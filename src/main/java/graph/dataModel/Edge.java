@@ -35,7 +35,11 @@ public class Edge {
     }
 
     public Object getProperty(String key) {
-        return properties.get(key);
+        Object value = properties.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("Property " + key + " not found");
+        }
+        return value;
     }
 
     public Map<String, Object> getProperties() {
