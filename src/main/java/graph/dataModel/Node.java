@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-class Node {
+public class Node {
 
     private final String id;
     private final Map<String, Object> attributes;

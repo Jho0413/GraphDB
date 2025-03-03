@@ -39,6 +39,16 @@ public class Graph {
         return new ArrayList<>(this.nodes.values());
     }
 
+    public List<Node> getNodesByAttribute(String attribute, Object value) {
+        List<Node> filteredNodes = new LinkedList<>();
+        for (Node node : this.nodes.values()) {
+            if (node.getAttribute(attribute).equals(value)) {
+                filteredNodes.add(node);
+            }
+        }
+        return filteredNodes;
+    }
+
     // Node update methods
     public void updateNode(String id, Map<String, Object> attributes) {
         Node currentNode = getNodeIfExists(id);
@@ -68,6 +78,7 @@ public class Graph {
     }
 
     // Edge methods
+    // Edge create method
     public Edge addEdge(double weight, String source, String target, Map<String, Object> properties) {
         checkNodeId(source);
         checkNodeId(target);
@@ -87,9 +98,12 @@ public class Graph {
         return edge;
     }
 
+    // Edge get methods
     public Edge getEdgeById(String id) {
         return getEdgeIfExists(id);
     }
+
+    public List<Edge> getEdges() { return new ArrayList<>(this.edges.values()); }
 
     public List<Edge> getEdgesFromNode(String nodeId) {
         checkNodeId(nodeId);
@@ -99,6 +113,27 @@ public class Graph {
         return edgeList;
     }
 
+    public List<Edge> getEdgesByProperty(String property, Object value) {
+        List<Edge> filteredEdges = new LinkedList<>();
+        for (Edge edge : this.edges.values()) {
+            if (edge.getProperty(property).equals(value)) {
+                filteredEdges.add(edge);
+            }
+        }
+        return filteredEdges;
+    }
+
+    public List<Edge> getEdgesByWeight(double weight) {
+        List<Edge> filteredEdges = new LinkedList<>();
+        for (Edge edge : this.edges.values()) {
+            if (edge.getWeight() == weight) {
+                filteredEdges.add(edge);
+            }
+        }
+        return filteredEdges;
+    }
+
+    // Edge update methods
     public void updateEdge(String edgeId, double weight) {
         Edge currentEdge = getEdgeIfExists(edgeId);
         currentEdge.setWeight(weight);
@@ -119,6 +154,7 @@ public class Graph {
         return currentEdge.deleteProperty(key);
     }
 
+    // Edge delete method
     public Edge deleteEdge(String edgeId) {
         checkEdgeId(edgeId);
         Edge removedEdge = this.edges.remove(edgeId);
