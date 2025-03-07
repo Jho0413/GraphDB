@@ -1,19 +1,20 @@
-package graph.traversalAlgorithms;
+package graph.traversalAlgorithms.shortestPath;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.queryModel.Path;
+import graph.traversalAlgorithms.TraversalResult;
 
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 
-public class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
+class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
 
     // fields
     private final Queue<SimpleEntry<String, Double>> queue;
 
-    public Dijkstra(String fromNodeId, String toNodeId, Graph graph) {
+    Dijkstra(String fromNodeId, String toNodeId, Graph graph) {
         super(fromNodeId, toNodeId, graph);
         List<Node> nodes = graph.getNodes();
         int length = nodes.size();
@@ -30,10 +31,8 @@ public class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
     }
 
     @Override
-    public Path performAlgorithm() {
-        if (fromNodeId.equals(toNodeId)) {
-            return new Path(List.of(fromNodeId));
-        }
+    public TraversalResult performAlgorithm() {
+        TraversalResult result = new TraversalResult();
 
         // performs dijkstra's algorithm
         while (!store.get(toNodeId).getInTree() && !queue.isEmpty()) {
@@ -65,10 +64,12 @@ public class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
         }
         // check for no path
         if (store.get(toNodeId).getParent() == null) {
-            return new Path(List.of());
+            result.setPath(new Path(List.of()));
+            return result;
         }
 
         // constructs the path
-        return constructPath();
+        result.setPath(constructPath());
+        return result;
     }
 }

@@ -1,4 +1,4 @@
-package graph.traversalAlgorithms;
+package graph.traversalAlgorithms.shortestPath;
 
 abstract class NodeStats {
 

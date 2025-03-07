@@ -1,13 +1,13 @@
-package graph.traversalAlgorithms;
+package graph.traversalAlgorithms.shortestPath;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
-import graph.queryModel.Path;
+import graph.traversalAlgorithms.TraversalResult;
 
-public class BellmanFord extends ShortestPathAlgorithm<BellmanFordNodeStats> {
+class BellmanFord extends ShortestPathAlgorithm<BellmanFordNodeStats> {
 
-    public BellmanFord(String fromNodeId, String toNodeId, Graph graph) {
+    BellmanFord(String fromNodeId, String toNodeId, Graph graph) {
         super(fromNodeId, toNodeId, graph);
         for (Node node : graph.getNodes()) {
             String currentNodeId = node.getId();
@@ -16,7 +16,8 @@ public class BellmanFord extends ShortestPathAlgorithm<BellmanFordNodeStats> {
     }
 
     @Override
-    public Path performAlgorithm() {
+    public TraversalResult performAlgorithm() {
+        TraversalResult result = new TraversalResult();
         int numberOfNodes = graph.getNodes().size();
         for (int i = 0; i < numberOfNodes - 1; i++) {
             for (Edge edge : graph.getEdges()) {
@@ -33,6 +34,7 @@ public class BellmanFord extends ShortestPathAlgorithm<BellmanFordNodeStats> {
         }
 
         // constructs the path
-        return constructPath();
+        result.setPath(constructPath());
+        return result;
     }
 }
