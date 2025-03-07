@@ -22,14 +22,10 @@ public class TraversalAlgorithmManager implements AlgorithmManager {
 
     @Override
     public TraversalResult runAlgorithm(AlgorithmType algorithmType, TraversalInput inputs) {
-        switch (algorithmType) {
-            case DIJKSTRA, BELLMAN_FORD-> {
-                return shortestPathAlgorithmManager.runAlgorithm(algorithmType, inputs);
-            }
-            case DFS_ALL_PATHS -> {
-                return dfsAlgorithmManager.runAlgorithm(algorithmType, inputs);
-            }
-        }
-        return null;
+        AlgorithmManager manager = switch (algorithmType) {
+            case DIJKSTRA, BELLMAN_FORD-> shortestPathAlgorithmManager;
+            case DFS_ALL_PATHS, DFS_GRAPH_CONNECTED, DFS_NODES_CONNECTED, DFS_NODES_CONNECTED_TO -> dfsAlgorithmManager;
+        };
+        return manager.runAlgorithm(algorithmType, inputs);
     }
 }

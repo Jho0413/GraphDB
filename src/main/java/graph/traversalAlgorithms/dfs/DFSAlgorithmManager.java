@@ -1,10 +1,7 @@
 package graph.traversalAlgorithms.dfs;
 
 import graph.dataModel.Graph;
-import graph.traversalAlgorithms.AlgorithmManager;
-import graph.traversalAlgorithms.AlgorithmType;
-import graph.traversalAlgorithms.TraversalInput;
-import graph.traversalAlgorithms.TraversalResult;
+import graph.traversalAlgorithms.*;
 
 public class DFSAlgorithmManager implements AlgorithmManager {
 
@@ -14,20 +11,14 @@ public class DFSAlgorithmManager implements AlgorithmManager {
 
     @Override
     public TraversalResult runAlgorithm(AlgorithmType algorithmType, TraversalInput inputs) {
-        TraversalResult result = new TraversalResult();
-        switch (algorithmType) {
-            case DFS_ALL_PATHS -> {
-                DFSAllPaths dfsAllPaths = new DFSAllPaths(
-                        graph,
-                        inputs.getFromNodeId(),
-                        inputs.getToNodeId(),
-                        inputs.getMaxLength()
-                );
-                return dfsAllPaths.performAlgorithm();
-            }
-            default -> {
-                return null;
-            }
-        }
+        Algorithm algorithm = switch (algorithmType) {
+            case DFS_ALL_PATHS -> new DFSAllPaths(graph, inputs.getFromNodeId(), inputs.getToNodeId(), inputs.getMaxLength());
+            case DFS_GRAPH_CONNECTED -> new DFSGraphConnector(graph);
+            case DFS_NODES_CONNECTED -> new DFSNodesConnector(graph, inputs.getFromNodeId(), inputs.getToNodeId());
+            case DFS_NODES_CONNECTED_TO -> new DFSNodesConnectedTo(graph, inputs.getFromNodeId());
+            default -> null;
+        };
+        assert algorithm != null;
+        return algorithm.performAlgorithm();
     }
 }

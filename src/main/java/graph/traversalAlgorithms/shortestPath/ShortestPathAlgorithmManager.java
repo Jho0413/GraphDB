@@ -15,16 +15,12 @@ public class ShortestPathAlgorithmManager implements AlgorithmManager {
     public TraversalResult runAlgorithm(AlgorithmType algorithmType, TraversalInput input) {
         String fromNodeId = input.getFromNodeId();
         String toNodeId = input.getToNodeId();
-        switch (algorithmType) {
-            case DIJKSTRA -> {
-                Dijkstra dijkstra = new Dijkstra(fromNodeId, toNodeId, graph);
-                return dijkstra.performAlgorithm();
-            }
-            case BELLMAN_FORD -> {
-                BellmanFord bellmanFord = new BellmanFord(fromNodeId, toNodeId, graph);
-                return bellmanFord.performAlgorithm();
-            }
-        }
-        return null;
+        Algorithm algorithm = switch (algorithmType) {
+            case DIJKSTRA -> new Dijkstra(fromNodeId, toNodeId, graph);
+            case BELLMAN_FORD -> new BellmanFord(fromNodeId, toNodeId, graph);
+            default -> null;
+        };
+        assert algorithm != null;
+        return algorithm.performAlgorithm();
     }
 }

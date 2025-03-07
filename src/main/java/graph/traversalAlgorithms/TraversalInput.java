@@ -2,29 +2,49 @@ package graph.traversalAlgorithms;
 
 public class TraversalInput {
 
-    private String fromNodeId;
-    private String toNodeId;
-    private Integer maxLength;
+    private final String fromNodeId;
+    private final String toNodeId;
+    private final Integer maxLength;
 
-    public TraversalInput() {}
-
-    public void setFromNodeId(String fromNodeId) {
-        this.fromNodeId = fromNodeId;
+    private TraversalInput(TraversalInputBuilder builder) {
+        this.fromNodeId = builder.fromNodeId;
+        this.toNodeId = builder.toNodeId;
+        this.maxLength = builder.maxLength;
     }
 
     public String getFromNodeId() {
         return this.fromNodeId;
     }
 
-    public void setToNodeId(String toNodeId) {
-        this.toNodeId = toNodeId;
-    }
-
     public String getToNodeId() {
         return this.toNodeId;
     }
 
-    public void setMaxLength(Integer maxLength) { this.maxLength = maxLength; }
-
     public Integer getMaxLength() { return this.maxLength; }
+
+    public static class TraversalInputBuilder {
+        private String fromNodeId;
+        private String toNodeId;
+        private Integer maxLength;
+
+        public TraversalInputBuilder() {}
+        public TraversalInputBuilder setFromNodeId(String fromNodeId) {
+            this.fromNodeId = fromNodeId;
+            return this;
+        }
+
+        public TraversalInputBuilder setToNodeId(String toNodeId) {
+            this.toNodeId = toNodeId;
+            return this;
+        }
+
+        public TraversalInputBuilder setMaxLength(Integer maxLength) {
+            this.maxLength = maxLength;
+            return this;
+        }
+
+        public TraversalInput build() {
+            return new TraversalInput(this);
+        }
+    }
 }

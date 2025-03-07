@@ -5,6 +5,7 @@ import graph.dataModel.Graph;
 import graph.queryModel.Path;
 import graph.traversalAlgorithms.Algorithm;
 import graph.traversalAlgorithms.TraversalResult;
+import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -27,9 +28,7 @@ class DFSAllPaths implements Algorithm {
     @Override
     public TraversalResult performAlgorithm() {
         findAllPathsHelper(fromNodeId, toNodeId, new LinkedList<>(), maxLength);
-        TraversalResult result = new TraversalResult();
-        result.setAllPaths(paths);
-        return result;
+        return new TraversalResultBuilder().setAllPaths(paths).build();
     }
 
     private void findAllPathsHelper(String fromNodeId, String toNodeId, List<String> path, Integer maxLength) {

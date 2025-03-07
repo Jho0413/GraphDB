@@ -10,8 +10,8 @@ public class GraphQueryClient {
 
     public static GraphQueryClient createClient(Graph graph) {
         TraversalAlgorithmManager algorithmManager = TraversalAlgorithmManager.createManager(graph);
-        GraphPathFinder pathFinder = new GraphPathFinder(graph, algorithmManager);
-        GraphConnectivityAnalyser connector = new GraphConnectivityAnalyser(graph);
+        GraphPathFinder pathFinder = new GraphPathFinder(algorithmManager);
+        GraphConnectivityAnalyser connector = new GraphConnectivityAnalyser(algorithmManager);
         return new GraphQueryClient(pathFinder, connector);
     }
 

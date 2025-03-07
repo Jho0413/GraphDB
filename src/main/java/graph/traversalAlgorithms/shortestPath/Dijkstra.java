@@ -5,6 +5,7 @@ import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.queryModel.Path;
 import graph.traversalAlgorithms.TraversalResult;
+import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
@@ -32,8 +33,6 @@ class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
 
     @Override
     public TraversalResult performAlgorithm() {
-        TraversalResult result = new TraversalResult();
-
         // performs dijkstra's algorithm
         while (!store.get(toNodeId).getInTree() && !queue.isEmpty()) {
 
@@ -62,14 +61,8 @@ class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
                 }
             }
         }
-        // check for no path
-        if (store.get(toNodeId).getParent() == null) {
-            result.setPath(new Path(List.of()));
-            return result;
-        }
 
-        // constructs the path
-        result.setPath(constructPath());
-        return result;
+        Path path = store.get(toNodeId).getParent() == null ? new Path(List.of()) : constructPath();
+        return new TraversalResultBuilder().setPath(path).build();
     }
 }

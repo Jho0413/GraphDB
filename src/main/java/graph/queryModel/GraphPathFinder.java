@@ -1,8 +1,8 @@
 package graph.queryModel;
 
-import graph.dataModel.Graph;
 import graph.traversalAlgorithms.TraversalAlgorithmManager;
 import graph.traversalAlgorithms.TraversalInput;
+import graph.traversalAlgorithms.TraversalInput.TraversalInputBuilder;
 import graph.traversalAlgorithms.TraversalResult;
 
 import java.util.*;
@@ -12,11 +12,9 @@ import static graph.traversalAlgorithms.AlgorithmType.DIJKSTRA;
 
 public class GraphPathFinder {
 
-    private final Graph graph;
     private final TraversalAlgorithmManager algorithmManager;
 
-    public GraphPathFinder(Graph graph, TraversalAlgorithmManager algorithmManager) {
-        this.graph = graph;
+    public GraphPathFinder(TraversalAlgorithmManager algorithmManager) {
         this.algorithmManager = algorithmManager;
     }
 
@@ -25,10 +23,11 @@ public class GraphPathFinder {
         if (maxLength != null && maxLength < 0) {
             throw new IllegalArgumentException("Max length must be greater than or equal to 0");
         }
-        TraversalInput input = new TraversalInput();
-        input.setFromNodeId(fromNodeId);
-        input.setToNodeId(toNodeId);
-        input.setMaxLength(maxLength);
+
+        TraversalInput input = new TraversalInputBuilder()
+                .setFromNodeId(fromNodeId)
+                .setToNodeId(toNodeId)
+                .setMaxLength(maxLength).build();
         TraversalResult result = algorithmManager.runAlgorithm(DFS_ALL_PATHS, input);
         return result.getAllPaths();
     }
@@ -42,9 +41,7 @@ public class GraphPathFinder {
         if (fromNodeId.equals(toNodeId)) {
             return new Path(List.of(fromNodeId));
         }
-        TraversalInput input = new TraversalInput();
-        input.setFromNodeId(fromNodeId);
-        input.setToNodeId(toNodeId);
+        TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).build();
         TraversalResult result = algorithmManager.runAlgorithm(DIJKSTRA, input);
         return result.getPath();
     }
