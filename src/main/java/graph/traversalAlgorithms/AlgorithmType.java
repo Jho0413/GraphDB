@@ -7,4 +7,6 @@ public enum AlgorithmType {
     DFS_GRAPH_CONNECTED,
     DFS_NODES_CONNECTED,
     DFS_NODES_CONNECTED_TO,
+    KOSARAJU,
+    TARJAN,
 }

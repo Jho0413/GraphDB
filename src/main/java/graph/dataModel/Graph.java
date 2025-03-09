@@ -113,6 +113,17 @@ public class Graph {
         return edgeList;
     }
 
+    public List<String> getNodesIdWithEdgeToNode(String nodeId) {
+        checkNodeId(nodeId);
+        List<String> nodeIds = new ArrayList<>();
+        for (String id : adjacencyList.keySet()) {
+            if (adjacencyList.get(id).containsKey(nodeId)) {
+                nodeIds.add(id);
+            }
+        }
+        return nodeIds;
+    }
+
     public List<Edge> getEdgesByProperty(String property, Object value) {
         List<Edge> filteredEdges = new LinkedList<>();
         for (Edge edge : this.edges.values()) {

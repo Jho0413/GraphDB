@@ -5,6 +5,7 @@ import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalInput.TraversalInputBuilder;
 import graph.traversalAlgorithms.TraversalResult;
 
+import java.util.Map;
 import java.util.Set;
 
 import static graph.traversalAlgorithms.AlgorithmType.*;
@@ -32,5 +33,15 @@ public class GraphConnectivityAnalyser {
         TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).build();
         TraversalResult result = traversalAlgorithmManager.runAlgorithm(DFS_NODES_CONNECTED_TO, input);
         return result.getNodeIds();
+    }
+
+    public Map<Integer, Set<String>> getStronglyConnectedComponents() {
+        TraversalResult result = traversalAlgorithmManager.runAlgorithm(TARJAN, null);
+        return result.getComponents();
+    }
+
+    public boolean isStronglyConnected() {
+        TraversalResult result = traversalAlgorithmManager.runAlgorithm(TARJAN, null);
+        return result.getComponents().size() == 1;
     }
 }

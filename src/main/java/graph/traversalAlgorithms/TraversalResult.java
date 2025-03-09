@@ -3,6 +3,7 @@ package graph.traversalAlgorithms;
 import graph.queryModel.Path;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 // class that includes the different possible return types from the traversal algorithms
@@ -12,12 +13,14 @@ public class TraversalResult {
     private final Path path;
     private final boolean conditionResult;
     private final Set<String> nodeIds;
+    private final Map<Integer, Set<String>> components;
 
     private TraversalResult(TraversalResultBuilder builder) {
         this.allPaths = builder.allPaths;
         this.path = builder.path;
         this.conditionResult = builder.conditionResult;
         this.nodeIds = builder.nodeIds;
+        this.components = builder.components;
     }
 
     public List<Path> getAllPaths() {
@@ -32,13 +35,20 @@ public class TraversalResult {
         return this.conditionResult;
     }
 
-    public Set<String> getNodeIds() { return this.nodeIds; }
+    public Set<String> getNodeIds() {
+        return this.nodeIds;
+    }
+
+    public Map<Integer, Set<String>> getComponents() {
+        return this.components;
+    }
 
     public static class TraversalResultBuilder {
         private List<Path> allPaths;
         private Path path;
         private boolean conditionResult;
         private Set<String> nodeIds;
+        private Map<Integer, Set<String>> components;
 
         public TraversalResultBuilder() {}
 
@@ -59,6 +69,11 @@ public class TraversalResult {
 
         public TraversalResultBuilder setNodeIds(Set<String> nodeIds) {
             this.nodeIds = nodeIds;
+            return this;
+        }
+
+        public TraversalResultBuilder setComponents(Map<Integer, Set<String>> components) {
+            this.components = components;
             return this;
         }
 
