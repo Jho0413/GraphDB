@@ -3,31 +3,29 @@ package graph.traversalAlgorithms.shortestPath;
 import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
+import graph.helper.Pair;
 import graph.queryModel.Path;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
 import java.util.*;
-import java.util.AbstractMap.SimpleEntry;
 
 class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
 
     // fields
-    private final Queue<SimpleEntry<String, Double>> queue;
+    private final Queue<Pair<String, Double>> queue;
 
     Dijkstra(String fromNodeId, String toNodeId, Graph graph) {
         super(fromNodeId, toNodeId, graph);
         List<Node> nodes = graph.getNodes();
         int length = nodes.size();
 
-        queue = new PriorityQueue<SimpleEntry<String, Double>>(
-                length,
-                Map.Entry.comparingByValue());
+        queue = new PriorityQueue<Pair<String, Double>>(length);
 
         for (Node node : nodes) {
             String nodeId = node.getId();
             store.put(nodeId, new DijkstraNodeStats(null, Double.POSITIVE_INFINITY, false));
-            queue.add(new SimpleEntry<>(nodeId, nodeId.equals(this.fromNodeId) ? 0 : Double.POSITIVE_INFINITY));
+            queue.add(new Pair<>(nodeId, nodeId.equals(this.fromNodeId) ? 0 : Double.POSITIVE_INFINITY));
         }
     }
 
@@ -37,8 +35,8 @@ class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
         while (!store.get(toNodeId).getInTree() && !queue.isEmpty()) {
 
             // obtain the node with the highest priority (minimum distance)
-            SimpleEntry<String, Double> sourceEntry = queue.poll();
-            String source = sourceEntry.getKey();
+            Pair<String, Double> sourcePair = queue.poll();
+            String source = sourcePair.getFirst();
 
             // add source into tree
             store.get(source).setInTree();
@@ -53,8 +51,8 @@ class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
 
                     // change priority and parent if there is a shorter path to the destination
                     if (alternativePath < nextNodeStats.getDistance()) {
-                        queue.removeIf(e -> e.getKey().equals(destination));
-                        queue.add(new SimpleEntry<>(destination, alternativePath));
+                        queue.removeIf(e -> e.getFirst().equals(destination));
+                        queue.add(new Pair<>(destination, alternativePath));
                         nextNodeStats.setDistance(alternativePath);
                         nextNodeStats.setParent(source);
                     }

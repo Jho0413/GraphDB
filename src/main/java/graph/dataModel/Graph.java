@@ -49,6 +49,11 @@ public class Graph {
         return filteredNodes;
     }
 
+    public int getNodesDegree(String id) {
+        checkNodeId(id);
+        return adjacencyList.get(id).size();
+    }
+
     // Node update methods
     public void updateNode(String id, Map<String, Object> attributes) {
         Node currentNode = getNodeIfExists(id);

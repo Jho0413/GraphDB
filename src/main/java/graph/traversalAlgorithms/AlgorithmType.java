@@ -9,4 +9,5 @@ public enum AlgorithmType {
     DFS_NODES_CONNECTED_TO,
     KOSARAJU,
     TARJAN,
+    BFS_COMMON_NODES_BY_DEPTH,
 }

@@ -5,11 +5,13 @@ public class TraversalInput {
     private final String fromNodeId;
     private final String toNodeId;
     private final Integer maxLength;
+    private final Boolean condition;
 
     private TraversalInput(TraversalInputBuilder builder) {
         this.fromNodeId = builder.fromNodeId;
         this.toNodeId = builder.toNodeId;
         this.maxLength = builder.maxLength;
+        this.condition = builder.condition;
     }
 
     public String getFromNodeId() {
@@ -22,10 +24,13 @@ public class TraversalInput {
 
     public Integer getMaxLength() { return this.maxLength; }
 
+    public Boolean getCondition() { return this.condition; }
+
     public static class TraversalInputBuilder {
         private String fromNodeId;
         private String toNodeId;
         private Integer maxLength;
+        private Boolean condition;
 
         public TraversalInputBuilder() {}
         public TraversalInputBuilder setFromNodeId(String fromNodeId) {
@@ -40,6 +45,11 @@ public class TraversalInput {
 
         public TraversalInputBuilder setMaxLength(Integer maxLength) {
             this.maxLength = maxLength;
+            return this;
+        }
+
+        public TraversalInputBuilder setCondition() {
+            this.condition = true;
             return this;
         }
 
