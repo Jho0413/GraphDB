@@ -47,7 +47,7 @@ public class TraversalAlgorithmManager implements AlgorithmManager {
     @Override
     public TraversalResult runAlgorithm(AlgorithmType algorithmType, TraversalInput inputs) {
         AlgorithmManager manager = switch (algorithmType) {
-            case DIJKSTRA, BELLMAN_FORD -> shortestPathAlgorithmManager;
+            case DIJKSTRA, BELLMAN_FORD, FLOYD_WARSHALL -> shortestPathAlgorithmManager;
             case BFS_COMMON_NODES_BY_DEPTH,
                  DFS_NODES_CONNECTED,
                  DFS_GRAPH_CONNECTED,

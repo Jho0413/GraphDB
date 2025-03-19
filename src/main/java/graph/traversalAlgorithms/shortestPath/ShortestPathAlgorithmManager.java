@@ -18,6 +18,7 @@ public class ShortestPathAlgorithmManager implements AlgorithmManager {
         Algorithm algorithm = switch (algorithmType) {
             case DIJKSTRA -> new Dijkstra(fromNodeId, toNodeId, graph);
             case BELLMAN_FORD -> new BellmanFord(fromNodeId, toNodeId, graph);
+            case FLOYD_WARSHALL -> new FloydWarshall(graph);
             default -> null;
         };
         assert algorithm != null;

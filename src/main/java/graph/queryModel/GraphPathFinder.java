@@ -7,8 +7,7 @@ import graph.traversalAlgorithms.TraversalResult;
 
 import java.util.*;
 
-import static graph.traversalAlgorithms.AlgorithmType.DFS_ALL_PATHS;
-import static graph.traversalAlgorithms.AlgorithmType.DIJKSTRA;
+import static graph.traversalAlgorithms.AlgorithmType.*;
 
 public class GraphPathFinder {
 
@@ -37,12 +36,25 @@ public class GraphPathFinder {
         return findPathsWithMaxLength(fromNodeId, toNodeId, null);
     }
 
-    public Path findShortestPath(String fromNodeId, String toNodeId) {
+    public Path findShortestPath(String fromNodeId, String toNodeId) throws Exception {
         if (fromNodeId.equals(toNodeId)) {
             return new Path(List.of(fromNodeId));
         }
         TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).build();
         TraversalResult result = algorithmManager.runAlgorithm(DIJKSTRA, input);
+        Exception exception = result.getException();
+        if (exception != null) {
+            throw exception;
+        }
         return result.getPath();
+    }
+
+    public double[][] findAllShortestDistances() throws Exception {
+        TraversalResult result = algorithmManager.runAlgorithm(FLOYD_WARSHALL, null);
+        Exception exception = result.getException();
+        if (exception != null) {
+            throw exception;
+        }
+        return result.getAllShortestDistances();
     }
 }

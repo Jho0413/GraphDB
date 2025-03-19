@@ -108,6 +108,14 @@ public class Graph {
         return getEdgeIfExists(id);
     }
 
+    public Edge getEdgeByNodeIds(String fromNodeId, String toNodeId) {
+        checkNodeId(fromNodeId);
+        checkNodeId(toNodeId);
+        Map<String, String> nodesConnectedTo = adjacencyList.get(fromNodeId);
+        String edgeId = nodesConnectedTo.getOrDefault(toNodeId, null);
+        return edgeId == null ? null : this.edges.get(edgeId);
+    }
+
     public List<Edge> getEdges() { return new ArrayList<>(this.edges.values()); }
 
     public List<Edge> getEdgesFromNode(String nodeId) {

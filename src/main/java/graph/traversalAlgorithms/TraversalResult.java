@@ -15,6 +15,7 @@ public class TraversalResult {
     private final Set<String> nodeIds;
     private final Map<Integer, Set<String>> components;
     private final Exception exception;
+    private final double[][] allShortestDistances;
 
     private TraversalResult(TraversalResultBuilder builder) {
         this.allPaths = builder.allPaths;
@@ -23,6 +24,7 @@ public class TraversalResult {
         this.nodeIds = builder.nodeIds;
         this.components = builder.components;
         this.exception = builder.exception;
+        this.allShortestDistances = builder.allShortestDistances;
     }
 
     public List<Path> getAllPaths() {
@@ -47,6 +49,8 @@ public class TraversalResult {
 
     public Exception getException() { return this.exception; }
 
+    public double[][] getAllShortestDistances() { return this.allShortestDistances; }
+
     public static class TraversalResultBuilder {
         private List<Path> allPaths;
         private Path path;
@@ -54,6 +58,7 @@ public class TraversalResult {
         private Set<String> nodeIds;
         private Map<Integer, Set<String>> components;
         private Exception exception;
+        private double[][] allShortestDistances;
 
         public TraversalResultBuilder() {}
 
@@ -84,6 +89,11 @@ public class TraversalResult {
 
         public TraversalResultBuilder setException(Exception exception) {
             this.exception = exception;
+            return this;
+        }
+
+        public TraversalResultBuilder setAllShortestDistances(double[][] allShortestDistances) {
+            this.allShortestDistances = allShortestDistances;
             return this;
         }
 
