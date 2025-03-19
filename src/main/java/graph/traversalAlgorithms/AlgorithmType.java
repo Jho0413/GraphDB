@@ -2,11 +2,13 @@ package graph.traversalAlgorithms;
 
 public enum AlgorithmType {
     BELLMAN_FORD,
+    BELLMAN_FORD_CYCLE,
     DIJKSTRA,
     DFS_ALL_PATHS,
     DFS_GRAPH_CONNECTED,
     DFS_NODES_CONNECTED,
     DFS_NODES_CONNECTED_TO,
+    DFS_HAS_CYCLE,
     KOSARAJU,
     TARJAN,
     BFS_COMMON_NODES_BY_DEPTH,

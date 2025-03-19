@@ -1,50 +1,60 @@
 package graph.traversalAlgorithms;
 
 import graph.dataModel.Graph;
-import graph.traversalAlgorithms.bfs.BFSAlgorithmManager;
-import graph.traversalAlgorithms.dfs.DFSAlgorithmManager;
+import graph.traversalAlgorithms.connectivity.ConnectivityAlgorithmManager;
+import graph.traversalAlgorithms.cycles.CyclesAlgorithmManager;
+import graph.traversalAlgorithms.paths.PathAlgorithmManager;
 import graph.traversalAlgorithms.shortestPath.ShortestPathAlgorithmManager;
 import graph.traversalAlgorithms.stronglyConnected.StronglyConnectedAlgorithmManager;
 
 public class TraversalAlgorithmManager implements AlgorithmManager {
 
-    private final DFSAlgorithmManager dfsAlgorithmManager;
     private final ShortestPathAlgorithmManager shortestPathAlgorithmManager;
     private final StronglyConnectedAlgorithmManager stronglyConnectedAlgorithmManager;
-    private final BFSAlgorithmManager bfsAlgorithmManager;
+    private final CyclesAlgorithmManager cyclesAlgorithmManager;
+    private final PathAlgorithmManager pathAlgorithmManager;
+    private final ConnectivityAlgorithmManager connectivityAlgorithmManager;
 
     private TraversalAlgorithmManager(
-            DFSAlgorithmManager dfsAlgorithmManager,
             ShortestPathAlgorithmManager shortestPathAlgorithmManager,
             StronglyConnectedAlgorithmManager stronglyConnectedAlgorithmManager,
-            BFSAlgorithmManager bfsAlgorithmManager
+            CyclesAlgorithmManager cyclesAlgorithmManager,
+            PathAlgorithmManager pathAlgorithmManager,
+            ConnectivityAlgorithmManager connectivityAlgorithmManager
     ) {
-        this.dfsAlgorithmManager = dfsAlgorithmManager;
         this.shortestPathAlgorithmManager = shortestPathAlgorithmManager;
         this.stronglyConnectedAlgorithmManager = stronglyConnectedAlgorithmManager;
-        this.bfsAlgorithmManager = bfsAlgorithmManager;
+        this.cyclesAlgorithmManager = cyclesAlgorithmManager;
+        this.pathAlgorithmManager = pathAlgorithmManager;
+        this.connectivityAlgorithmManager = connectivityAlgorithmManager;
     }
 
     public static TraversalAlgorithmManager createManager(Graph graph) {
-        DFSAlgorithmManager dfsAlgorithmManager = new DFSAlgorithmManager(graph);
         ShortestPathAlgorithmManager shortestPathAlgorithmManager = new ShortestPathAlgorithmManager(graph);
         StronglyConnectedAlgorithmManager stronglyConnectedAlgorithmManager = new StronglyConnectedAlgorithmManager(graph);
-        BFSAlgorithmManager bfsAlgorithmManager = new BFSAlgorithmManager(graph);
+        CyclesAlgorithmManager cyclesAlgorithmManager = new CyclesAlgorithmManager(graph);
+        PathAlgorithmManager pathAlgorithmManager = new PathAlgorithmManager(graph);
+        ConnectivityAlgorithmManager connectivityAlgorithmManager = new ConnectivityAlgorithmManager(graph);
         return new TraversalAlgorithmManager(
-                dfsAlgorithmManager,
                 shortestPathAlgorithmManager,
                 stronglyConnectedAlgorithmManager,
-                bfsAlgorithmManager
+                cyclesAlgorithmManager,
+                pathAlgorithmManager,
+                connectivityAlgorithmManager
         );
     }
 
     @Override
     public TraversalResult runAlgorithm(AlgorithmType algorithmType, TraversalInput inputs) {
         AlgorithmManager manager = switch (algorithmType) {
-            case DIJKSTRA, BELLMAN_FORD-> shortestPathAlgorithmManager;
-            case DFS_ALL_PATHS, DFS_GRAPH_CONNECTED, DFS_NODES_CONNECTED, DFS_NODES_CONNECTED_TO -> dfsAlgorithmManager;
-            case KOSARAJU, TARJAN -> stronglyConnectedAlgorithmManager;
-            case BFS_COMMON_NODES_BY_DEPTH -> bfsAlgorithmManager;
+            case DIJKSTRA, BELLMAN_FORD -> shortestPathAlgorithmManager;
+            case BFS_COMMON_NODES_BY_DEPTH,
+                 DFS_NODES_CONNECTED,
+                 DFS_GRAPH_CONNECTED,
+                 DFS_NODES_CONNECTED_TO -> connectivityAlgorithmManager;
+            case BELLMAN_FORD_CYCLE, DFS_HAS_CYCLE -> cyclesAlgorithmManager;
+            case DFS_ALL_PATHS -> pathAlgorithmManager;
+            case TARJAN, KOSARAJU -> stronglyConnectedAlgorithmManager;
         };
         return manager.runAlgorithm(algorithmType, inputs);
     }

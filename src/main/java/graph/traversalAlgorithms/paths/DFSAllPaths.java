@@ -1,4 +1,4 @@
-package graph.traversalAlgorithms.dfs;
+package graph.traversalAlgorithms.paths;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Graph;

@@ -5,7 +5,7 @@ abstract class NodeStats {
     private String parent;
     private double distance;
 
-    NodeStats(String parent, double distance) {
+    protected NodeStats(String parent, double distance) {
         this.parent = parent;
         this.distance = distance;
     }

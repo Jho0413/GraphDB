@@ -5,7 +5,6 @@ import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalInput.TraversalInputBuilder;
 import graph.traversalAlgorithms.TraversalResult;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -71,5 +70,15 @@ public class GraphConnectivityAnalyser {
                 new TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).setMaxLength(depth).setCondition().build();
         TraversalResult result = traversalAlgorithmManager.runAlgorithm(BFS_COMMON_NODES_BY_DEPTH, input);
         return result.getNodeIds();
+    }
+
+    public boolean hasCycle() {
+        TraversalResult result = traversalAlgorithmManager.runAlgorithm(DFS_HAS_CYCLE, null);;
+        return result.getConditionResult();
+    }
+
+    public boolean hasNegativeCycle() {
+        TraversalResult result = traversalAlgorithmManager.runAlgorithm(BELLMAN_FORD_CYCLE, null);
+        return result.getConditionResult();
     }
 }

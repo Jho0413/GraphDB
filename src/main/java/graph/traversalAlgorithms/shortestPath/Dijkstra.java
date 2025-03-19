@@ -3,6 +3,7 @@ package graph.traversalAlgorithms.shortestPath;
 import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
+import graph.exceptions.NegativeWeightException;
 import graph.helper.Pair;
 import graph.queryModel.Path;
 import graph.traversalAlgorithms.TraversalResult;
@@ -11,8 +12,7 @@ import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 import java.util.*;
 
 class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
-
-    // fields
+    // pre-condition: all positive edges
     private final Queue<Pair<String, Double>> queue;
 
     Dijkstra(String fromNodeId, String toNodeId, Graph graph) {
@@ -47,7 +47,12 @@ class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
 
                 // check if already in tree
                 if (!nextNodeStats.getInTree()) {
-                    double alternativePath = store.get(source).getDistance() + edge.getWeight();
+                    double weight = edge.getWeight();
+                    // checking for negative weights
+                    if (weight < 0) {
+                        return new TraversalResultBuilder().setException(new NegativeWeightException()).build();
+                    }
+                    double alternativePath = store.get(source).getDistance() + weight;
 
                     // change priority and parent if there is a shorter path to the destination
                     if (alternativePath < nextNodeStats.getDistance()) {

@@ -1,4 +1,4 @@
-package graph.traversalAlgorithms.bfs;
+package graph.traversalAlgorithms.connectivity;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Graph;

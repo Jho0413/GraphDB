@@ -14,6 +14,7 @@ public class TraversalResult {
     private final boolean conditionResult;
     private final Set<String> nodeIds;
     private final Map<Integer, Set<String>> components;
+    private final Exception exception;
 
     private TraversalResult(TraversalResultBuilder builder) {
         this.allPaths = builder.allPaths;
@@ -21,6 +22,7 @@ public class TraversalResult {
         this.conditionResult = builder.conditionResult;
         this.nodeIds = builder.nodeIds;
         this.components = builder.components;
+        this.exception = builder.exception;
     }
 
     public List<Path> getAllPaths() {
@@ -43,12 +45,15 @@ public class TraversalResult {
         return this.components;
     }
 
+    public Exception getException() { return this.exception; }
+
     public static class TraversalResultBuilder {
         private List<Path> allPaths;
         private Path path;
         private boolean conditionResult;
         private Set<String> nodeIds;
         private Map<Integer, Set<String>> components;
+        private Exception exception;
 
         public TraversalResultBuilder() {}
 
@@ -74,6 +79,11 @@ public class TraversalResult {
 
         public TraversalResultBuilder setComponents(Map<Integer, Set<String>> components) {
             this.components = components;
+            return this;
+        }
+
+        public TraversalResultBuilder setException(Exception exception) {
+            this.exception = exception;
             return this;
         }
 
