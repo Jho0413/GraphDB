@@ -1,187 +1,131 @@
 package graph.dataModel;
 
-import java.util.*;
+import graph.operations.GraphOperations;
+import graph.operations.GraphService;
+import graph.storage.GraphStorage;
+import graph.storage.InMemoryGraphStorage;
 
-public class Graph {
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
+public class Graph implements GraphOperations {
+
+    private final GraphOperations service;
     private final String id;
-    // node id -> neighbour node id -> edge id
-    private final Map<String, Map<String, String>> adjacencyList;
-    private final Map<String, Node> nodes;
-    private final Map<String, Edge> edges;
 
-    public Graph() {
-        this.id = UUID.randomUUID().toString();
-        this.adjacencyList = new HashMap<>();
-        this.nodes = new HashMap<>();
-        this.edges = new HashMap<>();
+    private Graph(GraphOperations service, String id) {
+        this.service = service;
+        this.id = id;
+    }
+
+    public static Graph createGraph() {
+        GraphStorage storage = new InMemoryGraphStorage();
+        GraphOperations service = new GraphService(storage);
+        return new Graph(service, UUID.randomUUID().toString());
     }
 
     public String getId() {
         return id;
     }
 
-    // Node methods
-    // Node create method
+    @Override
     public Node addNode(Map<String, Object> attributes) {
-        String nodeId = UUID.randomUUID().toString();
-        Node newNode = new Node(nodeId, attributes);
-        this.nodes.put(nodeId, newNode);
-        return newNode;
+        return service.addNode(attributes);
     }
 
-    // Node get methods
+    @Override
     public Node getNodeById(String id) {
-        return getNodeIfExists(id);
+        return service.getNodeById(id);
     }
 
+    @Override
     public List<Node> getNodes() {
-        return new ArrayList<>(this.nodes.values());
+        return service.getNodes();
     }
 
+    @Override
     public List<Node> getNodesByAttribute(String attribute, Object value) {
-        List<Node> filteredNodes = new LinkedList<>();
-        for (Node node : this.nodes.values()) {
-            if (node.getAttribute(attribute).equals(value)) {
-                filteredNodes.add(node);
-            }
-        }
-        return filteredNodes;
+        return service.getNodesByAttribute(attribute, value);
     }
 
-    // Node update methods
+    @Override
     public void updateNode(String id, Map<String, Object> attributes) {
-        Node currentNode = getNodeIfExists(id);
-        currentNode.setAttributes(attributes);
+        service.updateNode(id, attributes);
     }
 
-    public void updateNode(String id, String key, Object value) {
-        Node currentNode = getNodeIfExists(id);
-        currentNode.setAttribute(key, value);
+    @Override
+    public void updateNode(String id, String attribute, Object value) {
+        service.updateNode(id, attribute, value);
     }
 
-    public Object removeNodeAttribute(String id, String key) {
-        Node currentNode = getNodeIfExists(id);
-        return currentNode.deleteAttribute(key);
+    @Override
+    public Object removeNodeAttribute(String id, String attribute) {
+        return service.removeNodeAttribute(id, attribute);
     }
 
-    // Node delete method
+    @Override
     public Node deleteNode(String id) {
-        checkNodeId(id);
-        edges.entrySet().removeIf(entry -> {
-            Edge edge = entry.getValue();
-            return edge.getSource().equals(id) || edge.getDestination().equals(id);
-        });
-        adjacencyList.remove(id);
-        adjacencyList.forEach((key, neighbours) -> neighbours.remove(id));
-        return this.nodes.remove(id);
+        return service.deleteNode(id);
     }
 
-    // Edge methods
-    // Edge create method
-    public Edge addEdge(double weight, String source, String target, Map<String, Object> properties) {
-        checkNodeId(source);
-        checkNodeId(target);
-
-        if (adjacencyList.containsKey(source) && adjacencyList.get(source).containsKey(target)) {
-            throw new IllegalArgumentException("Edge between " + source + " and " + target + " already exists");
-        }
-
-        String edgeId = UUID.randomUUID().toString();
-        Edge edge = new Edge(edgeId, source, target, weight, properties);
-
-        // Adding to edges map
-        this.edges.put(edgeId, edge);
-
-        // Adding into adjacency list
-        adjacencyList.computeIfAbsent(source, k -> new HashMap<>()).put(target, edgeId);
-        return edge;
+    @Override
+    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) {
+        return service.addEdge(source, target, properties, weight);
     }
 
-    // Edge get methods
+    @Override
     public Edge getEdgeById(String id) {
-        return getEdgeIfExists(id);
+        return service.getEdgeById(id);
     }
 
-    public List<Edge> getEdges() { return new ArrayList<>(this.edges.values()); }
-
-    public List<Edge> getEdgesFromNode(String nodeId) {
-        checkNodeId(nodeId);
-        Map<String, String> neighbours = adjacencyList.get(nodeId);
-        List<Edge> edgeList = new ArrayList<>();
-        neighbours.values().forEach(edgeId -> edgeList.add(edges.get(edgeId)));
-        return edgeList;
+    @Override
+    public List<Edge> getEdges() {
+        return service.getEdges();
     }
 
+    @Override
     public List<Edge> getEdgesByProperty(String property, Object value) {
-        List<Edge> filteredEdges = new LinkedList<>();
-        for (Edge edge : this.edges.values()) {
-            if (edge.getProperty(property).equals(value)) {
-                filteredEdges.add(edge);
-            }
-        }
-        return filteredEdges;
+        return service.getEdgesByProperty(property, value);
     }
 
+    @Override
     public List<Edge> getEdgesByWeight(double weight) {
-        List<Edge> filteredEdges = new LinkedList<>();
-        for (Edge edge : this.edges.values()) {
-            if (edge.getWeight() == weight) {
-                filteredEdges.add(edge);
-            }
-        }
-        return filteredEdges;
+        return service.getEdgesByWeight(weight);
     }
 
-    // Edge update methods
+    @Override
     public void updateEdge(String edgeId, double weight) {
-        Edge currentEdge = getEdgeIfExists(edgeId);
-        currentEdge.setWeight(weight);
+        service.updateEdge(edgeId, weight);
     }
 
+    @Override
     public void updateEdge(String edgeId, String key, Object value) {
-        Edge currentEdge = getEdgeIfExists(edgeId);
-        currentEdge.setProperty(key, value);
+        service.updateEdge(edgeId, key, value);
     }
 
+    @Override
     public void updateEdge(String edgeId, Map<String, Object> properties) {
-        Edge currentEdge = getEdgeIfExists(edgeId);
-        currentEdge.setProperties(properties);
+        service.updateEdge(edgeId, properties);
     }
 
-    public Object removeEdgeAttribute(String edgeId, String key) {
-        Edge currentEdge = getEdgeIfExists(edgeId);
-        return currentEdge.deleteProperty(key);
+    @Override
+    public Object removeEdgeProperty(String edgeId, String property) {
+        return service.removeEdgeProperty(edgeId, property);
     }
 
-    // Edge delete method
+    @Override
     public Edge deleteEdge(String edgeId) {
-        checkEdgeId(edgeId);
-        Edge removedEdge = this.edges.remove(edgeId);
-        adjacencyList.get(removedEdge.getSource()).remove(removedEdge.getDestination());
-        return removedEdge;
+        return service.deleteEdge(edgeId);
     }
 
-    // helper functions
-    private Node getNodeIfExists(String nodeId) {
-        checkNodeId(nodeId);
-        return this.nodes.get(nodeId);
+    @Override
+    public List<Edge> getEdgesFromNode(String nodeId) {
+        return service.getEdgesFromNode(nodeId);
     }
 
-    private void checkNodeId(String nodeId) {
-        if (!this.nodes.containsKey(nodeId)) {
-            throw new NoSuchElementException("Node with id " + nodeId + " does not exist");
-        }
-    }
-
-    private Edge getEdgeIfExists(String edgeId) {
-        checkEdgeId(edgeId);
-        return this.edges.get(edgeId);
-    }
-
-    private void checkEdgeId(String edgeId) {
-        if (!this.edges.containsKey(edgeId)) {
-            throw new NoSuchElementException("Edge with id " + edgeId + " does not exist");
-        }
+    @Override
+    public List<String> getNodesIdWithEdgeToNode(String nodeId) {
+        return service.getNodesIdWithEdgeToNode(nodeId);
     }
 }
