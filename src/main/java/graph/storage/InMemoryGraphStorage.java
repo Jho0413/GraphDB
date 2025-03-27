@@ -2,6 +2,7 @@ package graph.storage;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
+import graph.operations.GraphOperation;
 
 import java.util.*;
 
@@ -104,5 +105,10 @@ public class InMemoryGraphStorage implements GraphStorage {
     @Override
     public boolean edgeExists(String source, String target) {
         return adjacencyList.containsKey(source) && adjacencyList.get(source).containsKey(target);
+    }
+
+    @Override
+    public void updateStorage(TransactionStorage transactionStorage) {
+        transactionStorage.getOperations().forEach(operation -> operation.apply(this));
     }
 }

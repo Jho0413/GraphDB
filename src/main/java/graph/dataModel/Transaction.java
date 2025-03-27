@@ -1,33 +1,16 @@
 package graph.dataModel;
 
-import graph.operations.GraphOperations;
-import graph.operations.GraphOperationsWithTransaction;
-import graph.operations.GraphService;
-import graph.storage.GraphStorage;
-import graph.storage.InMemoryGraphStorage;
+import graph.operations.TransactionOperations;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-public class Graph implements GraphOperationsWithTransaction {
+public class Transaction implements TransactionOperations {
 
-    private final GraphOperationsWithTransaction service;
-    private final String id;
+    private final TransactionOperations service;
 
-    private Graph(GraphOperationsWithTransaction service, String id) {
+    public Transaction(TransactionOperations service) {
         this.service = service;
-        this.id = id;
-    }
-
-    public static Graph createGraph() {
-        GraphStorage storage = new InMemoryGraphStorage();
-        GraphOperationsWithTransaction service = new GraphService(storage);
-        return new Graph(service, UUID.randomUUID().toString());
-    }
-
-    public String getId() {
-        return id;
     }
 
     @Override
@@ -81,6 +64,11 @@ public class Graph implements GraphOperationsWithTransaction {
     }
 
     @Override
+    public Edge getEdgeByNodeIds(String source, String target) {
+        return service.getEdgeByNodeIds(source, target);
+    }
+
+    @Override
     public List<Edge> getEdges() {
         return service.getEdges();
     }
@@ -131,12 +119,7 @@ public class Graph implements GraphOperationsWithTransaction {
     }
 
     @Override
-    public Edge getEdgeByNodeIds(String source, String target) {
-        return service.getEdgeByNodeIds(source, target);
-    }
-
-    @Override
-    public Transaction createTransaction() {
-        return service.createTransaction();
+    public void commit() {
+        service.commit();
     }
 }

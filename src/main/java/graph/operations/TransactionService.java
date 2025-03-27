@@ -6,19 +6,18 @@ import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
+import graph.storage.TransactionStorage;
 
 import java.util.*;
 
-public class TransactionService implements GraphOperations {
+public class TransactionService implements TransactionOperations {
 
     private final GraphStorage storage;
-    private final Map<String, Node> modifiedNodes = new HashMap<>();
-    private final Map<String, Edge> modifiedEdges = new HashMap<>();
-    private final Set<String> deletedNodes = new HashSet<>();
-    private final Set<String> deletedEdges = new HashSet<>();
+    private final TransactionStorage transactionStorage;
 
-    public TransactionService(GraphStorage storage) {
+    public TransactionService(GraphStorage storage, TransactionStorage transactionStorage) {
         this.storage = storage;
+        this.transactionStorage = transactionStorage;
     }
 
     @Override
@@ -26,7 +25,7 @@ public class TransactionService implements GraphOperations {
         checkAttributes(attributes);
         String nodeId = UUID.randomUUID().toString();
         Node newNode = new Node(nodeId, attributes);
-        this.modifiedNodes.put(nodeId, newNode);
+        this.transactionStorage.putNode(newNode);
         return newNode;
     }
 
@@ -41,10 +40,10 @@ public class TransactionService implements GraphOperations {
         List<Node> newNodes = new LinkedList<>();
         for (Node node : nodes) {
             String currentId = node.getId();
-            if (deletedNodes.contains(currentId)) {
+            if (this.transactionStorage.nodeDeleted(currentId)) {
                 continue;
             }
-            newNodes.add(modifiedNodes.getOrDefault(currentId, node));
+            newNodes.add(getMostUpdatedNode(currentId, node));
         }
         return newNodes;
     }
@@ -54,14 +53,11 @@ public class TransactionService implements GraphOperations {
         List<Node> nodes = this.storage.getAllNodes();
         List<Node> filteredNodes = new LinkedList<>();
         for (Node node : nodes) {
-            Node currentNode = node;
             String currentId = node.getId();
-            if (this.deletedNodes.contains(currentId)) {
+            if (this.transactionStorage.nodeDeleted(currentId)) {
                 continue;
             }
-            if (this.modifiedNodes.containsKey(currentId)) {
-                currentNode = this.modifiedNodes.get(currentId);
-            }
+            Node currentNode = getMostUpdatedNode(currentId, node);
             if (currentNode.hasAttribute(attribute) && currentNode.getAttribute(attribute).equals(value)) {
                 filteredNodes.add(currentNode);
             }
@@ -75,7 +71,7 @@ public class TransactionService implements GraphOperations {
         Node currentNode = getNodeIfExists(id);
         Node modifiedNode = new Node(id, currentNode.getAttributes());
         modifiedNode.setAttributes(attributes);
-        this.modifiedNodes.put(id, modifiedNode);
+        this.transactionStorage.putNode(modifiedNode);
     }
 
     @Override
@@ -83,7 +79,7 @@ public class TransactionService implements GraphOperations {
         Node currentNode = getNodeIfExists(id);
         Node modifiedNode = new Node(id, currentNode.getAttributes());
         modifiedNode.setAttribute(attribute, value);
-        this.modifiedNodes.put(id, modifiedNode);
+        this.transactionStorage.putNode(modifiedNode);
     }
 
     @Override
@@ -91,14 +87,14 @@ public class TransactionService implements GraphOperations {
         Node currentNode = getNodeIfExists(id);
         Node modifiedNode = new Node(id, currentNode.getAttributes());
         Object value = modifiedNode.deleteAttribute(attribute);
-        this.modifiedNodes.put(id, modifiedNode);
+        this.transactionStorage.putNode(modifiedNode);
         return value;
     }
 
     @Override
     public Node deleteNode(String id) throws NodeNotFoundException {
         Node currentNode = getNodeIfExists(id);
-        this.deletedNodes.add(id);
+        this.transactionStorage.deleteNode(id);
         return currentNode;
     }
 
@@ -112,7 +108,7 @@ public class TransactionService implements GraphOperations {
         }
         String edgeId = UUID.randomUUID().toString();
         Edge edge = new Edge(edgeId, source, target, weight, properties);
-        this.modifiedEdges.put(edgeId, edge);
+        this.transactionStorage.putEdge(edge);
         return edge;
     }
 
@@ -127,10 +123,10 @@ public class TransactionService implements GraphOperations {
         checkNodeId(target);
         if (this.storage.edgeExists(source, target)) {
             Edge edge = this.storage.getEdgeByNodeIds(source, target);
-            if (deletedEdges.contains(edge.getId())) {
+            if (this.transactionStorage.edgeDeleted(edge.getId())) {
                 throw new EdgeNotFoundException(source, target);
             }
-            return this.modifiedEdges.getOrDefault(edge.getId(), edge);
+            return getMostUpdatedEdge(edge.getId(), edge);
         }
         throw new EdgeNotFoundException(source, target);
     }
@@ -141,10 +137,10 @@ public class TransactionService implements GraphOperations {
         List<Edge> newEdges = new LinkedList<>();
         for (Edge edge : edges) {
             String currentId = edge.getId();
-            if (deletedEdges.contains(currentId)) {
+            if (this.transactionStorage.edgeDeleted(currentId)) {
                 continue;
             }
-            newEdges.add(modifiedEdges.getOrDefault(currentId, edge));
+            newEdges.add(getMostUpdatedEdge(currentId, edge));
         }
         return newEdges;
     }
@@ -155,13 +151,10 @@ public class TransactionService implements GraphOperations {
         List<Edge> newEdges = new LinkedList<>();
         for (Edge edge : edges) {
             String currentId = edge.getId();
-            Edge currentEdge = edge;
-            if (deletedEdges.contains(currentId)) {
+            if (this.transactionStorage.edgeDeleted(currentId)) {
                 continue;
             }
-            if (this.modifiedEdges.containsKey(currentId)) {
-                currentEdge = this.modifiedEdges.get(currentId);
-            }
+            Edge currentEdge = getMostUpdatedEdge(currentId, edge);
             if (currentEdge.hasProperty(property) && currentEdge.getProperty(property).equals(value)) {
                 newEdges.add(currentEdge);
             }
@@ -175,13 +168,10 @@ public class TransactionService implements GraphOperations {
         List<Edge> newEdges = new LinkedList<>();
         for (Edge edge : edges) {
             String currentId = edge.getId();
-            Edge currentEdge = edge;
-            if (deletedEdges.contains(currentId)) {
+            if (this.transactionStorage.edgeDeleted(currentId)) {
                 continue;
             }
-            if (this.modifiedEdges.containsKey(currentId)) {
-                currentEdge = this.modifiedEdges.get(currentId);
-            }
+            Edge currentEdge = getMostUpdatedEdge(currentId, edge);
             if (currentEdge.getWeight() == weight) {
                 newEdges.add(currentEdge);
             }
@@ -193,7 +183,7 @@ public class TransactionService implements GraphOperations {
     public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
         Edge currentEdge = getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), weight, currentEdge.getProperties());
-        this.modifiedEdges.put(edgeId, modifiedEdge);
+        this.transactionStorage.putEdge(currentEdge);
     }
 
     @Override
@@ -201,7 +191,7 @@ public class TransactionService implements GraphOperations {
         Edge currentEdge = getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
         modifiedEdge.setProperty(key, value);
-        this.modifiedEdges.put(edgeId, modifiedEdge);
+        this.transactionStorage.putEdge(currentEdge);
     }
 
     @Override
@@ -210,7 +200,7 @@ public class TransactionService implements GraphOperations {
         Edge currentEdge = getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
         modifiedEdge.setProperties(properties);
-        this.modifiedEdges.put(edgeId, modifiedEdge);
+        this.transactionStorage.putEdge(currentEdge);
     }
 
     @Override
@@ -218,14 +208,14 @@ public class TransactionService implements GraphOperations {
         Edge currentEdge = getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
         Object value = modifiedEdge.deleteProperty(property);
-        this.modifiedEdges.put(edgeId, modifiedEdge);
+        this.transactionStorage.putEdge(currentEdge);
         return value;
     }
 
     @Override
     public Edge deleteEdge(String edgeId) throws EdgeNotFoundException {
         Edge currentEdge = getEdgeIfExists(edgeId);
-        this.deletedEdges.add(edgeId);
+        this.transactionStorage.deleteEdge(edgeId);
         return currentEdge;
     }
 
@@ -236,10 +226,10 @@ public class TransactionService implements GraphOperations {
         List<Edge> newEdges = new LinkedList<>();
         for (Edge edge : edges) {
             String currentId = edge.getId();
-            if (deletedEdges.contains(currentId) || deletedNodes.contains(edge.getDestination())) {
+            if (this.transactionStorage.edgeDeleted(currentId) || this.transactionStorage.nodeDeleted(edge.getDestination())) {
                 continue;
             }
-            newEdges.add(modifiedEdges.getOrDefault(currentId, edge));
+            newEdges.add(getMostUpdatedEdge(currentId, edge));
         }
         return newEdges;
     }
@@ -250,7 +240,8 @@ public class TransactionService implements GraphOperations {
         List<String> nodes = this.storage.nodesIdsWithEdgesToNode(nodeId);
         List<String> newNodes = new LinkedList<>();
         for (String node : nodes) {
-            if (deletedNodes.contains(node) || deletedEdges.contains(this.storage.getEdgeByNodeIds(node, nodeId).getId())) {
+            Edge edge = this.storage.getEdgeByNodeIds(node, nodeId);
+            if (this.transactionStorage.nodeDeleted(node) || this.transactionStorage.edgeDeleted(edge.getId())) {
                 continue;
             }
             newNodes.add(node);
@@ -258,30 +249,33 @@ public class TransactionService implements GraphOperations {
         return newNodes;
     }
 
+    @Override
+    public void commit() {
+        this.storage.updateStorage(this.transactionStorage);
+    }
+
     private Node getNodeIfExists(String nodeId) throws NodeNotFoundException {
         checkNodeId(nodeId);
-        if (this.modifiedNodes.containsKey(nodeId)) {
-            return this.modifiedNodes.get(nodeId);
-        }
-        return this.storage.getNode(nodeId);
+        return getMostUpdatedNode(nodeId, null);
     }
 
     private void checkNodeId(String nodeId) throws NodeNotFoundException {
-        if (!this.modifiedNodes.containsKey(nodeId) && (this.deletedNodes.contains(nodeId) || !this.storage.containsNode(nodeId))) {
+        if (!this.transactionStorage.nodeExists(nodeId) && (
+                this.transactionStorage.nodeDeleted(nodeId) || !this.storage.containsNode(nodeId)
+        )) {
             throw new NodeNotFoundException(nodeId);
         }
     }
 
     private Edge getEdgeIfExists(String edgeId) throws EdgeNotFoundException {
         checkEdgeId(edgeId);
-        if (this.modifiedNodes.containsKey(edgeId)) {
-            return this.modifiedEdges.get(edgeId);
-        }
-        return this.storage.getEdge(edgeId);
+        return getMostUpdatedEdge(edgeId, null);
     }
 
     private void checkEdgeId(String edgeId) throws EdgeNotFoundException {
-        if (!this.modifiedEdges.containsKey(edgeId) && (!this.storage.containsEdge(edgeId) || this.deletedEdges.contains(edgeId))) {
+        if (!this.transactionStorage.edgeExists(edgeId) && (
+                this.transactionStorage.edgeDeleted(edgeId) || !this.storage.containsEdge(edgeId)
+        )) {
             throw new EdgeNotFoundException(edgeId);
         }
     }
@@ -290,5 +284,17 @@ public class TransactionService implements GraphOperations {
         if (attributes == null) {
             throw new IllegalArgumentException("Attributes cannot be null");
         }
+    }
+
+    private Node getMostUpdatedNode(String nodeId, Node node) {
+        return this.transactionStorage.nodeExists(nodeId)
+                ? this.transactionStorage.getNode(nodeId)
+                : node != null ? node : this.storage.getNode(nodeId);
+    }
+
+    private Edge getMostUpdatedEdge(String edgeId, Edge edge) {
+        return this.transactionStorage.edgeExists(edgeId)
+                ? this.transactionStorage.getEdge(edgeId)
+                : edge != null ? edge : this.storage.getEdge(edgeId);
     }
 }

@@ -2,14 +2,17 @@ package graph.operations;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
+import graph.dataModel.Transaction;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
+import graph.storage.TransactionStorage;
+import graph.storage.TransactionTemporaryStorage;
 
 import java.util.*;
 
-public class GraphService implements GraphOperations {
+public class GraphService implements GraphOperationsWithTransaction {
 
     private final GraphStorage storage;
 
@@ -170,6 +173,13 @@ public class GraphService implements GraphOperations {
     @Override
     public List<String> getNodesIdWithEdgeToNode(String nodeId) {
         return this.storage.nodesIdsWithEdgesToNode(nodeId);
+    }
+
+    @Override
+    public Transaction createTransaction() {
+        TransactionStorage transactionStorage = new TransactionTemporaryStorage();
+        TransactionOperations service = new TransactionService(storage, transactionStorage);
+        return new Transaction(service);
     }
 
     private Node getNodeIfExists(String nodeId) throws NodeNotFoundException {
