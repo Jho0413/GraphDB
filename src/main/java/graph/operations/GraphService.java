@@ -93,6 +93,16 @@ public class GraphService implements GraphOperations {
     }
 
     @Override
+    public Edge getEdgeByNodeIds(String source, String target) throws NodeNotFoundException, EdgeNotFoundException {
+        checkNodeId(source);
+        checkNodeId(target);
+        if (this.storage.edgeExists(source, target)) {
+            return this.storage.getEdgeByNodeIds(source, target);
+        }
+        throw new EdgeNotFoundException(source, target);
+    }
+
+    @Override
     public List<Edge> getEdges() {
         return this.storage.getAllEdges();
     }

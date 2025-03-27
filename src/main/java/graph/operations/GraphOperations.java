@@ -20,6 +20,7 @@ public interface GraphOperations {
     // Edge methods
     Edge addEdge(String source, String target, Map<String, Object> properties, double weight);
     Edge getEdgeById(String id);
+    Edge getEdgeByNodeIds(String source, String target);
     List<Edge> getEdges();
     List<Edge> getEdgesByProperty(String property, Object value);
     List<Edge> getEdgesByWeight(double weight);

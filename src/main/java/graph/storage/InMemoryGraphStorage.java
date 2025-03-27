@@ -55,6 +55,11 @@ public class InMemoryGraphStorage implements GraphStorage {
     }
 
     @Override
+    public Edge getEdgeByNodeIds(String source, String target) {
+        return this.edges.get(adjacencyList.get(source).get(target));
+    }
+
+    @Override
     public void putEdge(Edge edge) {
         this.edges.put(edge.getId(), edge);
         adjacencyList.get(edge.getSource()).put(edge.getDestination(), edge.getId());

@@ -15,6 +15,7 @@ public interface GraphStorage {
 
     // edges
     Edge getEdge(String id);
+    Edge getEdgeByNodeIds(String source, String target);
     void putEdge(Edge edge);
     Edge removeEdge(String id);
     List<Edge> getAllEdges();

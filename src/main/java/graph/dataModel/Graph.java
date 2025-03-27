@@ -128,4 +128,9 @@ public class Graph implements GraphOperations {
     public List<String> getNodesIdWithEdgeToNode(String nodeId) {
         return service.getNodesIdWithEdgeToNode(nodeId);
     }
+
+    @Override
+    public Edge getEdgeByNodeIds(String source, String target) {
+        return service.getEdgeByNodeIds(source, target);
+    }
 }
