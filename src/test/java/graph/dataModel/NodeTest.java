@@ -61,8 +61,10 @@ public class NodeTest {
         Map<String, Object> attributes = new HashMap<>();
         Node node = new Node("node1", attributes);
         node.setAttribute("size", "large");
+        assertTrue(node.hasAttribute("size"));
         assertThat(node.deleteAttribute("size"), is("large"));
         assertNull(node.deleteAttribute("size"));
+        assertFalse(node.hasAttribute("size"));
     }
 
     @Test

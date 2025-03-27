@@ -72,8 +72,10 @@ public class EdgeTest {
         Map<String, Object> properties = new HashMap<>();
         Edge edge = new Edge("edge1", "node1", "node2", 0.0, properties);
         edge.setProperty("size", "large");
+        assertTrue(edge.hasProperty("size"));
         assertThat(edge.deleteProperty("size"), is("large"));
         assertNull(edge.deleteProperty("size"));
+        assertFalse(edge.hasProperty("size"));
     }
 
     @Test

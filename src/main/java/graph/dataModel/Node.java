@@ -40,6 +40,10 @@ public class Node {
         return value;
     }
 
+    public boolean hasAttribute(String key) {
+        return attributes.containsKey(key);
+    }
+
     public Map<String, Object> getAttributes() {
         return Collections.unmodifiableMap(attributes);
     }

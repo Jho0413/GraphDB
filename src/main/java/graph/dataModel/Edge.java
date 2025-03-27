@@ -42,6 +42,10 @@ public class Edge {
         return value;
     }
 
+    public boolean hasProperty(String key) {
+        return properties.containsKey(key);
+    }
+
     public Map<String, Object> getProperties() {
         return Collections.unmodifiableMap(properties);
     }
