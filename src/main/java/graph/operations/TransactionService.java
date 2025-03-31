@@ -251,7 +251,7 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public void commit() {
-        this.storage.updateStorage(this.transactionStorage);
+        this.transactionStorage.getOperations().forEach(operation -> operation.apply(this.storage));
     }
 
     private Node getNodeIfExists(String nodeId) throws NodeNotFoundException {

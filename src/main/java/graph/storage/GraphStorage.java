@@ -25,6 +25,4 @@ public interface GraphStorage {
     List<Edge> getEdgesFromNode(String id);
     List<String> nodesIdsWithEdgesToNode(String id);
     boolean edgeExists(String source, String target);
-
-    void updateStorage(TransactionStorage transactionStorage);
 }
