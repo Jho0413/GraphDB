@@ -260,7 +260,7 @@ public class TransactionService implements TransactionOperations {
     }
 
     private void checkNodeId(String nodeId) throws NodeNotFoundException {
-        if (!this.transactionStorage.nodeExists(nodeId) && (
+        if (!this.transactionStorage.containsNode(nodeId) && (
                 this.transactionStorage.nodeDeleted(nodeId) || !this.storage.containsNode(nodeId)
         )) {
             throw new NodeNotFoundException(nodeId);
@@ -273,7 +273,7 @@ public class TransactionService implements TransactionOperations {
     }
 
     private void checkEdgeId(String edgeId) throws EdgeNotFoundException {
-        if (!this.transactionStorage.edgeExists(edgeId) && (
+        if (!this.transactionStorage.containsEdge(edgeId) && (
                 this.transactionStorage.edgeDeleted(edgeId) || !this.storage.containsEdge(edgeId)
         )) {
             throw new EdgeNotFoundException(edgeId);
@@ -287,13 +287,13 @@ public class TransactionService implements TransactionOperations {
     }
 
     private Node getMostUpdatedNode(String nodeId, Node node) {
-        return this.transactionStorage.nodeExists(nodeId)
+        return this.transactionStorage.containsNode(nodeId)
                 ? this.transactionStorage.getNode(nodeId)
                 : node != null ? node : this.storage.getNode(nodeId);
     }
 
     private Edge getMostUpdatedEdge(String edgeId, Edge edge) {
-        return this.transactionStorage.edgeExists(edgeId)
+        return this.transactionStorage.containsEdge(edgeId)
                 ? this.transactionStorage.getEdge(edgeId)
                 : edge != null ? edge : this.storage.getEdge(edgeId);
     }

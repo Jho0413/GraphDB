@@ -22,6 +22,7 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     @Override
     public void putNode(Node node) {
         modifiedNodes.put(node.getId(), node);
+        deletedNodes.remove(node.getId());
         operations.add(new AddOrUpdateNode(node));
     }
 
@@ -33,7 +34,7 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     }
 
     @Override
-    public boolean nodeExists(String id) {
+    public boolean containsNode(String id) {
         return !deletedNodes.contains(id) && modifiedNodes.containsKey(id);
     }
 
@@ -50,6 +51,7 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     @Override
     public void putEdge(Edge edge) {
         modifiedEdges.put(edge.getId(), edge);
+        deletedEdges.remove(edge.getId());
         operations.add(new AddOrUpdateEdge(edge));
     }
 
@@ -61,7 +63,7 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     }
 
     @Override
-    public boolean edgeExists(String id) {
+    public boolean containsEdge(String id) {
         return !deletedEdges.contains(id) && modifiedEdges.containsKey(id);
     }
 
@@ -73,5 +75,14 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     @Override
     public List<GraphOperation> getOperations() {
         return Collections.unmodifiableList(operations);
+    }
+
+    @Override
+    public void clear() {
+        modifiedNodes.clear();
+        modifiedEdges.clear();
+        deletedNodes.clear();
+        deletedEdges.clear();
+        operations.clear();
     }
 }
