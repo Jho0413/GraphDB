@@ -44,7 +44,7 @@ public class GraphService implements GraphOperationsWithTransaction {
         List<Node> nodes = getNodes();
         List<Node> filteredNodes = new LinkedList<>();
         for (Node node : nodes) {
-            if (node.getAttribute(attribute).equals(value)) {
+            if (node.hasAttribute(attribute) && node.getAttribute(attribute).equals(value)) {
                 filteredNodes.add(node);
             }
         }

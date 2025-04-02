@@ -94,7 +94,6 @@ public class GraphStorageTest {
         storage.putNode(node2);
 
         List<Node> nodes = storage.getAllNodes();
-        nodes.forEach(node -> System.out.println(node.getId()));
         assertThat(nodes.size(), is(2));
         assertThat(nodes, hasItems(node1, node2));
     }
