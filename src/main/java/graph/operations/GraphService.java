@@ -115,7 +115,7 @@ public class GraphService implements GraphOperationsWithTransaction {
         List<Edge> edges = this.storage.getAllEdges();
         List<Edge> filteredEdges = new LinkedList<>();
         for (Edge edge : edges) {
-            if (edge.getProperty(property).equals(value)) {
+            if (edge.hasProperty(property) && edge.getProperty(property).equals(value)) {
                 filteredEdges.add(edge);
             }
         }
@@ -167,11 +167,13 @@ public class GraphService implements GraphOperationsWithTransaction {
 
     @Override
     public List<Edge> getEdgesFromNode(String nodeId) {
+        checkNodeId(nodeId);
         return this.storage.getEdgesFromNode(nodeId);
     }
 
     @Override
     public List<String> getNodesIdWithEdgeToNode(String nodeId) {
+        checkNodeId(nodeId);
         return this.storage.nodesIdsWithEdgesToNode(nodeId);
     }
 
