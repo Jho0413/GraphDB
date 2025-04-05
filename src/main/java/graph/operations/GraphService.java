@@ -12,7 +12,7 @@ import graph.storage.TransactionTemporaryStorage;
 
 import java.util.*;
 
-public class GraphService implements GraphOperationsWithTransaction {
+public class GraphService implements GraphOperations {
 
     private final GraphStorage storage;
 

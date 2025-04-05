@@ -26,16 +26,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
-public class GraphOperationsWithTransactionUnitTest {
+public class GraphOperationsUnitTest {
 
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
     private final GraphStorage storage = context.mock(GraphStorage.class);
 
-    private GraphOperationsWithTransaction service;
+    private GraphOperations service;
 
     @Parameterized.Parameter(value = 0)
-    public Function<GraphStorage, GraphOperationsWithTransaction> serviceCreator;
+    public Function<GraphStorage, GraphOperations> serviceCreator;
 
     @Before
     public void setUp() {
@@ -45,7 +45,7 @@ public class GraphOperationsWithTransactionUnitTest {
     @Parameters(name="{0}")
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
-                (Function<GraphStorage, GraphOperationsWithTransaction>) GraphService::new
+                (Function<GraphStorage, GraphOperations>) GraphService::new
         });
     }
 

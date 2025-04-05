@@ -1,5 +1,5 @@
 package graph.operations;
 
-public interface TransactionOperations extends GraphOperations {
+public interface TransactionOperations extends CRUDOperations {
     void commit();
 }

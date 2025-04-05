@@ -9,6 +9,7 @@ import java.util.*;
 public class TransactionTemporaryStorage implements TransactionStorage {
 
     private final Map<String, Node> modifiedNodes = new HashMap<>();
+    private final Map<String, Map<String, String>> adjacencyList = new HashMap<>();
     private final Map<String, Edge> modifiedEdges = new HashMap<>();
     private final Set<String> deletedNodes = new HashSet<>();
     private final Set<String> deletedEdges = new HashSet<>();
@@ -44,21 +45,34 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     }
 
     @Override
+    public List<Node> getAllNodes() {
+        return new ArrayList<>(modifiedNodes.values());
+    }
+
+    @Override
     public Edge getEdge(String id) {
         return modifiedEdges.get(id);
+    }
+
+    @Override
+    public Edge getEdgesByNodeIds(String source, String target) {
+        return this.modifiedEdges.get(adjacencyList.get(source).get(target));
     }
 
     @Override
     public void putEdge(Edge edge) {
         modifiedEdges.put(edge.getId(), edge);
         deletedEdges.remove(edge.getId());
+        adjacencyList.putIfAbsent(edge.getSource(), new HashMap<>());
+        adjacencyList.get(edge.getSource()).put(edge.getDestination(), edge.getId());
         operations.add(new AddOrUpdateEdge(edge));
     }
 
     @Override
     public void deleteEdge(String id) {
         deletedEdges.add(id);
-        modifiedEdges.remove(id);
+        Edge edge = modifiedEdges.remove(id);
+        adjacencyList.get(edge.getSource()).remove(edge.getDestination());
         operations.add(new DeleteEdge(id));
     }
 
@@ -70,6 +84,16 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     @Override
     public boolean edgeDeleted(String id) {
         return deletedEdges.contains(id);
+    }
+
+    @Override
+    public boolean edgeExists(String source, String target) {
+        return adjacencyList.containsKey(source) && adjacencyList.get(source).containsKey(target);
+    }
+
+    @Override
+    public List<Edge> getAllEdges() {
+        return new ArrayList<>(modifiedEdges.values());
     }
 
     @Override

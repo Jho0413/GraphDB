@@ -109,16 +109,6 @@ public class Transaction implements TransactionOperations {
     }
 
     @Override
-    public List<Edge> getEdgesFromNode(String nodeId) {
-        return service.getEdgesFromNode(nodeId);
-    }
-
-    @Override
-    public List<String> getNodesIdWithEdgeToNode(String nodeId) {
-        return service.getNodesIdWithEdgeToNode(nodeId);
-    }
-
-    @Override
     public void commit() {
         service.commit();
     }

@@ -38,28 +38,32 @@ public class TransactionService implements TransactionOperations {
     public List<Node> getNodes() {
         List<Node> nodes = this.storage.getAllNodes();
         List<Node> newNodes = new LinkedList<>();
+        List<Node> modifiedNodes = this.transactionStorage.getAllNodes();
+        Set<String> nodeIds = new HashSet<>();
+
+        // newly added/modified nodes in transaction
+        for (Node node : modifiedNodes) {
+            newNodes.add(node);
+            nodeIds.add(node.getId());
+        }
+
         for (Node node : nodes) {
             String currentId = node.getId();
-            if (this.transactionStorage.nodeDeleted(currentId)) {
-                continue;
+            if (!this.transactionStorage.nodeDeleted(currentId) && !nodeIds.contains(currentId)) {
+                newNodes.add(node);
             }
-            newNodes.add(getMostUpdatedNode(currentId, node));
         }
         return newNodes;
     }
 
     @Override
     public List<Node> getNodesByAttribute(String attribute, Object value) {
-        List<Node> nodes = this.storage.getAllNodes();
         List<Node> filteredNodes = new LinkedList<>();
+        List<Node> nodes = this.getNodes();
+
         for (Node node : nodes) {
-            String currentId = node.getId();
-            if (this.transactionStorage.nodeDeleted(currentId)) {
-                continue;
-            }
-            Node currentNode = getMostUpdatedNode(currentId, node);
-            if (currentNode.hasAttribute(attribute) && currentNode.getAttribute(attribute).equals(value)) {
-                filteredNodes.add(currentNode);
+            if (node.hasAttribute(attribute) && node.getAttribute(attribute).equals(value)) {
+                filteredNodes.add(node);
             }
         }
         return filteredNodes;
@@ -121,42 +125,55 @@ public class TransactionService implements TransactionOperations {
     public Edge getEdgeByNodeIds(String source, String target) throws EdgeNotFoundException{
         checkNodeId(source);
         checkNodeId(target);
-        if (this.storage.edgeExists(source, target)) {
+        boolean inStorage = this.storage.edgeExists(source, target);
+        boolean inTransactionStorage = this.transactionStorage.edgeExists(source, target);
+
+        // currently in main storage
+        if (inStorage) {
             Edge edge = this.storage.getEdgeByNodeIds(source, target);
-            if (this.transactionStorage.edgeDeleted(edge.getId())) {
-                throw new EdgeNotFoundException(source, target);
+            // check if transaction has deleted this edge
+            if (!this.transactionStorage.edgeDeleted(edge.getId())) {
+                return getMostUpdatedEdge(edge.getId(), edge);
             }
-            return getMostUpdatedEdge(edge.getId(), edge);
         }
+        // deleted in transaction -> need to check if there is a new edge for source to target
+        if (inTransactionStorage) {
+            return this.transactionStorage.getEdgesByNodeIds(source, target);
+        }
+        // no edge found for source to target
         throw new EdgeNotFoundException(source, target);
     }
 
     @Override
     public List<Edge> getEdges() {
         List<Edge> edges = this.storage.getAllEdges();
+        List<Edge> modifiedEdges = this.transactionStorage.getAllEdges();
         List<Edge> newEdges = new LinkedList<>();
+        Set<String> edgeIds = new HashSet<>();
+
+        // newly added/modified edges in transaction
+        for (Edge edge : modifiedEdges) {
+            newEdges.add(edge);
+            edgeIds.add(edge.getId());
+        }
+
         for (Edge edge : edges) {
             String currentId = edge.getId();
-            if (this.transactionStorage.edgeDeleted(currentId)) {
-                continue;
+            if (!this.transactionStorage.nodeDeleted(currentId) && !edgeIds.contains(currentId)) {
+                newEdges.add(edge);
             }
-            newEdges.add(getMostUpdatedEdge(currentId, edge));
         }
         return newEdges;
     }
 
     @Override
     public List<Edge> getEdgesByProperty(String property, Object value) {
-        List<Edge> edges = this.storage.getAllEdges();
+        List<Edge> edges = this.getEdges();
         List<Edge> newEdges = new LinkedList<>();
+
         for (Edge edge : edges) {
-            String currentId = edge.getId();
-            if (this.transactionStorage.edgeDeleted(currentId)) {
-                continue;
-            }
-            Edge currentEdge = getMostUpdatedEdge(currentId, edge);
-            if (currentEdge.hasProperty(property) && currentEdge.getProperty(property).equals(value)) {
-                newEdges.add(currentEdge);
+            if (edge.hasProperty(property) && edge.getProperty(property).equals(value)) {
+                newEdges.add(edge);
             }
         }
         return newEdges;
@@ -164,16 +181,12 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public List<Edge> getEdgesByWeight(double weight) {
-        List<Edge> edges = this.storage.getAllEdges();
+        List<Edge> edges = this.getEdges();
         List<Edge> newEdges = new LinkedList<>();
+
         for (Edge edge : edges) {
-            String currentId = edge.getId();
-            if (this.transactionStorage.edgeDeleted(currentId)) {
-                continue;
-            }
-            Edge currentEdge = getMostUpdatedEdge(currentId, edge);
-            if (currentEdge.getWeight() == weight) {
-                newEdges.add(currentEdge);
+            if (edge.getWeight() == weight) {
+                newEdges.add(edge);
             }
         }
         return newEdges;
@@ -183,7 +196,7 @@ public class TransactionService implements TransactionOperations {
     public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
         Edge currentEdge = getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), weight, currentEdge.getProperties());
-        this.transactionStorage.putEdge(currentEdge);
+        this.transactionStorage.putEdge(modifiedEdge);
     }
 
     @Override
@@ -191,7 +204,7 @@ public class TransactionService implements TransactionOperations {
         Edge currentEdge = getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
         modifiedEdge.setProperty(key, value);
-        this.transactionStorage.putEdge(currentEdge);
+        this.transactionStorage.putEdge(modifiedEdge);
     }
 
     @Override
@@ -200,7 +213,7 @@ public class TransactionService implements TransactionOperations {
         Edge currentEdge = getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
         modifiedEdge.setProperties(properties);
-        this.transactionStorage.putEdge(currentEdge);
+        this.transactionStorage.putEdge(modifiedEdge);
     }
 
     @Override
@@ -208,7 +221,7 @@ public class TransactionService implements TransactionOperations {
         Edge currentEdge = getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
         Object value = modifiedEdge.deleteProperty(property);
-        this.transactionStorage.putEdge(currentEdge);
+        this.transactionStorage.putEdge(modifiedEdge);
         return value;
     }
 
@@ -217,36 +230,6 @@ public class TransactionService implements TransactionOperations {
         Edge currentEdge = getEdgeIfExists(edgeId);
         this.transactionStorage.deleteEdge(edgeId);
         return currentEdge;
-    }
-
-    @Override
-    public List<Edge> getEdgesFromNode(String nodeId) {
-        checkNodeId(nodeId);
-        List<Edge> edges = this.storage.getEdgesFromNode(nodeId);
-        List<Edge> newEdges = new LinkedList<>();
-        for (Edge edge : edges) {
-            String currentId = edge.getId();
-            if (this.transactionStorage.edgeDeleted(currentId) || this.transactionStorage.nodeDeleted(edge.getDestination())) {
-                continue;
-            }
-            newEdges.add(getMostUpdatedEdge(currentId, edge));
-        }
-        return newEdges;
-    }
-
-    @Override
-    public List<String> getNodesIdWithEdgeToNode(String nodeId) {
-        checkNodeId(nodeId);
-        List<String> nodes = this.storage.nodesIdsWithEdgesToNode(nodeId);
-        List<String> newNodes = new LinkedList<>();
-        for (String node : nodes) {
-            Edge edge = this.storage.getEdgeByNodeIds(node, nodeId);
-            if (this.transactionStorage.nodeDeleted(node) || this.transactionStorage.edgeDeleted(edge.getId())) {
-                continue;
-            }
-            newNodes.add(node);
-        }
-        return newNodes;
     }
 
     @Override
