@@ -44,6 +44,11 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     }
 
     @Override
+    public List<Node> getAllNodes() {
+        return new ArrayList<>(modifiedNodes.values());
+    }
+
+    @Override
     public Edge getEdge(String id) {
         return modifiedEdges.get(id);
     }
@@ -82,6 +87,11 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     @Override
     public boolean edgeExists(String source, String target) {
         return adjacencyList.containsKey(source) && adjacencyList.get(source).containsKey(target);
+    }
+
+    @Override
+    public List<Edge> getAllEdges() {
+        return new ArrayList<>(modifiedEdges.values());
     }
 
     @Override

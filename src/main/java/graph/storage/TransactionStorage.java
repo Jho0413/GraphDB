@@ -13,6 +13,7 @@ public interface TransactionStorage {
     void deleteNode(String id);
     boolean containsNode(String id);
     boolean nodeDeleted(String id);
+    List<Node> getAllNodes();
 
     Edge getEdge(String id);
     Edge getEdgesByNodeIds(String source, String target);
@@ -21,6 +22,7 @@ public interface TransactionStorage {
     boolean containsEdge(String id);
     boolean edgeDeleted(String id);
     boolean edgeExists(String source, String target);
+    List<Edge> getAllEdges();
 
     List<GraphOperation> getOperations();
 }
