@@ -1,7 +1,6 @@
 package graph.dataModel;
 
 import graph.operations.GraphOperations;
-import graph.operations.GraphOperationsWithTransaction;
 import graph.operations.GraphService;
 import graph.storage.GraphStorage;
 import graph.storage.InMemoryGraphStorage;
@@ -10,19 +9,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class Graph implements GraphOperationsWithTransaction {
+public class Graph implements GraphOperations {
 
-    private final GraphOperationsWithTransaction service;
+    private final GraphOperations service;
     private final String id;
 
-    private Graph(GraphOperationsWithTransaction service, String id) {
+    private Graph(GraphOperations service, String id) {
         this.service = service;
         this.id = id;
     }
 
     public static Graph createGraph() {
         GraphStorage storage = new InMemoryGraphStorage();
-        GraphOperationsWithTransaction service = new GraphService(storage);
+        GraphOperations service = new GraphService(storage);
         return new Graph(service, UUID.randomUUID().toString());
     }
 

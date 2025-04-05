@@ -121,13 +121,22 @@ public class TransactionService implements TransactionOperations {
     public Edge getEdgeByNodeIds(String source, String target) throws EdgeNotFoundException{
         checkNodeId(source);
         checkNodeId(target);
-        if (this.storage.edgeExists(source, target)) {
+        boolean inStorage = this.storage.edgeExists(source, target);
+        boolean inTransactionStorage = this.transactionStorage.edgeExists(source, target);
+
+        // currently in main storage
+        if (inStorage) {
             Edge edge = this.storage.getEdgeByNodeIds(source, target);
-            if (this.transactionStorage.edgeDeleted(edge.getId())) {
-                throw new EdgeNotFoundException(source, target);
+            // check if transaction has deleted this edge
+            if (!this.transactionStorage.edgeDeleted(edge.getId())) {
+                return getMostUpdatedEdge(edge.getId(), edge);
             }
-            return getMostUpdatedEdge(edge.getId(), edge);
         }
+        // deleted in transaction -> need to check if there is a new edge for source to target
+        if (inTransactionStorage) {
+            return this.transactionStorage.getEdgesByNodeIds(source, target);
+        }
+        // no edge found for source to target
         throw new EdgeNotFoundException(source, target);
     }
 
@@ -220,36 +229,6 @@ public class TransactionService implements TransactionOperations {
     }
 
     @Override
-    public List<Edge> getEdgesFromNode(String nodeId) {
-        checkNodeId(nodeId);
-        List<Edge> edges = this.storage.getEdgesFromNode(nodeId);
-        List<Edge> newEdges = new LinkedList<>();
-        for (Edge edge : edges) {
-            String currentId = edge.getId();
-            if (this.transactionStorage.edgeDeleted(currentId) || this.transactionStorage.nodeDeleted(edge.getDestination())) {
-                continue;
-            }
-            newEdges.add(getMostUpdatedEdge(currentId, edge));
-        }
-        return newEdges;
-    }
-
-    @Override
-    public List<String> getNodesIdWithEdgeToNode(String nodeId) {
-        checkNodeId(nodeId);
-        List<String> nodes = this.storage.nodesIdsWithEdgesToNode(nodeId);
-        List<String> newNodes = new LinkedList<>();
-        for (String node : nodes) {
-            Edge edge = this.storage.getEdgeByNodeIds(node, nodeId);
-            if (this.transactionStorage.nodeDeleted(node) || this.transactionStorage.edgeDeleted(edge.getId())) {
-                continue;
-            }
-            newNodes.add(node);
-        }
-        return newNodes;
-    }
-
-    @Override
     public void commit() {
         this.storage.updateStorage(this.transactionStorage);
     }
@@ -260,7 +239,7 @@ public class TransactionService implements TransactionOperations {
     }
 
     private void checkNodeId(String nodeId) throws NodeNotFoundException {
-        if (!this.transactionStorage.nodeExists(nodeId) && (
+        if (!this.transactionStorage.containsNode(nodeId) && (
                 this.transactionStorage.nodeDeleted(nodeId) || !this.storage.containsNode(nodeId)
         )) {
             throw new NodeNotFoundException(nodeId);
@@ -273,7 +252,7 @@ public class TransactionService implements TransactionOperations {
     }
 
     private void checkEdgeId(String edgeId) throws EdgeNotFoundException {
-        if (!this.transactionStorage.edgeExists(edgeId) && (
+        if (!this.transactionStorage.containsEdge(edgeId) && (
                 this.transactionStorage.edgeDeleted(edgeId) || !this.storage.containsEdge(edgeId)
         )) {
             throw new EdgeNotFoundException(edgeId);
@@ -287,13 +266,13 @@ public class TransactionService implements TransactionOperations {
     }
 
     private Node getMostUpdatedNode(String nodeId, Node node) {
-        return this.transactionStorage.nodeExists(nodeId)
+        return this.transactionStorage.containsNode(nodeId)
                 ? this.transactionStorage.getNode(nodeId)
                 : node != null ? node : this.storage.getNode(nodeId);
     }
 
     private Edge getMostUpdatedEdge(String edgeId, Edge edge) {
-        return this.transactionStorage.edgeExists(edgeId)
+        return this.transactionStorage.containsEdge(edgeId)
                 ? this.transactionStorage.getEdge(edgeId)
                 : edge != null ? edge : this.storage.getEdge(edgeId);
     }
