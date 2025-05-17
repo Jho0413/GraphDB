@@ -14,15 +14,17 @@ public class TransactionService implements TransactionOperations {
 
     private final GraphStorage storage;
     private final TransactionStorage transactionStorage;
+    private final OperationsResolver resolver;
 
-    public TransactionService(GraphStorage storage, TransactionStorage transactionStorage) {
+    public TransactionService(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver) {
         this.storage = storage;
         this.transactionStorage = transactionStorage;
+        this.resolver = resolver;
     }
 
     @Override
     public Node addNode(Map<String, Object> attributes) throws IllegalArgumentException {
-        checkAttributes(attributes);
+        resolver.checkAttributes(attributes);
         String nodeId = UUID.randomUUID().toString();
         Node newNode = new Node(nodeId, attributes);
         this.transactionStorage.putNode(newNode);
@@ -31,7 +33,7 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public Node getNodeById(String id) throws NodeNotFoundException {
-        return getNodeIfExists(id);
+        return resolver.getNodeIfExists(id);
     }
 
     @Override
@@ -71,8 +73,8 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public void updateNode(String id, Map<String, Object> attributes) throws NodeNotFoundException, IllegalArgumentException {
-        checkAttributes(attributes);
-        Node currentNode = getNodeIfExists(id);
+        resolver.checkAttributes(attributes);
+        Node currentNode = resolver.getNodeIfExists(id);
         Node modifiedNode = new Node(id, currentNode.getAttributes());
         modifiedNode.setAttributes(attributes);
         this.transactionStorage.putNode(modifiedNode);
@@ -80,7 +82,7 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public void updateNode(String id, String attribute, Object value) throws NodeNotFoundException {
-        Node currentNode = getNodeIfExists(id);
+        Node currentNode = resolver.getNodeIfExists(id);
         Node modifiedNode = new Node(id, currentNode.getAttributes());
         modifiedNode.setAttribute(attribute, value);
         this.transactionStorage.putNode(modifiedNode);
@@ -88,7 +90,7 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public Object removeNodeAttribute(String id, String attribute) throws NodeNotFoundException {
-        Node currentNode = getNodeIfExists(id);
+        Node currentNode = resolver.getNodeIfExists(id);
         Node modifiedNode = new Node(id, currentNode.getAttributes());
         Object value = modifiedNode.deleteAttribute(attribute);
         this.transactionStorage.putNode(modifiedNode);
@@ -97,16 +99,16 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public Node deleteNode(String id) throws NodeNotFoundException {
-        Node currentNode = getNodeIfExists(id);
+        Node currentNode = resolver.getNodeIfExists(id);
         this.transactionStorage.deleteNode(id);
         return currentNode;
     }
 
     @Override
     public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws NodeNotFoundException, IllegalArgumentException, EdgeExistsException {
-        checkNodeId(source);
-        checkNodeId(target);
-        checkAttributes(properties);
+        resolver.checkNodeId(source);
+        resolver.checkNodeId(target);
+        resolver.checkAttributes(properties);
         if (this.storage.edgeExists(source, target)) {
             throw new EdgeExistsException(source, target);
         }
@@ -118,30 +120,33 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public Edge getEdgeById(String id) throws EdgeNotFoundException {
-        return getEdgeIfExists(id);
+        return resolver.getEdgeIfExists(id);
     }
 
     @Override
     public Edge getEdgeByNodeIds(String source, String target) throws EdgeNotFoundException{
-        checkNodeId(source);
-        checkNodeId(target);
+        resolver.checkNodeId(source);
+        resolver.checkNodeId(target);
         boolean inStorage = this.storage.edgeExists(source, target);
         boolean inTransactionStorage = this.transactionStorage.edgeExists(source, target);
+        Edge edge = null;
 
         // currently in main storage
         if (inStorage) {
-            Edge edge = this.storage.getEdgeByNodeIds(source, target);
+            edge = this.storage.getEdgeByNodeIds(source, target);
             // check if transaction has deleted this edge
-            if (!this.transactionStorage.edgeDeleted(edge.getId())) {
-                return getMostUpdatedEdge(edge.getId(), edge);
+            if (this.transactionStorage.edgeDeleted(edge.getId())) {
+                edge = null;
             }
         }
         // deleted in transaction -> need to check if there is a new edge for source to target
         if (inTransactionStorage) {
-            return this.transactionStorage.getEdgesByNodeIds(source, target);
+            edge = this.transactionStorage.getEdgesByNodeIds(source, target);
         }
         // no edge found for source to target
-        throw new EdgeNotFoundException(source, target);
+        if (edge == null)
+            throw new EdgeNotFoundException(source, target);
+        return edge;
     }
 
     @Override
@@ -194,14 +199,14 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
-        Edge currentEdge = getEdgeIfExists(edgeId);
+        Edge currentEdge = resolver.getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), weight, currentEdge.getProperties());
         this.transactionStorage.putEdge(modifiedEdge);
     }
 
     @Override
     public void updateEdge(String edgeId, String key, Object value) throws EdgeNotFoundException {
-        Edge currentEdge = getEdgeIfExists(edgeId);
+        Edge currentEdge = resolver.getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
         modifiedEdge.setProperty(key, value);
         this.transactionStorage.putEdge(modifiedEdge);
@@ -209,8 +214,8 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public void updateEdge(String edgeId, Map<String, Object> properties) throws EdgeNotFoundException, IllegalArgumentException {
-        checkAttributes(properties);
-        Edge currentEdge = getEdgeIfExists(edgeId);
+        resolver.checkAttributes(properties);
+        Edge currentEdge = resolver.getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
         modifiedEdge.setProperties(properties);
         this.transactionStorage.putEdge(modifiedEdge);
@@ -218,7 +223,7 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public Object removeEdgeProperty(String edgeId, String property) throws EdgeNotFoundException {
-        Edge currentEdge = getEdgeIfExists(edgeId);
+        Edge currentEdge = resolver.getEdgeIfExists(edgeId);
         Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
         Object value = modifiedEdge.deleteProperty(property);
         this.transactionStorage.putEdge(modifiedEdge);
@@ -227,7 +232,7 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public Edge deleteEdge(String edgeId) throws EdgeNotFoundException {
-        Edge currentEdge = getEdgeIfExists(edgeId);
+        Edge currentEdge = resolver.getEdgeIfExists(edgeId);
         this.transactionStorage.deleteEdge(edgeId);
         return currentEdge;
     }
@@ -235,49 +240,5 @@ public class TransactionService implements TransactionOperations {
     @Override
     public void commit() {
         this.transactionStorage.getOperations().forEach(operation -> operation.apply(this.storage));
-    }
-
-    private Node getNodeIfExists(String nodeId) throws NodeNotFoundException {
-        checkNodeId(nodeId);
-        return getMostUpdatedNode(nodeId, null);
-    }
-
-    private void checkNodeId(String nodeId) throws NodeNotFoundException {
-        if (!this.transactionStorage.containsNode(nodeId) && (
-                this.transactionStorage.nodeDeleted(nodeId) || !this.storage.containsNode(nodeId)
-        )) {
-            throw new NodeNotFoundException(nodeId);
-        }
-    }
-
-    private Edge getEdgeIfExists(String edgeId) throws EdgeNotFoundException {
-        checkEdgeId(edgeId);
-        return getMostUpdatedEdge(edgeId, null);
-    }
-
-    private void checkEdgeId(String edgeId) throws EdgeNotFoundException {
-        if (!this.transactionStorage.containsEdge(edgeId) && (
-                this.transactionStorage.edgeDeleted(edgeId) || !this.storage.containsEdge(edgeId)
-        )) {
-            throw new EdgeNotFoundException(edgeId);
-        }
-    }
-
-    private void checkAttributes(Map<String, Object> attributes) throws IllegalArgumentException {
-        if (attributes == null) {
-            throw new IllegalArgumentException("Attributes cannot be null");
-        }
-    }
-
-    private Node getMostUpdatedNode(String nodeId, Node node) {
-        return this.transactionStorage.containsNode(nodeId)
-                ? this.transactionStorage.getNode(nodeId)
-                : node != null ? node : this.storage.getNode(nodeId);
-    }
-
-    private Edge getMostUpdatedEdge(String edgeId, Edge edge) {
-        return this.transactionStorage.containsEdge(edgeId)
-                ? this.transactionStorage.getEdge(edgeId)
-                : edge != null ? edge : this.storage.getEdge(edgeId);
     }
 }

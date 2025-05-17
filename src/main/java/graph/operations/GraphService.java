@@ -180,7 +180,8 @@ public class GraphService implements GraphOperations {
     @Override
     public Transaction createTransaction() {
         TransactionStorage transactionStorage = new TransactionTemporaryStorage();
-        TransactionOperations service = new TransactionService(storage, transactionStorage);
+        TransactionOperationsResolver resolver = new TransactionOperationsResolver(storage, transactionStorage);
+        TransactionOperations service = new TransactionService(storage, transactionStorage, resolver);
         return new Transaction(service);
     }
 
