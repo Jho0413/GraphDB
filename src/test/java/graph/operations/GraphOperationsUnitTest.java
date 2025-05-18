@@ -4,6 +4,8 @@ import graph.dataModel.Edge;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
+import graph.helper.EdgeBaseMatcher;
+import graph.helper.NodeBaseMatcher;
 import graph.storage.GraphStorage;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -492,53 +494,6 @@ public class GraphOperationsUnitTest {
     }
 
     // ============= Helper Methods =============
-
-    private static class NodeBaseMatcher extends BaseMatcher<Node> {
-        private final Map<String, Object> attributes;
-
-        public NodeBaseMatcher(Map<String, Object> attributes) {
-            this.attributes = attributes;
-        }
-
-        @Override
-        public boolean matches(Object o) {
-            if (!(o instanceof Node node)) return false;
-            return node.getAttributes().equals(attributes);
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("a Node with attributes: " + attributes);
-        }
-    }
-
-    private static class EdgeBaseMatcher extends BaseMatcher<Edge> {
-        private final Map<String, Object> properties;
-        private final double weight;
-        private final String source;
-        private final String target;
-
-        public EdgeBaseMatcher(String source, String target, Map<String, Object> properties, double weight) {
-            this.properties = properties;
-            this.weight = weight;
-            this.source = source;
-            this.target = target;
-        }
-
-        @Override
-        public boolean matches(Object o) {
-            if (!(o instanceof Edge edge)) return false;
-            return edge.getProperties().equals(properties) &&
-                    edge.getWeight() == weight &&
-                    edge.getSource().equals(source) &&
-                    edge.getDestination().equals(target);
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("an Edge with properties: " + properties + ", weight: " + weight + ", source: " + source + ", target: " + target);
-        }
-    }
 
     private void getNodeIfExistsCheck(String nodeId, boolean expected, Node expectedNode) {
         expectNodeExists(nodeId, expected);

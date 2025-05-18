@@ -109,9 +109,7 @@ public class TransactionService implements TransactionOperations {
         resolver.checkNodeId(source);
         resolver.checkNodeId(target);
         resolver.checkAttributes(properties);
-        if (this.storage.edgeExists(source, target)) {
-            throw new EdgeExistsException(source, target);
-        }
+        resolver.edgeExists(source, target);
         String edgeId = UUID.randomUUID().toString();
         Edge edge = new Edge(edgeId, source, target, weight, properties);
         this.transactionStorage.putEdge(edge);
@@ -125,28 +123,7 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public Edge getEdgeByNodeIds(String source, String target) throws EdgeNotFoundException{
-        resolver.checkNodeId(source);
-        resolver.checkNodeId(target);
-        boolean inStorage = this.storage.edgeExists(source, target);
-        boolean inTransactionStorage = this.transactionStorage.edgeExists(source, target);
-        Edge edge = null;
-
-        // currently in main storage
-        if (inStorage) {
-            edge = this.storage.getEdgeByNodeIds(source, target);
-            // check if transaction has deleted this edge
-            if (this.transactionStorage.edgeDeleted(edge.getId())) {
-                edge = null;
-            }
-        }
-        // deleted in transaction -> need to check if there is a new edge for source to target
-        if (inTransactionStorage) {
-            edge = this.transactionStorage.getEdgesByNodeIds(source, target);
-        }
-        // no edge found for source to target
-        if (edge == null)
-            throw new EdgeNotFoundException(source, target);
-        return edge;
+        return resolver.getEdgeByNodeIdsIfExists(source, target);
     }
 
     @Override
@@ -164,7 +141,7 @@ public class TransactionService implements TransactionOperations {
 
         for (Edge edge : edges) {
             String currentId = edge.getId();
-            if (!this.transactionStorage.nodeDeleted(currentId) && !edgeIds.contains(currentId)) {
+            if (!this.transactionStorage.edgeDeleted(currentId) && !edgeIds.contains(currentId)) {
                 newEdges.add(edge);
             }
         }

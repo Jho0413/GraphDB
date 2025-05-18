@@ -2,6 +2,7 @@ package graph.operations;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
+import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 
@@ -14,4 +15,6 @@ public interface OperationsResolver {
     Node getNodeIfExists(String nodeId) throws NodeNotFoundException;
     void checkEdgeId(String edgeId) throws EdgeNotFoundException;
     Edge getEdgeIfExists(String edgeId) throws EdgeNotFoundException;
+    void edgeExists(String source, String target) throws EdgeExistsException;
+    Edge getEdgeByNodeIdsIfExists(String source, String target) throws EdgeNotFoundException;
 }

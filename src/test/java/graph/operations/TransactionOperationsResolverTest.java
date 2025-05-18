@@ -2,6 +2,7 @@ package graph.operations;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
+import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
@@ -52,7 +53,7 @@ public class TransactionOperationsResolverTest {
         }
     }
 
-    // ============ Check Node ID Tests ============
+    // ============ Check Node Tests ============
 
     @Test
     public void throwsNodeNotFoundExceptionIfDeletedInTransaction() {
@@ -139,7 +140,7 @@ public class TransactionOperationsResolverTest {
         assertEquals(resolver.getNodeIfExists(NODE_ID), GRAPH_NODE);
     }
 
-    // ============ Check Edge ID Tests ============
+    // ============ Check Edge Tests ============
 
     @Test
     public void throwsEdgeNotFoundExceptionIfDeletedInTransaction() {
@@ -182,6 +183,48 @@ public class TransactionOperationsResolverTest {
         checkEdgeIdDoesNotThrowException();
     }
 
+    @Test
+    public void throwsEdgeExistsExceptionIfStorageAlreadyHasAnEdgeWithThePairOfNodesWithoutDeletionInTransaction() {
+        context.checking(new Expectations() {{
+            oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+            oneOf(storage).getEdgeByNodeIds(NODE_ID, NODE_ID_2); will(returnValue(GRAPH_EDGE));
+            oneOf(transactionStorage).edgeDeleted(EDGE_ID); will(returnValue(false));
+        }});
+
+        checkEdgeWithNodeIdsThrowsException();
+    }
+
+    @Test
+    public void doesNotThrowEdgeExistsExceptionIfStorageAlreadyHasAnEdgeWithThePairOfNodesWithDeletionInTransaction() {
+        context.checking(new Expectations() {{
+            oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+            oneOf(storage).getEdgeByNodeIds(NODE_ID, NODE_ID_2); will(returnValue(GRAPH_EDGE));
+            oneOf(transactionStorage).edgeDeleted(EDGE_ID); will(returnValue(true));
+        }});
+
+        checkEdgeWithNodeIdsDoesNotThrowException();
+    }
+
+    @Test
+    public void throwsEdgeExistsExceptionIfTransactionStorageHasAnEdgeWithThePairOfNodes() {
+        context.checking(new Expectations() {{
+            oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(false));
+            oneOf(transactionStorage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+        }});
+
+        checkEdgeWithNodeIdsThrowsException();
+    }
+
+    @Test
+    public void doesNotThrowEdgeExistsExceptionIfBothStoragesDontHaveAnEdgeWithThePairOfNodes() {
+        context.checking(new Expectations() {{
+            oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(false));
+            oneOf(transactionStorage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(false));
+        }});
+
+        checkEdgeWithNodeIdsDoesNotThrowException();
+    }
+
     private void checkEdgeIdThrowsException() {
         try {
             resolver.checkEdgeId(EDGE_ID);
@@ -195,6 +238,23 @@ public class TransactionOperationsResolverTest {
         try {
             resolver.checkEdgeId(EDGE_ID);
         } catch (EdgeNotFoundException e) {
+            fail("Should not have thrown an exception here");
+        }
+    }
+
+    private void checkEdgeWithNodeIdsThrowsException() {
+        try {
+            resolver.edgeExists(NODE_ID, NODE_ID_2);
+            fail("Should have thrown an exception here");
+        } catch (EdgeExistsException e) {
+            assertTrue(e.getMessage().contains(NODE_ID) && e.getMessage().contains(NODE_ID_2));
+        }
+    }
+
+    private void checkEdgeWithNodeIdsDoesNotThrowException() {
+        try {
+            resolver.edgeExists(NODE_ID, NODE_ID_2);
+        } catch (EdgeExistsException e) {
             fail("Should not have thrown an exception here");
         }
     }
@@ -224,5 +284,70 @@ public class TransactionOperationsResolverTest {
         }});
 
         assertEquals(resolver.getEdgeIfExists(EDGE_ID), GRAPH_EDGE);
+    }
+
+    @Test
+    public void returnsEdgeFromTransactionIfExistsThereEvenIfStorageHasAnEdgeWithThePairOfNodes() {
+        mockValidNodeIds();
+
+        context.checking(new Expectations() {{
+            oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+            oneOf(storage).getEdgeByNodeIds(NODE_ID, NODE_ID_2); will(returnValue(GRAPH_EDGE));
+            oneOf(transactionStorage).edgeDeleted(EDGE_ID); will(returnValue(false));
+            oneOf(transactionStorage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+            oneOf(transactionStorage).getEdgesByNodeIds(NODE_ID, NODE_ID_2); will(returnValue(TRANSACTION_EDGE));
+        }});
+
+        assertEquals(TRANSACTION_EDGE, resolver.getEdgeByNodeIdsIfExists(NODE_ID, NODE_ID_2));
+    }
+
+    @Test
+    public void returnsEdgeFromStorageIfExistsAndNotDeletedAndNotInTransaction() {
+        mockValidNodeIds();
+
+        context.checking(new Expectations() {{
+            oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+            oneOf(storage).getEdgeByNodeIds(NODE_ID, NODE_ID_2); will(returnValue(GRAPH_EDGE));
+            oneOf(transactionStorage).edgeDeleted(EDGE_ID); will(returnValue(false));
+            oneOf(transactionStorage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(false));
+        }});
+
+        assertEquals(GRAPH_EDGE, resolver.getEdgeByNodeIdsIfExists(NODE_ID, NODE_ID_2));
+    }
+
+    @Test
+    public void returnsEdgeFromTransactionIfDeletedFromStorageButExistsInTransaction() {
+        mockValidNodeIds();
+
+        context.checking(new Expectations() {{
+            oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+            oneOf(storage).getEdgeByNodeIds(NODE_ID, NODE_ID_2); will(returnValue(GRAPH_EDGE));
+            oneOf(transactionStorage).edgeDeleted(EDGE_ID); will(returnValue(true));
+            oneOf(transactionStorage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+            oneOf(transactionStorage).getEdgesByNodeIds(NODE_ID, NODE_ID_2); will(returnValue(TRANSACTION_EDGE));
+        }});
+
+        assertEquals(TRANSACTION_EDGE, resolver.getEdgeByNodeIdsIfExists(NODE_ID, NODE_ID_2));
+    }
+
+    @Test(expected = EdgeNotFoundException.class)
+    public void throwsEdgeNotFoundIfEdgeMissingInBothStorages() {
+        mockValidNodeIds();
+
+        context.checking(new Expectations() {{
+            oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(false));
+            oneOf(transactionStorage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(false));
+        }});
+
+        resolver.getEdgeByNodeIdsIfExists(NODE_ID, NODE_ID_2);
+    }
+
+    // ============ Helper Methods ============
+
+    private void mockValidNodeIds() {
+        context.checking(new Expectations() {{
+            oneOf(transactionStorage).containsNode(NODE_ID); will(returnValue(true));
+            oneOf(transactionStorage).containsNode(NODE_ID_2); will(returnValue(true));
+        }});
     }
 }

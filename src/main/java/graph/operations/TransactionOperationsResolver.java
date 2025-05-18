@@ -2,6 +2,7 @@ package graph.operations;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
+import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
@@ -54,6 +55,45 @@ public class TransactionOperationsResolver implements OperationsResolver {
         )) {
             throw new EdgeNotFoundException(edgeId);
         }
+    }
+
+    @Override
+    public void edgeExists(String source, String target) throws EdgeExistsException {
+        if (this.storage.edgeExists(source, target)) {
+            Edge edge = this.storage.getEdgeByNodeIds(source, target);
+            if (!transactionStorage.edgeDeleted(edge.getId()))
+                throw new EdgeExistsException(source, target);
+        } else {
+            if (this.transactionStorage.edgeExists(source, target)) {
+                throw new EdgeExistsException(source, target);
+            }
+        }
+    }
+
+    @Override
+    public Edge getEdgeByNodeIdsIfExists(String source, String target) throws EdgeNotFoundException {
+        checkNodeId(source);
+        checkNodeId(target);
+        boolean inStorage = this.storage.edgeExists(source, target);
+        boolean inTransactionStorage = this.transactionStorage.edgeExists(source, target);
+        Edge edge = null;
+
+        // currently in main storage
+        if (inStorage) {
+            edge = this.storage.getEdgeByNodeIds(source, target);
+            // check if transaction has deleted this edge
+            if (this.transactionStorage.edgeDeleted(edge.getId())) {
+                edge = null;
+            }
+        }
+        // deleted in transaction -> need to check if there is a new edge for source to target
+        if (inTransactionStorage) {
+            edge = this.transactionStorage.getEdgesByNodeIds(source, target);
+        }
+        // no edge found for source to target
+        if (edge == null)
+            throw new EdgeNotFoundException(source, target);
+        return edge;
     }
 
     private Node getMostUpdatedNode(String nodeId) {
