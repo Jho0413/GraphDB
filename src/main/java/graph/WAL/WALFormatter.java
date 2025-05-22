@@ -16,15 +16,15 @@ public class WALFormatter {
             case BEGIN_TRANSACTION -> formatTransaction(loggingInfo);
             case COMMIT -> "";
         };
-        return operation.getLoggingMessage() + message;
+        return operation.name() + message;
     }
 
     private String formatAddNode(LoggingInfo info) {
-        return String.format(" id=%s attributes=%s", info.getId(), info.getAttributes());
+        return String.format(" id=%s~attributes=%s", info.getId(), info.getAttributes());
     }
 
     private String formatUpdateNodeAttrs(LoggingInfo info) {
-        return String.format(" id=%s attributes=%s", info.getId(), info.getAttributes());
+        return String.format(" id=%s~attributes=%s", info.getId(), info.getAttributes());
     }
 
     private String formatDelete(LoggingInfo info) {
@@ -32,25 +32,25 @@ public class WALFormatter {
     }
 
     private String formatAddEdge(LoggingInfo info) {
-        return String.format(" id=%s source=%s target=%s properties=%s weight=%s",
+        return String.format(" id=%s~source=%s~target=%s~properties=%s~weight=%s",
                 info.getId(), info.getSource(), info.getTarget(),
                 info.getAttributes(), info.getWeight());
     }
 
     private String formatUpdateEdgeProps(LoggingInfo info) {
-        return String.format(" id=%s properties=%s", info.getId(), info.getAttributes());
+        return String.format(" id=%s~properties=%s", info.getId(), info.getAttributes());
     }
 
     private String formatUpdateKeyValue(LoggingInfo info) {
-        return String.format(" id=%s key=%s value=%s", info.getId(), info.getKey(), info.getValue());
+        return String.format(" id=%s~key=%s~value=%s", info.getId(), info.getKey(), info.getValue());
     }
 
     private String formatUpdateEdgeWeight(LoggingInfo info) {
-        return String.format(" id=%s weight=%s", info.getId(), info.getWeight());
+        return String.format(" id=%s~weight=%s", info.getId(), info.getWeight());
     }
 
     private String formatRemove(LoggingInfo info) {
-        return String.format(" id=%s key=%s", info.getId(), info.getKey());
+        return String.format(" id=%s~key=%s", info.getId(), info.getKey());
     }
 
     private String formatTransaction(LoggingInfo info) {

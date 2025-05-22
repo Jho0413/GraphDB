@@ -99,6 +99,11 @@ public class LoggingInfo {
             return this;
         }
 
+        public LoggingInfoBuilder withValue(Object value) {
+            this.value = value;
+            return this;
+        }
+
         public LoggingInfoBuilder withKeyValuePair(String key, Object value) {
             this.key = key;
             this.value = value;

@@ -57,29 +57,31 @@ public class TransactionLogger implements TransactionOperations {
     @Override
     public void updateNode(String id, Map<String, Object> attributes) {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_NODE_ATTRS).withId(id).withAttributes(attributes).build();
-        safeWriteToFile(loggingInfo);
         transaction.updateNode(id, attributes);
+        safeWriteToFile(loggingInfo);
     }
 
     @Override
     public void updateNode(String id, String attribute, Object value) {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_NODE_ATTR).withId(id).withKeyValuePair(attribute, value).build();
-        safeWriteToFile(loggingInfo);
         transaction.updateNode(id, attribute, value);
+        safeWriteToFile(loggingInfo);
     }
 
     @Override
     public Object removeNodeAttribute(String id, String attribute) {
         LoggingInfo loggingInfo = aLoggingInfo(REMOVE_NODE).withId(id).withKey(attribute).build();
+        Object value = transaction.removeNodeAttribute(id, attribute);
         safeWriteToFile(loggingInfo);
-        return transaction.removeNodeAttribute(id, attribute);
+        return value;
     }
 
     @Override
     public Node deleteNode(String id) {
         LoggingInfo loggingInfo = aLoggingInfo(DELETE_NODE).withId(id).build();
+        Node deleted = transaction.deleteNode(id);
         safeWriteToFile(loggingInfo);
-        return transaction.deleteNode(id);
+        return deleted;
     }
 
     @Override
@@ -119,36 +121,38 @@ public class TransactionLogger implements TransactionOperations {
     @Override
     public void updateEdge(String edgeId, double weight) {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_PROPS).withId(edgeId).withWeight(weight).build();
-        safeWriteToFile(loggingInfo);
         transaction.updateEdge(edgeId, weight);
+        safeWriteToFile(loggingInfo);
     }
 
     @Override
     public void updateEdge(String edgeId, String key, Object value) {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_PROP).withId(edgeId).withKeyValuePair(key, value).build();
-        safeWriteToFile(loggingInfo);
         transaction.updateEdge(edgeId, key, value);
+        safeWriteToFile(loggingInfo);
     }
 
     @Override
     public void updateEdge(String edgeId, Map<String, Object> properties) {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_WEIGHT).withId(edgeId).withAttributes(properties).build();
-        safeWriteToFile(loggingInfo);
         transaction.updateEdge(edgeId, properties);
+        safeWriteToFile(loggingInfo);
     }
 
     @Override
     public Object removeEdgeProperty(String edgeId, String property) {
         LoggingInfo loggingInfo = aLoggingInfo(REMOVE_EDGE).withId(edgeId).withKey(property).build();
+        Object value = transaction.removeEdgeProperty(edgeId, property);
         safeWriteToFile(loggingInfo);
-        return transaction.removeEdgeProperty(edgeId, property);
+        return value;
     }
 
     @Override
     public Edge deleteEdge(String edgeId) {
         LoggingInfo loggingInfo = aLoggingInfo(DELETE_EDGE).withId(edgeId).build();
+        Edge deletedEdge = transaction.deleteEdge(edgeId);
         safeWriteToFile(loggingInfo);
-        return transaction.deleteEdge(edgeId);
+        return deletedEdge;
     }
 
     private void safeWriteToFile(LoggingInfo loggingInfo) {
