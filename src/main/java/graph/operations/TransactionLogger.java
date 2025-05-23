@@ -1,8 +1,9 @@
-package graph.WAL;
+package graph.operations;
 
+import graph.WAL.LoggingInfo;
+import graph.WAL.WALWriter;
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
-import graph.operations.TransactionOperations;
 
 import java.io.IOException;
 import java.util.List;

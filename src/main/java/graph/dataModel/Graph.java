@@ -21,6 +21,10 @@ public class Graph implements GraphOperations {
 
     public static Graph createGraph() {
         GraphStorage storage = new InMemoryGraphStorage();
+        return createRecoveryGraph(storage);
+    }
+
+    static Graph createRecoveryGraph(GraphStorage storage) {
         GraphOperations service = new GraphService(storage);
         return new Graph(service, UUID.randomUUID().toString());
     }
