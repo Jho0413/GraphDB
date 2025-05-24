@@ -21,6 +21,7 @@ import org.junit.runners.Parameterized.Parameters;
 import graph.dataModel.Node;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -37,17 +38,17 @@ public class GraphOperationsUnitTest {
     private GraphOperations service;
 
     @Parameterized.Parameter(value = 0)
-    public Function<GraphStorage, GraphOperations> serviceCreator;
+    public BiFunction<GraphStorage, String, GraphOperations> serviceCreator;
 
     @Before
     public void setUp() {
-        this.service = this.serviceCreator.apply(storage);
+        this.service = this.serviceCreator.apply(storage, "1");
     }
 
     @Parameters(name="{0}")
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
-                (Function<GraphStorage, GraphOperations>) GraphService::new
+                (BiFunction<GraphStorage, String, GraphOperations>) GraphService::new
         });
     }
 

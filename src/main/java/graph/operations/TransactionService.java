@@ -17,7 +17,7 @@ public class TransactionService implements TransactionOperations {
     private final TransactionStorage transactionStorage;
     private final OperationsResolver resolver;
 
-    private TransactionService(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver) {
+    protected TransactionService(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver) {
         this.storage = storage;
         this.transactionStorage = transactionStorage;
         this.resolver = resolver;
