@@ -69,4 +69,9 @@ public class Edge {
     public String getDestination() {
         return to;
     }
+
+    @Override
+    public String toString() {
+        return "Edge [id=" + id + ", from=" + from + ", to=" + to + ", weight=" + weight + ", properties=" + properties + "]";
+    }
 }

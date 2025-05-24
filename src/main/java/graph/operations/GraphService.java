@@ -7,17 +7,18 @@ import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
-import graph.storage.TransactionStorage;
-import graph.storage.TransactionTemporaryStorage;
 
+import java.io.IOException;
 import java.util.*;
 
 public class GraphService implements GraphOperations {
 
     private final GraphStorage storage;
+    private final String graphId;
 
-    public GraphService(GraphStorage storage) {
+    public GraphService(GraphStorage storage, String graphId) {
         this.storage = storage;
+        this.graphId = graphId;
     }
 
     @Override
@@ -179,10 +180,13 @@ public class GraphService implements GraphOperations {
 
     @Override
     public Transaction createTransaction() {
-        TransactionStorage transactionStorage = new TransactionTemporaryStorage();
-        TransactionOperationsResolver resolver = new TransactionOperationsResolver(storage, transactionStorage);
-        TransactionOperations service = new TransactionService(storage, transactionStorage, resolver);
-        return new Transaction(service);
+        TransactionOperations service = TransactionService.create(storage);
+        try {
+            TransactionOperations logger = TransactionLogger.create(graphId, service);
+            return new Transaction(logger);
+        } catch (IOException e) {
+            throw new RuntimeException("Error creating transaction");
+        }
     }
 
     private Node getNodeIfExists(String nodeId) throws NodeNotFoundException {

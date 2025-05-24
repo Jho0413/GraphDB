@@ -7,6 +7,7 @@ import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
 import graph.storage.TransactionStorage;
+import graph.storage.TransactionTemporaryStorage;
 
 import java.util.*;
 
@@ -16,10 +17,16 @@ public class TransactionService implements TransactionOperations {
     private final TransactionStorage transactionStorage;
     private final OperationsResolver resolver;
 
-    public TransactionService(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver) {
+    private TransactionService(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver) {
         this.storage = storage;
         this.transactionStorage = transactionStorage;
         this.resolver = resolver;
+    }
+
+    static TransactionService create(GraphStorage storage) {
+        TransactionStorage transactionStorage = new TransactionTemporaryStorage();
+        OperationsResolver resolver = new TransactionOperationsResolver(storage, transactionStorage);
+        return new TransactionService(storage, transactionStorage, resolver);
     }
 
     @Override

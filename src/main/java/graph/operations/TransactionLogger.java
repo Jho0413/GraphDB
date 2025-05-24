@@ -1,6 +1,7 @@
 package graph.operations;
 
 import graph.WAL.LoggingInfo;
+import graph.WAL.WALFormatter;
 import graph.WAL.WALWriter;
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
@@ -18,11 +19,16 @@ public class TransactionLogger implements TransactionOperations {
     private final TransactionOperations transaction;
     private final WALWriter writer;
 
-    public TransactionLogger(TransactionOperations transaction, WALWriter writer) {
+    private TransactionLogger(String graphId, TransactionOperations transaction, WALWriter writer) {
         this.transaction = transaction;
         this.writer = writer;
-        LoggingInfo loggingInfo = aLoggingInfo(BEGIN_TRANSACTION).withId(UUID.randomUUID().toString()).build();
+        LoggingInfo loggingInfo = aLoggingInfo(BEGIN_TRANSACTION).withId(UUID.randomUUID().toString()).withSource(graphId).build();
         safeWriteToFile(loggingInfo);
+    }
+
+    static TransactionLogger create(String graphId, TransactionOperations transaction) throws IOException {
+        WALWriter writer = new WALWriter(new WALFormatter(), "log");
+        return new TransactionLogger(graphId, transaction, writer);
     }
 
     @Override
@@ -121,7 +127,7 @@ public class TransactionLogger implements TransactionOperations {
 
     @Override
     public void updateEdge(String edgeId, double weight) {
-        LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_PROPS).withId(edgeId).withWeight(weight).build();
+        LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_WEIGHT).withId(edgeId).withWeight(weight).build();
         transaction.updateEdge(edgeId, weight);
         safeWriteToFile(loggingInfo);
     }
@@ -135,7 +141,7 @@ public class TransactionLogger implements TransactionOperations {
 
     @Override
     public void updateEdge(String edgeId, Map<String, Object> properties) {
-        LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_WEIGHT).withId(edgeId).withAttributes(properties).build();
+        LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_PROPS).withId(edgeId).withAttributes(properties).build();
         transaction.updateEdge(edgeId, properties);
         safeWriteToFile(loggingInfo);
     }

@@ -4,8 +4,10 @@ import graph.WAL.LoggingInfo;
 import graph.WAL.LoggingOperations;
 import graph.WAL.WALReader;
 import graph.storage.GraphStorage;
+import graph.storage.InMemoryGraphStorage;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -15,17 +17,35 @@ import static graph.WAL.LoggingOperations.*;
 public class RecoveryManager {
 
     private final WALReader reader;
+    private final Map<String, GraphStorage> graphStorageMap = new HashMap<>();
 
     public RecoveryManager(WALReader reader) {
         this.reader = reader;
     }
 
-    public Graph recoverGraph(GraphStorage storage) {
+    public Map<String, Graph> recoverGraphs() {
         try {
-            List<LoggingInfo> loggingInfos = reader.readFromFile();
-            loggingInfos.forEach(loggingInfo -> applyRecoveryOpToGraph(storage, loggingInfo));
+            List<List<LoggingInfo>> transactionLoggingInfos = reader.readFromFile();
+            transactionLoggingInfos.forEach(this::recoverTransaction);
         } catch (IOException ignored) {}
-        return Graph.createRecoveryGraph(storage);
+
+        Map<String, Graph> graphMap = new HashMap<>();
+        graphStorageMap.forEach((graphId, storage) ->
+                graphMap.put(graphId, Graph.createRecoveryGraph(storage, graphId))
+        );
+        return graphMap;
+    }
+
+    private void recoverTransaction(List<LoggingInfo> transaction) {
+        LoggingInfo transactionLoggingInfo = transaction.getFirst();
+        String graphId = transactionLoggingInfo.getSource();
+        if (!graphStorageMap.containsKey(graphId)) {
+            graphStorageMap.put(graphId, new InMemoryGraphStorage());
+        }
+        GraphStorage graphStorage = graphStorageMap.get(graphId);
+        for (int i = 1; i < transaction.size() - 1; i++) {
+            applyRecoveryOpToGraph(graphStorage, transaction.get(i));
+        }
     }
 
     private void applyRecoveryOpToGraph(GraphStorage storage, LoggingInfo loggingInfo) {

@@ -22,9 +22,9 @@ public class WALReader {
         this.reader = new BufferedReader(new FileReader(filename));
     }
 
-    public List<LoggingInfo> readFromFile() throws IOException {
+    public List<List<LoggingInfo>> readFromFile() throws IOException {
         List<String> transaction = new LinkedList<>();
-        List<LoggingInfo> loggingInfos = new LinkedList<>();
+        List<List<LoggingInfo>> loggingInfos = new LinkedList<>();
 
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             if (line.startsWith(BEGIN_TRANSACTION.name())) {
@@ -33,7 +33,7 @@ public class WALReader {
             } else if (line.startsWith(COMMIT.name())) {
                 transaction.add(line);
                 try {
-                    loggingInfos.addAll(parser.parseTransaction(transaction));
+                    loggingInfos.add(parser.parseTransaction(transaction));
                 } catch (InvalidLogOperationException e) {
                     System.out.println(e.getMessage());
                     break;

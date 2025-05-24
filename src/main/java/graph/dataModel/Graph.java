@@ -8,6 +8,7 @@ import graph.storage.InMemoryGraphStorage;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class Graph implements GraphOperations {
 
@@ -21,12 +22,12 @@ public class Graph implements GraphOperations {
 
     public static Graph createGraph() {
         GraphStorage storage = new InMemoryGraphStorage();
-        return createRecoveryGraph(storage);
+        return createRecoveryGraph(storage, UUID.randomUUID().toString());
     }
 
-    static Graph createRecoveryGraph(GraphStorage storage) {
-        GraphOperations service = new GraphService(storage);
-        return new Graph(service, UUID.randomUUID().toString());
+    static Graph createRecoveryGraph(GraphStorage storage, String graphId) {
+        GraphOperations service = new GraphService(storage, graphId);
+        return new Graph(service, graphId);
     }
 
     public String getId() {
@@ -141,5 +142,13 @@ public class Graph implements GraphOperations {
     @Override
     public Transaction createTransaction() {
         return service.createTransaction();
+    }
+
+    @Override
+    public String toString() {
+        return
+                "Graph [id=" + id + "]\n" +
+                "Nodes: " + getNodes().stream().map(Node::toString).collect(Collectors.joining(", ")) + "\n" +
+                "Edges: " + getEdges().stream().map(Edge::toString).collect(Collectors.joining(", "));
     }
 }

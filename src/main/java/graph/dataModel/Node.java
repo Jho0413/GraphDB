@@ -47,4 +47,9 @@ public class Node {
     public Map<String, Object> getAttributes() {
         return Collections.unmodifiableMap(attributes);
     }
+
+    @Override
+    public String toString() {
+        return "Node [id=" + id + ", attributes=" + attributes + "]";
+    }
 }

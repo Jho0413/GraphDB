@@ -54,6 +54,6 @@ public class WALFormatter {
     }
 
     private String formatTransaction(LoggingInfo info) {
-        return String.format(" id=%s", info.getId());
+        return String.format(" id=%s~source=%s", info.getId(), info.getSource());
     }
 }
