@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -65,10 +66,20 @@ public class TransactionOperationsTest {
         this.service = this.serviceCreator.apply(storage, transactionStorage, resolver);
     }
 
+    private static TransactionOperations createTransactionLogger(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver) {
+        TransactionOperations service = new TransactionService(storage, transactionStorage, resolver);
+        try {
+            return TransactionLogger.create("1", service);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Parameterized.Parameters(name="{0}")
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
-                (TriFunction<GraphStorage, TransactionStorage, OperationsResolver, TransactionOperations>) TransactionService::new
+                (TriFunction<GraphStorage, TransactionStorage, OperationsResolver, TransactionOperations>) TransactionService::new,
+                (TriFunction<GraphStorage, TransactionStorage, OperationsResolver, TransactionOperations>) TransactionOperationsTest::createTransactionLogger
         });
     }
 

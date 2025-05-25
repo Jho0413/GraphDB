@@ -5,6 +5,9 @@ import graph.WAL.WALFormatter;
 import graph.WAL.WALWriter;
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
+import graph.exceptions.EdgeExistsException;
+import graph.exceptions.EdgeNotFoundException;
+import graph.exceptions.NodeNotFoundException;
 
 import java.io.IOException;
 import java.util.List;
@@ -39,7 +42,7 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public Node addNode(Map<String, Object> attributes) {
+    public Node addNode(Map<String, Object> attributes) throws IllegalArgumentException {
         Node node = transaction.addNode(attributes);
         LoggingInfo loggingInfo = aLoggingInfo(ADD_NODE).withId(node.getId()).withAttributes(attributes).build();
         safeWriteToFile(loggingInfo);
@@ -47,7 +50,7 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public Node getNodeById(String id) {
+    public Node getNodeById(String id) throws NodeNotFoundException {
         return transaction.getNodeById(id);
     }
 
@@ -62,21 +65,21 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public void updateNode(String id, Map<String, Object> attributes) {
+    public void updateNode(String id, Map<String, Object> attributes) throws NodeNotFoundException, IllegalArgumentException {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_NODE_ATTRS).withId(id).withAttributes(attributes).build();
         transaction.updateNode(id, attributes);
         safeWriteToFile(loggingInfo);
     }
 
     @Override
-    public void updateNode(String id, String attribute, Object value) {
+    public void updateNode(String id, String attribute, Object value) throws NodeNotFoundException {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_NODE_ATTR).withId(id).withKeyValuePair(attribute, value).build();
         transaction.updateNode(id, attribute, value);
         safeWriteToFile(loggingInfo);
     }
 
     @Override
-    public Object removeNodeAttribute(String id, String attribute) {
+    public Object removeNodeAttribute(String id, String attribute) throws NodeNotFoundException {
         LoggingInfo loggingInfo = aLoggingInfo(REMOVE_NODE).withId(id).withKey(attribute).build();
         Object value = transaction.removeNodeAttribute(id, attribute);
         safeWriteToFile(loggingInfo);
@@ -84,7 +87,7 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public Node deleteNode(String id) {
+    public Node deleteNode(String id) throws NodeNotFoundException{
         LoggingInfo loggingInfo = aLoggingInfo(DELETE_NODE).withId(id).build();
         Node deleted = transaction.deleteNode(id);
         safeWriteToFile(loggingInfo);
@@ -92,7 +95,7 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) {
+    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws NodeNotFoundException, IllegalArgumentException, EdgeExistsException {
         Edge edge = transaction.addEdge(source, target, properties, weight);
         LoggingInfo loggingInfo = aLoggingInfo(ADD_EDGE).withId(edge.getId())
                 .withSource(source).withTarget(target).withAttributes(properties).withWeight(weight).build();
@@ -101,12 +104,12 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public Edge getEdgeById(String id) {
+    public Edge getEdgeById(String id) throws EdgeNotFoundException {
         return transaction.getEdgeById(id);
     }
 
     @Override
-    public Edge getEdgeByNodeIds(String source, String target) {
+    public Edge getEdgeByNodeIds(String source, String target) throws EdgeNotFoundException {
         return transaction.getEdgeByNodeIds(source, target);
     }
 
@@ -126,28 +129,28 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public void updateEdge(String edgeId, double weight) {
+    public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_WEIGHT).withId(edgeId).withWeight(weight).build();
         transaction.updateEdge(edgeId, weight);
         safeWriteToFile(loggingInfo);
     }
 
     @Override
-    public void updateEdge(String edgeId, String key, Object value) {
+    public void updateEdge(String edgeId, String key, Object value) throws EdgeNotFoundException {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_PROP).withId(edgeId).withKeyValuePair(key, value).build();
         transaction.updateEdge(edgeId, key, value);
         safeWriteToFile(loggingInfo);
     }
 
     @Override
-    public void updateEdge(String edgeId, Map<String, Object> properties) {
+    public void updateEdge(String edgeId, Map<String, Object> properties) throws EdgeNotFoundException, IllegalArgumentException {
         LoggingInfo loggingInfo = aLoggingInfo(UPDATE_EDGE_PROPS).withId(edgeId).withAttributes(properties).build();
         transaction.updateEdge(edgeId, properties);
         safeWriteToFile(loggingInfo);
     }
 
     @Override
-    public Object removeEdgeProperty(String edgeId, String property) {
+    public Object removeEdgeProperty(String edgeId, String property) throws EdgeNotFoundException {
         LoggingInfo loggingInfo = aLoggingInfo(REMOVE_EDGE).withId(edgeId).withKey(property).build();
         Object value = transaction.removeEdgeProperty(edgeId, property);
         safeWriteToFile(loggingInfo);
@@ -155,7 +158,7 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public Edge deleteEdge(String edgeId) {
+    public Edge deleteEdge(String edgeId) throws EdgeNotFoundException {
         LoggingInfo loggingInfo = aLoggingInfo(DELETE_EDGE).withId(edgeId).build();
         Edge deletedEdge = transaction.deleteEdge(edgeId);
         safeWriteToFile(loggingInfo);

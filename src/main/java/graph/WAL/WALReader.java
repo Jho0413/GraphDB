@@ -15,11 +15,11 @@ import static graph.WAL.LoggingOperations.COMMIT;
 public class WALReader {
 
     private final WALParser parser;
-    private final BufferedReader reader;
+    private final LineReader reader;
 
-    public WALReader(WALParser parser, String filename) throws FileNotFoundException {
+    public WALReader(WALParser parser, LineReader reader) {
         this.parser = parser;
-        this.reader = new BufferedReader(new FileReader(filename));
+        this.reader = reader;
     }
 
     public List<List<LoggingInfo>> readFromFile() throws IOException {

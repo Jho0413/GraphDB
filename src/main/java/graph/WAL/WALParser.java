@@ -43,12 +43,12 @@ public class WALParser {
     }
 
     private LoggingInfo parseArguments(LoggingOperations operation, String operationArgs) {
-        String[] args = operationArgs.split("~");
         LoggingInfoBuilder loggingInfoBuilder = aLoggingInfo(operation);
-
         if (operation.equals(LoggingOperations.COMMIT)) {
             return loggingInfoBuilder.build();
         }
+
+        String[] args = operationArgs.split("~");
 
         for (String arg : args) {
             arg = arg.trim();
@@ -97,9 +97,19 @@ public class WALParser {
             return parseMap(value.substring(1, value.length() - 1));
         }
 
+        // Invalid Map
+        if (value.startsWith("{") || value.endsWith("}")) {
+            throw new InvalidLogOperationException(value);
+        }
+
         // List
         if (value.startsWith("[") && value.endsWith("]")) {
             return parseList(value.substring(1, value.length() - 1));
+        }
+
+        // Invalid List
+        if (value.startsWith("[") || value.endsWith("]")) {
+            throw new InvalidLogOperationException(value);
         }
 
         // Boolean

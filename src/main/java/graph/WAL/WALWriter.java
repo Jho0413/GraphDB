@@ -3,6 +3,7 @@ package graph.WAL;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.zip.CRC32;
 
 public class WALWriter implements AutoCloseable {
@@ -13,6 +14,11 @@ public class WALWriter implements AutoCloseable {
     public WALWriter(WALFormatter formatter, String filename) throws IOException {
         this.formatter = formatter;
         this.writer = new BufferedWriter(new FileWriter(filename, true));
+    }
+
+    WALWriter(WALFormatter formatter, Writer writer) {
+        this.formatter = formatter;
+        this.writer = new BufferedWriter(writer);
     }
 
     public void writeToFile(LoggingInfo loggingInfo) throws IOException {
