@@ -1,37 +1,16 @@
 package graph.dataModel;
 
-import graph.operations.GraphOperations;
-import graph.operations.GraphService;
-import graph.storage.GraphStorage;
-import graph.storage.InMemoryGraphStorage;
+import graph.operations.TransactionOperations;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
-public class Graph implements GraphOperations {
+public class Transaction implements TransactionOperations {
 
-    private final GraphOperations service;
-    private final String id;
+    private final TransactionOperations service;
 
-    private Graph(GraphOperations service, String id) {
+    public Transaction(TransactionOperations service) {
         this.service = service;
-        this.id = id;
-    }
-
-    public static Graph createGraph() {
-        GraphStorage storage = new InMemoryGraphStorage();
-        return createRecoveryGraph(storage, UUID.randomUUID().toString());
-    }
-
-    static Graph createRecoveryGraph(GraphStorage storage, String graphId) {
-        GraphOperations service = new GraphService(storage, graphId);
-        return new Graph(service, graphId);
-    }
-
-    public String getId() {
-        return id;
     }
 
     @Override
@@ -85,6 +64,11 @@ public class Graph implements GraphOperations {
     }
 
     @Override
+    public Edge getEdgeByNodeIds(String source, String target) {
+        return service.getEdgeByNodeIds(source, target);
+    }
+
+    @Override
     public List<Edge> getEdges() {
         return service.getEdges();
     }
@@ -125,30 +109,7 @@ public class Graph implements GraphOperations {
     }
 
     @Override
-    public List<Edge> getEdgesFromNode(String nodeId) {
-        return service.getEdgesFromNode(nodeId);
-    }
-
-    @Override
-    public List<String> getNodesIdWithEdgeToNode(String nodeId) {
-        return service.getNodesIdWithEdgeToNode(nodeId);
-    }
-
-    @Override
-    public Edge getEdgeByNodeIds(String source, String target) {
-        return service.getEdgeByNodeIds(source, target);
-    }
-
-    @Override
-    public Transaction createTransaction() {
-        return service.createTransaction();
-    }
-
-    @Override
-    public String toString() {
-        return
-                "Graph [id=" + id + "]\n" +
-                "Nodes: " + getNodes().stream().map(Node::toString).collect(Collectors.joining(", ")) + "\n" +
-                "Edges: " + getEdges().stream().map(Edge::toString).collect(Collectors.joining(", "));
+    public void commit() {
+        service.commit();
     }
 }
