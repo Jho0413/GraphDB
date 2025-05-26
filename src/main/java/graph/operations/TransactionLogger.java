@@ -22,7 +22,7 @@ public class TransactionLogger implements TransactionOperations {
     private final TransactionOperations transaction;
     private final WALWriter writer;
 
-    private TransactionLogger(String graphId, TransactionOperations transaction, WALWriter writer) {
+    TransactionLogger(String graphId, TransactionOperations transaction, WALWriter writer) {
         this.transaction = transaction;
         this.writer = writer;
         LoggingInfo loggingInfo = aLoggingInfo(BEGIN_TRANSACTION).withId(UUID.randomUUID().toString()).withSource(graphId).build();
@@ -87,7 +87,7 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public Node deleteNode(String id) throws NodeNotFoundException{
+    public Node deleteNode(String id) throws NodeNotFoundException {
         LoggingInfo loggingInfo = aLoggingInfo(DELETE_NODE).withId(id).build();
         Node deleted = transaction.deleteNode(id);
         safeWriteToFile(loggingInfo);
