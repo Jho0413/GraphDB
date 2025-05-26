@@ -22,6 +22,11 @@ public class WALReader {
         this.reader = reader;
     }
 
+    public static WALReader defaultWALReader() throws FileNotFoundException {
+        LineReader lineReader = new BufferedLineReader(new BufferedReader(new FileReader("log")));
+        return new WALReader(new WALParser(), lineReader);
+    }
+
     public List<List<LoggingInfo>> readFromFile() throws IOException {
         List<String> transaction = new LinkedList<>();
         List<List<LoggingInfo>> loggingInfos = new LinkedList<>();
