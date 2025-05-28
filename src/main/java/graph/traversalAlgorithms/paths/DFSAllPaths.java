@@ -4,6 +4,7 @@ import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.queryModel.Path;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
@@ -18,11 +19,11 @@ class DFSAllPaths implements Algorithm {
     private final Integer maxLength;
     private final List<Path> paths = new LinkedList<>();
 
-    DFSAllPaths(Graph graph, String fromNodeId, String toNodeId, Integer maxLength) {
+    DFSAllPaths(TraversalInput input, Graph graph) {
         this.graph = graph;
-        this.fromNodeId = fromNodeId;
-        this.toNodeId = toNodeId;
-        this.maxLength = maxLength;
+        this.fromNodeId = input.getFromNodeId();
+        this.toNodeId = input.getToNodeId();
+        this.maxLength = input.getMaxLength();
     }
 
     @Override

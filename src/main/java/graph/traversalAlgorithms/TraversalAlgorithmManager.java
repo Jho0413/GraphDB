@@ -7,55 +7,49 @@ import graph.traversalAlgorithms.paths.PathAlgorithmManager;
 import graph.traversalAlgorithms.shortestPath.ShortestPathAlgorithmManager;
 import graph.traversalAlgorithms.stronglyConnected.StronglyConnectedAlgorithmManager;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 public class TraversalAlgorithmManager implements AlgorithmManager {
 
-    private final ShortestPathAlgorithmManager shortestPathAlgorithmManager;
-    private final StronglyConnectedAlgorithmManager stronglyConnectedAlgorithmManager;
-    private final CyclesAlgorithmManager cyclesAlgorithmManager;
-    private final PathAlgorithmManager pathAlgorithmManager;
-    private final ConnectivityAlgorithmManager connectivityAlgorithmManager;
+    private final Map<AlgorithmType, AlgorithmManager> algorithmManagerMap;
 
-    private TraversalAlgorithmManager(
-            ShortestPathAlgorithmManager shortestPathAlgorithmManager,
-            StronglyConnectedAlgorithmManager stronglyConnectedAlgorithmManager,
-            CyclesAlgorithmManager cyclesAlgorithmManager,
-            PathAlgorithmManager pathAlgorithmManager,
-            ConnectivityAlgorithmManager connectivityAlgorithmManager
-    ) {
-        this.shortestPathAlgorithmManager = shortestPathAlgorithmManager;
-        this.stronglyConnectedAlgorithmManager = stronglyConnectedAlgorithmManager;
-        this.cyclesAlgorithmManager = cyclesAlgorithmManager;
-        this.pathAlgorithmManager = pathAlgorithmManager;
-        this.connectivityAlgorithmManager = connectivityAlgorithmManager;
+    private TraversalAlgorithmManager(Map<AlgorithmType, AlgorithmManager> algorithmManagerMap) {
+        this.algorithmManagerMap = algorithmManagerMap;
     }
 
     public static TraversalAlgorithmManager createManager(Graph graph) {
-        ShortestPathAlgorithmManager shortestPathAlgorithmManager = new ShortestPathAlgorithmManager(graph);
-        StronglyConnectedAlgorithmManager stronglyConnectedAlgorithmManager = new StronglyConnectedAlgorithmManager(graph);
-        CyclesAlgorithmManager cyclesAlgorithmManager = new CyclesAlgorithmManager(graph);
-        PathAlgorithmManager pathAlgorithmManager = new PathAlgorithmManager(graph);
-        ConnectivityAlgorithmManager connectivityAlgorithmManager = new ConnectivityAlgorithmManager(graph);
-        return new TraversalAlgorithmManager(
-                shortestPathAlgorithmManager,
-                stronglyConnectedAlgorithmManager,
-                cyclesAlgorithmManager,
-                pathAlgorithmManager,
-                connectivityAlgorithmManager
+        List<AlgorithmManager> algorithmManagers = List.of(
+                ShortestPathAlgorithmManager.create(graph),
+                StronglyConnectedAlgorithmManager.create(graph),
+                CyclesAlgorithmManager.create(graph),
+                PathAlgorithmManager.create(graph),
+                ConnectivityAlgorithmManager.create(graph)
         );
+
+        Map<AlgorithmType, AlgorithmManager> algorithmManagerMap = new HashMap<>();
+        for (AlgorithmManager algorithmManager : algorithmManagers) {
+            for (AlgorithmType algorithm : algorithmManager.getSupportedAlgorithms()) {
+                algorithmManagerMap.put(algorithm, algorithmManager);
+            }
+        }
+
+        return new TraversalAlgorithmManager(algorithmManagerMap);
     }
 
     @Override
     public TraversalResult runAlgorithm(AlgorithmType algorithmType, TraversalInput inputs) {
-        AlgorithmManager manager = switch (algorithmType) {
-            case DIJKSTRA, BELLMAN_FORD, FLOYD_WARSHALL -> shortestPathAlgorithmManager;
-            case BFS_COMMON_NODES_BY_DEPTH,
-                 DFS_NODES_CONNECTED,
-                 DFS_GRAPH_CONNECTED,
-                 DFS_NODES_CONNECTED_TO -> connectivityAlgorithmManager;
-            case BELLMAN_FORD_CYCLE, DFS_HAS_CYCLE -> cyclesAlgorithmManager;
-            case DFS_ALL_PATHS -> pathAlgorithmManager;
-            case TARJAN, KOSARAJU -> stronglyConnectedAlgorithmManager;
-        };
-        return manager.runAlgorithm(algorithmType, inputs);
+        AlgorithmManager algorithmManager = algorithmManagerMap.get(algorithmType);
+        if (algorithmManager == null) {
+            throw new IllegalArgumentException("Algorithm " + algorithmType + " not supported");
+        }
+        return algorithmManager.runAlgorithm(algorithmType, inputs);
+    }
+
+    @Override
+    public Set<AlgorithmType> getSupportedAlgorithms() {
+        return algorithmManagerMap.keySet();
     }
 }

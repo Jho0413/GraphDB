@@ -1,28 +1,37 @@
 package graph.traversalAlgorithms.paths;
 
 import graph.dataModel.Graph;
-import graph.traversalAlgorithms.AlgorithmManager;
-import graph.traversalAlgorithms.AlgorithmType;
-import graph.traversalAlgorithms.TraversalInput;
-import graph.traversalAlgorithms.TraversalResult;
+import graph.traversalAlgorithms.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
+
+import static graph.traversalAlgorithms.AlgorithmType.DFS_ALL_PATHS;
 
 public class PathAlgorithmManager implements AlgorithmManager {
 
-    private final Graph graph;
+    private final AlgorithmManager delegate;
 
-    public PathAlgorithmManager(Graph graph) {
-        this.graph = graph;
+    private PathAlgorithmManager(AlgorithmManager algorithmManager) {
+        this.delegate = algorithmManager;
+    }
+
+    public static PathAlgorithmManager create(Graph graph) {
+        Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
+        supportedAlgorithms.put(DFS_ALL_PATHS, DFSAllPaths::new);
+
+        return new PathAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));
     }
 
     @Override
     public TraversalResult runAlgorithm(AlgorithmType algorithmType, TraversalInput input) {
-        return switch (algorithmType) {
-            case DFS_ALL_PATHS -> findAllPaths(input);
-            default -> throw new IllegalArgumentException("Unsupported algorithm type: " + algorithmType);
-        };
+        return delegate.runAlgorithm(algorithmType, input);
     }
 
-    private TraversalResult findAllPaths(TraversalInput input) {
-        return new DFSAllPaths(graph, input.getFromNodeId(), input.getToNodeId(), input.getMaxLength()).performAlgorithm();
+    @Override
+    public Set<AlgorithmType> getSupportedAlgorithms() {
+        return delegate.getSupportedAlgorithms();
     }
 }

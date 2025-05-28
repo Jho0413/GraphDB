@@ -6,6 +6,7 @@ import graph.dataModel.Node;
 import graph.exceptions.NegativeWeightException;
 import graph.helper.Pair;
 import graph.queryModel.Path;
+import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
@@ -15,8 +16,8 @@ class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
     // pre-condition: all positive edges
     private final Queue<Pair<String, Double>> queue;
 
-    Dijkstra(String fromNodeId, String toNodeId, Graph graph) {
-        super(fromNodeId, toNodeId, graph);
+    Dijkstra(TraversalInput input, Graph graph) {
+        super(input.getFromNodeId(), input.getToNodeId(), graph);
         List<Node> nodes = graph.getNodes();
         int length = nodes.size();
 

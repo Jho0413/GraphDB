@@ -5,6 +5,7 @@ import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.exceptions.NegativeCycleException;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
@@ -16,7 +17,7 @@ class FloydWarshall implements Algorithm {
     private final List<Node> nodes;
     private final double[][] store;
 
-    FloydWarshall(Graph graph) {
+    FloydWarshall(TraversalInput input, Graph graph) {
         this.graph = graph;
         this.nodes = graph.getNodes();
         this.store = new double[nodes.size()][nodes.size()];

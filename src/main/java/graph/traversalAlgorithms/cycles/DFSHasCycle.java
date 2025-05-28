@@ -4,6 +4,7 @@ import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
@@ -16,7 +17,7 @@ class DFSHasCycle implements Algorithm {
     private final Set<String> visited = new HashSet<>();
     private final Set<String> inStack = new HashSet<>();
 
-    DFSHasCycle(Graph graph) {
+    DFSHasCycle(TraversalInput input, Graph graph) {
         this.graph = graph;
     }
 

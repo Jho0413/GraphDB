@@ -4,6 +4,7 @@ import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.helper.Pair;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
@@ -20,12 +21,12 @@ class BFSCommonNodesByDepth implements Algorithm {
     private final String toNodeId;
     private final boolean condition;  // if true, we only add nodes with exactly maxDepth nodes, otherwise we add <= maxDepth nodes
 
-    BFSCommonNodesByDepth(Graph graph, String fromNodeId, String toNodeId, int maxDepth, boolean condition) {
+    BFSCommonNodesByDepth(TraversalInput input, Graph graph) {
         this.graph = graph;
-        this.fromNodeId = fromNodeId;
-        this.toNodeId = toNodeId;
-        this.maxDepth = maxDepth;
-        this.condition = condition;
+        this.fromNodeId = input.getFromNodeId();
+        this.toNodeId = input.getToNodeId();
+        this.maxDepth = input.getMaxLength();
+        this.condition = input.getCondition();
     }
 
     @Override

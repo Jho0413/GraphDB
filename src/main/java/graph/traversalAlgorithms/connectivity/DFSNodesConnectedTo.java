@@ -3,6 +3,7 @@ package graph.traversalAlgorithms.connectivity;
 import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
@@ -15,9 +16,9 @@ public class DFSNodesConnectedTo implements Algorithm {
     private final String fromNodeId;
     private final Set<String> nodeIds = new HashSet<>();
 
-    DFSNodesConnectedTo(Graph graph, String fromNodeId) {
+    DFSNodesConnectedTo(TraversalInput input, Graph graph) {
         this.graph = graph;
-        this.fromNodeId = fromNodeId;
+        this.fromNodeId = input.getFromNodeId();
     }
 
     @Override

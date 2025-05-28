@@ -3,25 +3,37 @@ package graph.traversalAlgorithms.shortestPath;
 import graph.dataModel.Graph;
 import graph.traversalAlgorithms.*;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
+
+import static graph.traversalAlgorithms.AlgorithmType.*;
+
 public class ShortestPathAlgorithmManager implements AlgorithmManager {
 
-    private final Graph graph;
+    private final AlgorithmManager delegate;
 
-    public ShortestPathAlgorithmManager(Graph graph) {
-        this.graph = graph;
+    private ShortestPathAlgorithmManager(AlgorithmManager algorithmManager) {
+        this.delegate = algorithmManager;
+    }
+
+    public static ShortestPathAlgorithmManager create(Graph graph) {
+        Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
+        supportedAlgorithms.put(DIJKSTRA, Dijkstra::new);
+        supportedAlgorithms.put(BELLMAN_FORD, BellmanFord::new);
+        supportedAlgorithms.put(FLOYD_WARSHALL, FloydWarshall::new);
+
+        return new ShortestPathAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));
     }
 
     @Override
     public TraversalResult runAlgorithm(AlgorithmType algorithmType, TraversalInput input) {
-        String fromNodeId = input.getFromNodeId();
-        String toNodeId = input.getToNodeId();
-        Algorithm algorithm = switch (algorithmType) {
-            case DIJKSTRA -> new Dijkstra(fromNodeId, toNodeId, graph);
-            case BELLMAN_FORD -> new BellmanFord(fromNodeId, toNodeId, graph);
-            case FLOYD_WARSHALL -> new FloydWarshall(graph);
-            default -> null;
-        };
-        assert algorithm != null;
-        return algorithm.performAlgorithm();
+        return delegate.runAlgorithm(algorithmType, input);
+    }
+
+    @Override
+    public Set<AlgorithmType> getSupportedAlgorithms() {
+        return delegate.getSupportedAlgorithms();
     }
 }

@@ -4,6 +4,7 @@ import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
@@ -16,7 +17,7 @@ class DFSGraphConnector implements Algorithm {
     private final Graph graph;
     private final List<Node> nodes;
 
-    DFSGraphConnector(Graph graph) {
+    DFSGraphConnector(TraversalInput input, Graph graph) {
         this.graph = graph;
         this.nodes = graph.getNodes();
     }
@@ -27,7 +28,7 @@ class DFSGraphConnector implements Algorithm {
         return new TraversalResultBuilder().setConditionResult(result).build();
     }
 
-    public boolean isConnected(String currentNodeId, Set<String> visited) {
+    private boolean isConnected(String currentNodeId, Set<String> visited) {
         visited.add(currentNodeId);
 
         if (visited.size() == this.nodes.size()) {

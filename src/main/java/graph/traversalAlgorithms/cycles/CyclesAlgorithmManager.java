@@ -3,28 +3,37 @@ package graph.traversalAlgorithms.cycles;
 import graph.dataModel.Graph;
 import graph.traversalAlgorithms.*;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
+
+import static graph.traversalAlgorithms.AlgorithmType.BELLMAN_FORD_CYCLE;
+import static graph.traversalAlgorithms.AlgorithmType.DFS_HAS_CYCLE;
+
 public class CyclesAlgorithmManager implements AlgorithmManager {
 
-    private final Graph graph;
+    private final AlgorithmManager delegate;
 
-    public CyclesAlgorithmManager(Graph graph) {
-        this.graph = graph;
+    private CyclesAlgorithmManager(AlgorithmManager algorithmManager) {
+        this.delegate = algorithmManager;
+    }
+
+    public static CyclesAlgorithmManager create(Graph graph) {
+        Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
+        supportedAlgorithms.put(BELLMAN_FORD_CYCLE, BellmanFordCycle::new);
+        supportedAlgorithms.put(DFS_HAS_CYCLE, DFSHasCycle::new);
+
+        return new CyclesAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));
     }
 
     @Override
     public TraversalResult runAlgorithm(AlgorithmType algorithmType, TraversalInput input) {
-        return switch (algorithmType) {
-            case BELLMAN_FORD_CYCLE -> negativeCycleDetection(input);
-            case DFS_HAS_CYCLE -> cycleDetection(input);
-            default -> throw new IllegalArgumentException("Unsupported algorithm type: " + algorithmType);
-        };
+        return delegate.runAlgorithm(algorithmType, input);
     }
 
-    private TraversalResult cycleDetection(TraversalInput input) {
-        return new DFSHasCycle(graph).performAlgorithm();
-    }
-
-    private TraversalResult negativeCycleDetection(TraversalInput input) {
-        return new BellmanFordCycle(graph).performAlgorithm();
+    @Override
+    public Set<AlgorithmType> getSupportedAlgorithms() {
+        return delegate.getSupportedAlgorithms();
     }
 }

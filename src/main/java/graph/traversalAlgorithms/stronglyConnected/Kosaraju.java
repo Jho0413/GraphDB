@@ -4,6 +4,7 @@ import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
@@ -18,7 +19,7 @@ class Kosaraju implements Algorithm {
     private int counter = 1;
     private final Stack<String> stack = new Stack<>();
 
-    Kosaraju(Graph graph) {
+    Kosaraju(TraversalInput input, Graph graph) {
         this.graph = graph;
         this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
     }
