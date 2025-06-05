@@ -4,7 +4,7 @@ import graph.traversalAlgorithms.TraversalAlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 
 import java.util.List;
-import java.util.Set;
+
 
 import static graph.traversalAlgorithms.AlgorithmType.*;
 
@@ -30,7 +30,7 @@ public class GraphCycleAnalyser {
         return !hasCycle();
     }
 
-    public List<Set<String>> getAllCycles() {
+    public List<List<String>> getAllCycles() {
         TraversalResult result = algorithmManager.runAlgorithm(JOHNSONS, null);
         return result.getCycles();
     }
