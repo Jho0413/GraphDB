@@ -13,4 +13,6 @@ public enum AlgorithmType {
     KOSARAJU,
     TARJAN,
     BFS_COMMON_NODES_BY_DEPTH,
+    TOPOLOGICAL_SORT,
+    JOHNSONS,
 }

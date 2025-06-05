@@ -1,4 +1,4 @@
-package graph.traversalAlgorithms.cycles;
+package graph.traversalAlgorithms.structure;
 
 import graph.dataModel.Graph;
 import graph.traversalAlgorithms.*;
@@ -8,23 +8,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
-import static graph.traversalAlgorithms.AlgorithmType.*;
+import static graph.traversalAlgorithms.AlgorithmType.TOPOLOGICAL_SORT;
 
-public class CyclesAlgorithmManager implements AlgorithmManager {
+public class StructureAlgorithmManager implements AlgorithmManager {
 
     private final AlgorithmManager delegate;
 
-    private CyclesAlgorithmManager(AlgorithmManager algorithmManager) {
+    private StructureAlgorithmManager(AlgorithmManager algorithmManager) {
         this.delegate = algorithmManager;
     }
 
-    public static CyclesAlgorithmManager create(Graph graph) {
+    public static StructureAlgorithmManager create(Graph graph) {
         Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
-        supportedAlgorithms.put(BELLMAN_FORD_CYCLE, BellmanFordCycle::new);
-        supportedAlgorithms.put(DFS_HAS_CYCLE, DFSHasCycle::new);
-        supportedAlgorithms.put(JOHNSONS, Johnsons::new);
-
-        return new CyclesAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));
+        supportedAlgorithms.put(TOPOLOGICAL_SORT, TopologicalSort::new);
+        return new StructureAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));
     }
 
     @Override

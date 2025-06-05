@@ -6,8 +6,7 @@ import graph.traversalAlgorithms.TraversalResult;
 import java.util.List;
 import java.util.Set;
 
-import static graph.traversalAlgorithms.AlgorithmType.BELLMAN_FORD_CYCLE;
-import static graph.traversalAlgorithms.AlgorithmType.DFS_HAS_CYCLE;
+import static graph.traversalAlgorithms.AlgorithmType.*;
 
 public class GraphCycleAnalyser {
 
@@ -32,6 +31,7 @@ public class GraphCycleAnalyser {
     }
 
     public List<Set<String>> getAllCycles() {
-        return List.of();
+        TraversalResult result = algorithmManager.runAlgorithm(JOHNSONS, null);
+        return result.getCycles();
     }
 }

@@ -8,6 +8,7 @@ import graph.traversalAlgorithms.TraversalResult;
 import java.util.Set;
 
 import static graph.traversalAlgorithms.AlgorithmType.FLOYD_WARSHALL;
+import static graph.traversalAlgorithms.AlgorithmType.TOPOLOGICAL_SORT;
 
 public class GraphStructureAnalyser {
 
@@ -60,7 +61,12 @@ public class GraphStructureAnalyser {
         return diameter;
     }
 
-    public Set<String> topologicalSort() {
-        return Set.of();
+    public Set<String> topologicalSort() throws Exception {
+        TraversalResult result = algorithmManager.runAlgorithm(TOPOLOGICAL_SORT, null);
+        Exception exception = result.getException();
+        if (exception != null) {
+            throw exception;
+        }
+        return result.getNodeIds();
     }
 }

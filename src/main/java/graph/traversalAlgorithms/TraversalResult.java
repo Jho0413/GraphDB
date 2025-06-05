@@ -16,6 +16,7 @@ public class TraversalResult {
     private final Map<Integer, Set<String>> components;
     private final Exception exception;
     private final double[][] allShortestDistances;
+    private final List<List<String>> cycles;
 
     private TraversalResult(TraversalResultBuilder builder) {
         this.allPaths = builder.allPaths;
@@ -25,6 +26,7 @@ public class TraversalResult {
         this.components = builder.components;
         this.exception = builder.exception;
         this.allShortestDistances = builder.allShortestDistances;
+        this.cycles = builder.cycles;
     }
 
     public List<Path> getAllPaths() {
@@ -51,6 +53,8 @@ public class TraversalResult {
 
     public double[][] getAllShortestDistances() { return this.allShortestDistances; }
 
+    public List<List<String>> getCycles() { return this.cycles; }
+
     public static class TraversalResultBuilder {
         private List<Path> allPaths;
         private Path path;
@@ -59,6 +63,7 @@ public class TraversalResult {
         private Map<Integer, Set<String>> components;
         private Exception exception;
         private double[][] allShortestDistances;
+        private List<List<String>> cycles;
 
         public TraversalResultBuilder() {}
 
@@ -94,6 +99,11 @@ public class TraversalResult {
 
         public TraversalResultBuilder setAllShortestDistances(double[][] allShortestDistances) {
             this.allShortestDistances = allShortestDistances;
+            return this;
+        }
+
+        public TraversalResultBuilder setCycles(List<List<String>> cycles) {
+            this.cycles = cycles;
             return this;
         }
 
