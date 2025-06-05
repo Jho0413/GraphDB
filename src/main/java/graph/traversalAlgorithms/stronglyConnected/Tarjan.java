@@ -1,9 +1,9 @@
 package graph.traversalAlgorithms.stronglyConnected;
 
 import graph.dataModel.Edge;
-import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 class Tarjan implements Algorithm {
 
-    private final Graph graph;
+    private final GraphTraversalView graph;
     // keeps track of currently visited nodes that have not been classified into an SCC
     private final Stack<String> stack = new Stack<>();
     // set to track which ids are on the stack
@@ -29,7 +29,7 @@ class Tarjan implements Algorithm {
     private int nodeIdCounter = 1;
     private final Set<String> notVisited;
 
-    Tarjan(TraversalInput input, Graph graph) {
+    Tarjan(TraversalInput input, GraphTraversalView graph) {
         this.graph = graph;
         this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
     }

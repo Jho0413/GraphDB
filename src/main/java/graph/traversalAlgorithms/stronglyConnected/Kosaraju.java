@@ -4,6 +4,7 @@ import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
@@ -13,13 +14,13 @@ import java.util.stream.Collectors;
 
 class Kosaraju implements Algorithm {
 
-    private final Graph graph;
+    private final GraphTraversalView graph;
     private final Set<String> notVisited;
     private final Map<Integer, Set<String>> components = new HashMap<>();
     private int counter = 1;
     private final Stack<String> stack = new Stack<>();
 
-    Kosaraju(TraversalInput input, Graph graph) {
+    Kosaraju(TraversalInput input, GraphTraversalView graph) {
         this.graph = graph;
         this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
     }

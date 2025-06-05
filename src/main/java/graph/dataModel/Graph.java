@@ -4,13 +4,14 @@ import graph.operations.GraphOperations;
 import graph.operations.GraphService;
 import graph.storage.GraphStorage;
 import graph.storage.InMemoryGraphStorage;
+import graph.traversalAlgorithms.GraphTraversalView;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class Graph implements GraphOperations {
+public class Graph implements GraphOperations, GraphTraversalView {
 
     private final GraphOperations service;
     private final String id;

@@ -19,8 +19,8 @@ public class StronglyConnectedAlgorithmManager implements AlgorithmManager {
         this.delegate = algorithmManager;
     }
 
-    public static StronglyConnectedAlgorithmManager create(Graph graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
+    public static StronglyConnectedAlgorithmManager create(GraphTraversalView graph) {
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(KOSARAJU, Kosaraju::new);
         supportedAlgorithms.put(TARJAN, Tarjan::new);
 
