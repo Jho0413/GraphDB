@@ -30,7 +30,7 @@ public class TraversalInput {
         private String fromNodeId;
         private String toNodeId;
         private Integer maxLength;
-        private Boolean condition;
+        private Boolean condition = false;
 
         public TraversalInputBuilder() {}
         public TraversalInputBuilder setFromNodeId(String fromNodeId) {

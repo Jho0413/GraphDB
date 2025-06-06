@@ -13,7 +13,7 @@ public class ConnectivityAlgorithmManager implements AlgorithmManager {
 
     private final AlgorithmManager delegate;
 
-    private ConnectivityAlgorithmManager(AlgorithmManager algorithmManager) {
+    protected ConnectivityAlgorithmManager(AlgorithmManager algorithmManager) {
         this.delegate = algorithmManager;
     }
 
@@ -21,7 +21,7 @@ public class ConnectivityAlgorithmManager implements AlgorithmManager {
         Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(DFS_NODES_CONNECTED, DFSNodesConnectedTo::new);
         supportedAlgorithms.put(DFS_NODES_CONNECTED_TO, DFSNodesConnector::new);
-        supportedAlgorithms.put(DFS_GRAPH_CONNECTED, DFSGraphConnector::new);
+        supportedAlgorithms.put(DFS_REACHABLE_NODES, DFSGraphConnector::new);
         supportedAlgorithms.put(BFS_COMMON_NODES_BY_DEPTH, BFSCommonNodesByDepth::new);
 
         return new ConnectivityAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));

@@ -8,6 +8,7 @@ import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,7 +36,7 @@ class DFSAllPaths implements Algorithm {
     private void findAllPathsHelper(String fromNodeId, String toNodeId, List<String> path, Integer maxLength) {
         path.add(fromNodeId);
         if (fromNodeId.equals(toNodeId)) {
-            paths.add(new Path(path));
+            paths.add(new Path(new ArrayList<>(path)));
         } else {
             if (maxLength == null || maxLength > 0) {
                 List<Edge> edgesFromNode = graph.getEdgesFromNode(fromNodeId);

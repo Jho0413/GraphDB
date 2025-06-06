@@ -8,11 +8,15 @@ import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
+import java.util.HashSet;
+import java.util.Set;
+
 class DFSNodesConnector implements Algorithm {
 
     private final String fromNodeId;
     private final String toNodeId;
     private final GraphTraversalView graph;
+    private final Set<String> visited = new HashSet<>();
 
     DFSNodesConnector(TraversalInput input, GraphTraversalView graph) {
         this.fromNodeId = input.getFromNodeId();
@@ -29,8 +33,12 @@ class DFSNodesConnector implements Algorithm {
     }
 
     private boolean isConnected(String currentNodeId) {
+        visited.add(currentNodeId);
         for (Edge edge : graph.getEdgesFromNode(currentNodeId)) {
             String destination = edge.getDestination();
+            if (visited.contains(destination)) {
+                continue;
+            }
             if (destination.equals(toNodeId) || isConnected(destination)) {
                 return true;
             }

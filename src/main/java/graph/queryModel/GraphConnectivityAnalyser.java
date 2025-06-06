@@ -18,8 +18,9 @@ public class GraphConnectivityAnalyser {
         this.traversalAlgorithmManager = traversalAlgorithmManager;
     }
 
-    public boolean graphIsConnected() {
-        TraversalResult result = traversalAlgorithmManager.runAlgorithm(DFS_GRAPH_CONNECTED, null);
+    public boolean allNodesAreReachableFromNodeId(String nodeId) {
+        TraversalInput input = new TraversalInputBuilder().setFromNodeId(nodeId).build();
+        TraversalResult result = traversalAlgorithmManager.runAlgorithm(DFS_REACHABLE_NODES, input);
         return result.getConditionResult();
     }
 
