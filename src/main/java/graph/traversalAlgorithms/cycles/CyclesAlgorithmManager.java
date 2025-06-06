@@ -1,6 +1,5 @@
 package graph.traversalAlgorithms.cycles;
 
-import graph.dataModel.Graph;
 import graph.traversalAlgorithms.*;
 
 import java.util.HashMap;
@@ -18,8 +17,8 @@ public class CyclesAlgorithmManager implements AlgorithmManager {
         this.delegate = algorithmManager;
     }
 
-    public static CyclesAlgorithmManager create(Graph graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
+    public static CyclesAlgorithmManager create(GraphTraversalView graph) {
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(BELLMAN_FORD_CYCLE, BellmanFordCycle::new);
         supportedAlgorithms.put(DFS_HAS_CYCLE, DFSHasCycle::new);
         supportedAlgorithms.put(JOHNSONS, Johnsons::new);

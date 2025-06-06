@@ -1,10 +1,10 @@
 package graph.traversalAlgorithms.shortestPath;
 
 import graph.dataModel.Edge;
-import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.exceptions.NegativeCycleException;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
@@ -13,11 +13,11 @@ import java.util.List;
 
 class FloydWarshall implements Algorithm {
     // pre-condition: no negative cycles
-    private final Graph graph;
+    private final GraphTraversalView graph;
     private final List<Node> nodes;
     private final double[][] store;
 
-    FloydWarshall(TraversalInput input, Graph graph) {
+    FloydWarshall(TraversalInput input, GraphTraversalView graph) {
         this.graph = graph;
         this.nodes = graph.getNodes();
         this.store = new double[nodes.size()][nodes.size()];

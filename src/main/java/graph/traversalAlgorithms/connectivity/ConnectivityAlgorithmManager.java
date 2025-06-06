@@ -1,6 +1,5 @@
 package graph.traversalAlgorithms.connectivity;
 
-import graph.dataModel.Graph;
 import graph.traversalAlgorithms.*;
 
 import java.util.HashMap;
@@ -18,8 +17,8 @@ public class ConnectivityAlgorithmManager implements AlgorithmManager {
         this.delegate = algorithmManager;
     }
 
-    public static ConnectivityAlgorithmManager create(Graph graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
+    public static ConnectivityAlgorithmManager create(GraphTraversalView graph) {
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(DFS_NODES_CONNECTED, DFSNodesConnectedTo::new);
         supportedAlgorithms.put(DFS_NODES_CONNECTED_TO, DFSNodesConnector::new);
         supportedAlgorithms.put(DFS_GRAPH_CONNECTED, DFSGraphConnector::new);

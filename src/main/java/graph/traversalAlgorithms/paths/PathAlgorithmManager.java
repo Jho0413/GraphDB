@@ -1,6 +1,5 @@
 package graph.traversalAlgorithms.paths;
 
-import graph.dataModel.Graph;
 import graph.traversalAlgorithms.*;
 
 import java.util.HashMap;
@@ -18,8 +17,8 @@ public class PathAlgorithmManager implements AlgorithmManager {
         this.delegate = algorithmManager;
     }
 
-    public static PathAlgorithmManager create(Graph graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
+    public static PathAlgorithmManager create(GraphTraversalView graph) {
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(DFS_ALL_PATHS, DFSAllPaths::new);
 
         return new PathAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));

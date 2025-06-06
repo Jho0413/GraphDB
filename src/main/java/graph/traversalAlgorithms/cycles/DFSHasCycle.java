@@ -1,9 +1,9 @@
 package graph.traversalAlgorithms.cycles;
 
 import graph.dataModel.Edge;
-import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
@@ -13,11 +13,11 @@ import java.util.Set;
 
 class DFSHasCycle implements Algorithm {
 
-    private final Graph graph;
+    private final GraphTraversalView graph;
     private final Set<String> visited = new HashSet<>();
     private final Set<String> inStack = new HashSet<>();
 
-    DFSHasCycle(TraversalInput input, Graph graph) {
+    DFSHasCycle(TraversalInput input, GraphTraversalView graph) {
         this.graph = graph;
     }
 

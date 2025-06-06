@@ -1,10 +1,10 @@
 package graph.traversalAlgorithms.structure;
 
 import graph.dataModel.Edge;
-import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.exceptions.CycleFoundException;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 
@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 
 class TopologicalSort implements Algorithm {
 
-    private final Graph graph;
+    private final GraphTraversalView graph;
     private final Set<String> notVisited;
     private final List<String> order = new LinkedList<String>();
 
-    TopologicalSort(TraversalInput input, Graph graph) {
+    TopologicalSort(TraversalInput input, GraphTraversalView graph) {
         this.graph = graph;
         this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
     }

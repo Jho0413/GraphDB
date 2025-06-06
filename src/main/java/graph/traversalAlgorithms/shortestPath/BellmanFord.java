@@ -1,16 +1,16 @@
 package graph.traversalAlgorithms.shortestPath;
 
 import graph.dataModel.Edge;
-import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.exceptions.NegativeCycleException;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 
 class BellmanFord extends ShortestPathAlgorithm<BellmanFordNodeStats> {
     // pre-condition: no negative cycles
-    BellmanFord(TraversalInput input, Graph graph) {
+    BellmanFord(TraversalInput input, GraphTraversalView graph) {
         super(input.getFromNodeId(), input.getToNodeId(), graph);
         for (Node node : graph.getNodes()) {
             String currentNodeId = node.getId();

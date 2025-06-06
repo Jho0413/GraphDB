@@ -3,6 +3,8 @@ package graph;
 import graph.WAL.WALReader;
 import graph.dataModel.Graph;
 import graph.dataModel.RecoveryManager;
+import graph.exceptions.GraphNotFoundException;
+import graph.queryModel.GraphQueryClient;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -48,5 +50,13 @@ public class GraphDB {
 
     public Graph deleteGraph(String id) {
         return graphs.remove(id);
+    }
+
+    public GraphQueryClient createQueryClient(String graphId) throws GraphNotFoundException {
+        Graph graph = graphs.get(graphId);
+        if (graph == null) {
+            throw new GraphNotFoundException(graphId);
+        }
+        return GraphQueryClient.createClient(graph);
     }
 }

@@ -12,10 +12,10 @@ import java.util.stream.Collectors;
 
 class FilteredGraph implements GraphTraversalView {
 
-    private final Graph graph;
+    private final GraphTraversalView graph;
     private final Set<String> filteredNodes = new HashSet<String>();
 
-    FilteredGraph(Graph graph) {
+    FilteredGraph(GraphTraversalView graph) {
         this.graph = graph;
     }
 
@@ -46,5 +46,20 @@ class FilteredGraph implements GraphTraversalView {
     @Override
     public List<String> getNodesIdWithEdgeToNode(String nodeId) {
         return List.of();
+    }
+
+    @Override
+    public Edge getEdgeByNodeIds(String source, String destination) {
+        return null;
+    }
+
+    @Override
+    public Node getNodeById(String id) {
+        return null;
+    }
+
+    @Override
+    public Edge getEdgeById(String id) {
+        return null;
     }
 }

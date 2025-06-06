@@ -1,9 +1,9 @@
 package graph.traversalAlgorithms.connectivity;
 
 import graph.dataModel.Edge;
-import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
@@ -14,10 +14,10 @@ import java.util.Set;
 
 class DFSGraphConnector implements Algorithm {
 
-    private final Graph graph;
+    private final GraphTraversalView graph;
     private final List<Node> nodes;
 
-    DFSGraphConnector(TraversalInput input, Graph graph) {
+    DFSGraphConnector(TraversalInput input, GraphTraversalView graph) {
         this.graph = graph;
         this.nodes = graph.getNodes();
     }

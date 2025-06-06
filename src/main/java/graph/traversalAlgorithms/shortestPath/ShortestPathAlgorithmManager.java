@@ -1,6 +1,5 @@
 package graph.traversalAlgorithms.shortestPath;
 
-import graph.dataModel.Graph;
 import graph.traversalAlgorithms.*;
 
 import java.util.HashMap;
@@ -18,8 +17,8 @@ public class ShortestPathAlgorithmManager implements AlgorithmManager {
         this.delegate = algorithmManager;
     }
 
-    public static ShortestPathAlgorithmManager create(Graph graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
+    public static ShortestPathAlgorithmManager create(GraphTraversalView graph) {
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(DIJKSTRA, Dijkstra::new);
         supportedAlgorithms.put(BELLMAN_FORD, BellmanFord::new);
         supportedAlgorithms.put(FLOYD_WARSHALL, FloydWarshall::new);

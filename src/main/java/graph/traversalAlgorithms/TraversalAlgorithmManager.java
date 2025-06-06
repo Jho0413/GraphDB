@@ -1,6 +1,5 @@
 package graph.traversalAlgorithms;
 
-import graph.dataModel.Graph;
 import graph.traversalAlgorithms.connectivity.ConnectivityAlgorithmManager;
 import graph.traversalAlgorithms.cycles.CyclesAlgorithmManager;
 import graph.traversalAlgorithms.paths.PathAlgorithmManager;
@@ -20,7 +19,7 @@ public class TraversalAlgorithmManager implements AlgorithmManager {
         this.algorithmManagerMap = algorithmManagerMap;
     }
 
-    public static TraversalAlgorithmManager createManager(Graph graph) {
+    public static TraversalAlgorithmManager createManager(GraphTraversalView graph) {
         List<AlgorithmManager> algorithmManagers = List.of(
                 ShortestPathAlgorithmManager.create(graph),
                 StronglyConnectedAlgorithmManager.create(graph),

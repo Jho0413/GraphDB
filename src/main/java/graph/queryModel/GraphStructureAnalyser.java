@@ -1,7 +1,7 @@
 package graph.queryModel;
 
-import graph.dataModel.Graph;
 import graph.exceptions.NodeNotFoundException;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalAlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 
@@ -13,9 +13,9 @@ import static graph.traversalAlgorithms.AlgorithmType.TOPOLOGICAL_SORT;
 public class GraphStructureAnalyser {
 
     private final TraversalAlgorithmManager algorithmManager;
-    private final Graph graph;
+    private final GraphTraversalView graph;
 
-    public GraphStructureAnalyser(TraversalAlgorithmManager algorithmManager, Graph graph) {
+    public GraphStructureAnalyser(TraversalAlgorithmManager algorithmManager, GraphTraversalView graph) {
         this.algorithmManager = algorithmManager;
         this.graph = graph;
     }

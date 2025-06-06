@@ -1,9 +1,9 @@
 package graph.traversalAlgorithms.paths;
 
 import graph.dataModel.Edge;
-import graph.dataModel.Graph;
 import graph.queryModel.Path;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
@@ -13,13 +13,13 @@ import java.util.List;
 
 class DFSAllPaths implements Algorithm {
 
-    private final Graph graph;
+    private final GraphTraversalView graph;
     private final String fromNodeId;
     private final String toNodeId;
     private final Integer maxLength;
     private final List<Path> paths = new LinkedList<>();
 
-    DFSAllPaths(TraversalInput input, Graph graph) {
+    DFSAllPaths(TraversalInput input, GraphTraversalView graph) {
         this.graph = graph;
         this.fromNodeId = input.getFromNodeId();
         this.toNodeId = input.getToNodeId();

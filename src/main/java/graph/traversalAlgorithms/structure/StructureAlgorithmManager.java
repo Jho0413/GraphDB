@@ -1,6 +1,5 @@
 package graph.traversalAlgorithms.structure;
 
-import graph.dataModel.Graph;
 import graph.traversalAlgorithms.*;
 
 import java.util.HashMap;
@@ -18,8 +17,8 @@ public class StructureAlgorithmManager implements AlgorithmManager {
         this.delegate = algorithmManager;
     }
 
-    public static StructureAlgorithmManager create(Graph graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, Graph, Algorithm>> supportedAlgorithms = new HashMap<>();
+    public static StructureAlgorithmManager create(GraphTraversalView graph) {
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(TOPOLOGICAL_SORT, TopologicalSort::new);
         return new StructureAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));
     }

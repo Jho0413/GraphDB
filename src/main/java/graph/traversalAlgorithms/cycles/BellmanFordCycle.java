@@ -1,9 +1,9 @@
 package graph.traversalAlgorithms.cycles;
 
 import graph.dataModel.Edge;
-import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.traversalAlgorithms.Algorithm;
+import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
@@ -13,10 +13,10 @@ import java.util.Map;
 
 class BellmanFordCycle implements Algorithm {
 
-    private final Graph graph;
+    private final GraphTraversalView graph;
     protected final Map<String, Double> store = new HashMap<>();
 
-    BellmanFordCycle(TraversalInput input, Graph graph) {
+    BellmanFordCycle(TraversalInput input, GraphTraversalView graph) {
         this.graph = graph;
         for (Node node : graph.getNodes()) {
             String currentNodeId = node.getId();
