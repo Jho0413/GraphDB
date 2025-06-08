@@ -33,7 +33,7 @@ class TopologicalSort implements Algorithm {
             }
         }
 
-        return new TraversalResult.TraversalResultBuilder().setNodeIds(new HashSet<>(order)).build();
+        return new TraversalResult.TraversalResultBuilder().setOrderedNodeIds(new LinkedList<>(order)).build();
     }
 
     private void performSort(String nodeId, Set<String> onPath) {

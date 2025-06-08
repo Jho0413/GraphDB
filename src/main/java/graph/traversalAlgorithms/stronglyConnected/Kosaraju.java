@@ -52,16 +52,8 @@ class Kosaraju implements Algorithm {
             if (!visited.contains(nextNode)) {
                 // new strongly component created
                 Set<String> componentSet = new HashSet<>();
-                componentSet.add(nextNode);
                 components.put(counter, componentSet);
-
-                // add to visited
-                visited.add(nextNode);
-
-                // reversed edges
-                for (String nodeId : graph.getNodesIdWithEdgeToNode(nextNode)) {
-                    secondDfsHelper(nodeId, visited);
-                }
+                secondDfsHelper(nextNode, visited);
                 counter++;
             }
         }
