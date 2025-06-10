@@ -3,8 +3,6 @@ package graph.traversalAlgorithms.shortestPath;
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
 import graph.exceptions.NegativeWeightException;
-import graph.helper.Pair;
-import graph.queryModel.Path;
 import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
@@ -14,19 +12,20 @@ import java.util.*;
 
 class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
     // pre-condition: all positive edges
-    private final Queue<Pair<String, Double>> queue;
+    private final Queue<DijkstraEntry> queue;
 
     Dijkstra(TraversalInput input, GraphTraversalView graph) {
         super(input.getFromNodeId(), input.getToNodeId(), graph);
         List<Node> nodes = graph.getNodes();
         int length = nodes.size();
 
-        queue = new PriorityQueue<Pair<String, Double>>(length);
+        queue = new PriorityQueue<DijkstraEntry>(length);
 
         for (Node node : nodes) {
             String nodeId = node.getId();
-            store.put(nodeId, new DijkstraNodeStats(null, Double.POSITIVE_INFINITY, false));
-            queue.add(new Pair<>(nodeId, nodeId.equals(this.fromNodeId) ? 0 : Double.POSITIVE_INFINITY));
+            boolean isStart = nodeId.equals(fromNodeId);
+            store.put(nodeId, new DijkstraNodeStats(null, isStart ? 0.0 : Double.POSITIVE_INFINITY, false));
+            queue.add(new DijkstraEntry(nodeId, isStart ? 0.0 : Double.POSITIVE_INFINITY));
         }
     }
 
@@ -36,9 +35,12 @@ class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
         while (!store.get(toNodeId).getInTree() && !queue.isEmpty()) {
 
             // obtain the node with the highest priority (minimum distance)
-            Pair<String, Double> sourcePair = queue.poll();
-            String source = sourcePair.getFirst();
+            DijkstraEntry sourceEntry = queue.poll();
+            String source = sourceEntry.nodeId();
 
+            DijkstraNodeStats sourceStats = store.get(source);
+            // already in tree then skip
+            if (sourceStats.getInTree()) continue;
             // add source into tree
             store.get(source).setInTree();
 
@@ -54,19 +56,23 @@ class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
                         return new TraversalResultBuilder().setException(new NegativeWeightException()).build();
                     }
                     double alternativePath = store.get(source).getDistance() + weight;
-
                     // change priority and parent if there is a shorter path to the destination
                     if (alternativePath < nextNodeStats.getDistance()) {
-                        queue.removeIf(e -> e.getFirst().equals(destination));
-                        queue.add(new Pair<>(destination, alternativePath));
                         nextNodeStats.setDistance(alternativePath);
                         nextNodeStats.setParent(source);
+                        queue.add(new DijkstraEntry(destination, alternativePath));
                     }
                 }
             }
         }
-
-        Path path = store.get(toNodeId).getParent() == null ? new Path(List.of()) : constructPath();
-        return new TraversalResultBuilder().setPath(path).build();
+        return new TraversalResultBuilder().setPath(constructPath()).build();
     }
+
+    private record DijkstraEntry(String nodeId, double distance) implements Comparable<DijkstraEntry> {
+        @Override
+            public int compareTo(DijkstraEntry other) {
+                return Double.compare(this.distance, other.distance);
+            }
+        }
 }
+

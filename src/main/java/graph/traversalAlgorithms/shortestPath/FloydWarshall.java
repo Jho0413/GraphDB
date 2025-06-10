@@ -2,6 +2,7 @@ package graph.traversalAlgorithms.shortestPath;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
+import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NegativeCycleException;
 import graph.traversalAlgorithms.Algorithm;
 import graph.traversalAlgorithms.GraphTraversalView;
@@ -30,8 +31,12 @@ class FloydWarshall implements Algorithm {
                 if (i == j) {
                     store[i][j] = 0;
                 } else {
-                    Edge edge = graph.getEdgeByNodeIds(this.nodes.get(i).getId(), this.nodes.get(j).getId());
-                    store[i][j] = edge == null ? Double.POSITIVE_INFINITY : edge.getWeight();
+                    try {
+                        Edge edge = graph.getEdgeByNodeIds(this.nodes.get(i).getId(), this.nodes.get(j).getId());
+                        store[i][j] = edge.getWeight();
+                    } catch (EdgeNotFoundException e) {
+                        store[i][j] = Double.POSITIVE_INFINITY;
+                    }
                 }
             }
         }
