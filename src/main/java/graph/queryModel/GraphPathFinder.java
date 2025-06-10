@@ -1,6 +1,7 @@
 package graph.queryModel;
 
-import graph.traversalAlgorithms.TraversalAlgorithmManager;
+import graph.exceptions.NodeNotFoundException;
+import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalInput.TraversalInputBuilder;
 import graph.traversalAlgorithms.TraversalResult;
@@ -11,18 +12,18 @@ import static graph.traversalAlgorithms.AlgorithmType.*;
 
 public class GraphPathFinder {
 
-    private final TraversalAlgorithmManager algorithmManager;
+    private final AlgorithmManager algorithmManager;
+    private final GraphQueryValidator validator;
 
-    public GraphPathFinder(TraversalAlgorithmManager algorithmManager) {
+    public GraphPathFinder(AlgorithmManager algorithmManager, GraphQueryValidator validator) {
         this.algorithmManager = algorithmManager;
+        this.validator = validator;
     }
 
     // returns all paths with max length of n (edges) from source to destination (length 0 includes itself)
     public List<Path> findPathsWithMaxLength(String fromNodeId, String toNodeId, Integer maxLength) {
-        if (maxLength != null && maxLength < 0) {
-            throw new IllegalArgumentException("Max length must be greater than or equal to 0");
-        }
-
+        validator.testNonNegative(maxLength);
+        validateNodes(fromNodeId, toNodeId);
         TraversalInput input = new TraversalInputBuilder()
                 .setFromNodeId(fromNodeId)
                 .setToNodeId(toNodeId)
@@ -37,6 +38,7 @@ public class GraphPathFinder {
     }
 
     public Path findShortestPath(String fromNodeId, String toNodeId) throws Exception {
+        validateNodes(fromNodeId, toNodeId);
         if (fromNodeId.equals(toNodeId)) {
             return new Path(List.of(fromNodeId));
         }
@@ -56,5 +58,10 @@ public class GraphPathFinder {
             throw exception;
         }
         return result.getAllShortestDistances();
+    }
+
+    private void validateNodes(String fromNodeId, String toNodeId) throws NodeNotFoundException {
+        validator.checkNodeExists(fromNodeId);
+        validator.checkNodeExists(toNodeId);
     }
 }

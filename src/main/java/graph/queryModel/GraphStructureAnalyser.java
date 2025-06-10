@@ -1,8 +1,8 @@
 package graph.queryModel;
 
 import graph.exceptions.NodeNotFoundException;
+import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.GraphTraversalView;
-import graph.traversalAlgorithms.TraversalAlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 
 import java.util.Set;
@@ -12,10 +12,10 @@ import static graph.traversalAlgorithms.AlgorithmType.TOPOLOGICAL_SORT;
 
 public class GraphStructureAnalyser {
 
-    private final TraversalAlgorithmManager algorithmManager;
+    private final AlgorithmManager algorithmManager;
     private final GraphTraversalView graph;
 
-    public GraphStructureAnalyser(TraversalAlgorithmManager algorithmManager, GraphTraversalView graph) {
+    public GraphStructureAnalyser(AlgorithmManager algorithmManager, GraphTraversalView graph) {
         this.algorithmManager = algorithmManager;
         this.graph = graph;
     }
