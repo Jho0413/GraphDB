@@ -68,6 +68,8 @@ class Johnsons implements Algorithm {
                 foundCycle = true;
             } else if (!blockedSet.contains(nextNode)) {
                 foundCycle |= exploreNode(startNode, nextNode, SCC, stack);
+            } else {
+                blockedMap.computeIfAbsent(nextNode, k -> new HashSet<>()).add(currentNode);
             }
         }
 
@@ -77,10 +79,7 @@ class Johnsons implements Algorithm {
             for (Edge edge : filteredGraph.getEdgesFromNode(currentNode)) {
                 String nextNode = edge.getDestination();
                 if (SCC.contains(nextNode)) {
-                    if (!blockedMap.containsKey(currentNode)) {
-                        blockedMap.put(currentNode, new HashSet<>());
-                    }
-                    blockedMap.get(currentNode).add(nextNode);
+                    blockedMap.computeIfAbsent(nextNode, k -> new HashSet<>()).add(currentNode);
                 }
             }
         }

@@ -1,7 +1,6 @@
 package graph.traversalAlgorithms.cycles;
 
 import graph.dataModel.Edge;
-import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.traversalAlgorithms.GraphTraversalView;
 

@@ -41,7 +41,7 @@ class BellmanFordCycle implements Algorithm {
         double weight = edge.getWeight();
         double alternativePath = store.get(sourceId) + weight;
         if (alternativePath < store.get(destinationId)) {
-            store.replace(destinationId, alternativePath);
+            store.put(destinationId, alternativePath);
         }
     }
 

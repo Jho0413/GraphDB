@@ -34,19 +34,21 @@ class DFSHasCycle implements Algorithm {
     }
 
     private boolean dfsHelper(String currentNode) {
-        visited.add(currentNode);
+        if (inStack.contains(currentNode)) {
+            return true;
+        }
+        if (visited.contains(currentNode)) {
+            return false;
+        }
+
         inStack.add(currentNode);
         for (Edge edge : graph.getEdgesFromNode(currentNode)) {
             String destination = edge.getDestination();
-            if (visited.contains(destination)) {
-                return false;
-            }
-            if (inStack.contains(destination)) {
-                return true;
-            }
-            dfsHelper(destination);
+            if (dfsHelper(destination)) return true;
         }
+
         inStack.remove(currentNode);
+        visited.add(currentNode);
         return false;
     }
 }
