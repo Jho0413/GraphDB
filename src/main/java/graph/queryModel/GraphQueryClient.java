@@ -12,10 +12,11 @@ public class GraphQueryClient {
     private final GraphCycleAnalyser cycleAnalyser;
 
     public static GraphQueryClient createClient(GraphTraversalView graph) {
+        GraphQueryValidator validator = new DefaultGraphValidator(graph);
         TraversalAlgorithmManager algorithmManager = TraversalAlgorithmManager.createManager(graph);
-        GraphPathFinder pathFinder = new GraphPathFinder(algorithmManager);
-        GraphConnectivityAnalyser connector = new GraphConnectivityAnalyser(algorithmManager);
-        GraphCommonalityFinder commonalityFinder = new GraphCommonalityFinder(algorithmManager);
+        GraphPathFinder pathFinder = new GraphPathFinder(algorithmManager, validator);
+        GraphConnectivityAnalyser connector = new GraphConnectivityAnalyser(algorithmManager, validator);
+        GraphCommonalityFinder commonalityFinder = new GraphCommonalityFinder(algorithmManager, validator);
         GraphStructureAnalyser structureAnalyser = new GraphStructureAnalyser(algorithmManager, graph);
         GraphCycleAnalyser cycleAnalyser = new GraphCycleAnalyser(algorithmManager);
         return new GraphQueryClient(pathFinder, connector, commonalityFinder, structureAnalyser, cycleAnalyser);

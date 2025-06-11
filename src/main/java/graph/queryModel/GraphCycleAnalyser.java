@@ -1,6 +1,6 @@
 package graph.queryModel;
 
-import graph.traversalAlgorithms.TraversalAlgorithmManager;
+import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 
 import java.util.List;
@@ -10,9 +10,9 @@ import static graph.traversalAlgorithms.AlgorithmType.*;
 
 public class GraphCycleAnalyser {
 
-    private final TraversalAlgorithmManager algorithmManager;
+    private final AlgorithmManager algorithmManager;
 
-    public GraphCycleAnalyser(TraversalAlgorithmManager algorithmManager) {
+    public GraphCycleAnalyser(AlgorithmManager algorithmManager) {
         this.algorithmManager = algorithmManager;
     }
 
