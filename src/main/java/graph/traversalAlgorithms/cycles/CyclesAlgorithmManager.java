@@ -13,7 +13,7 @@ public class CyclesAlgorithmManager implements AlgorithmManager {
 
     private final AlgorithmManager delegate;
 
-    private CyclesAlgorithmManager(AlgorithmManager algorithmManager) {
+    CyclesAlgorithmManager(AlgorithmManager algorithmManager) {
         this.delegate = algorithmManager;
     }
 

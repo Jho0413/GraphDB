@@ -15,7 +15,7 @@ public class StronglyConnectedAlgorithmManager implements AlgorithmManager {
 
     private final AlgorithmManager delegate;
 
-    private StronglyConnectedAlgorithmManager(AlgorithmManager algorithmManager) {
+    StronglyConnectedAlgorithmManager(AlgorithmManager algorithmManager) {
         this.delegate = algorithmManager;
     }
 

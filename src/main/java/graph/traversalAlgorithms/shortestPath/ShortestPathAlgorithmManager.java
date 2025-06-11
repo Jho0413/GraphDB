@@ -13,7 +13,7 @@ public class ShortestPathAlgorithmManager implements AlgorithmManager {
 
     private final AlgorithmManager delegate;
 
-    private ShortestPathAlgorithmManager(AlgorithmManager algorithmManager) {
+    protected ShortestPathAlgorithmManager(AlgorithmManager algorithmManager) {
         this.delegate = algorithmManager;
     }
 

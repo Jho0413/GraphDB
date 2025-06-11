@@ -13,7 +13,7 @@ public class PathAlgorithmManager implements AlgorithmManager {
 
     private final AlgorithmManager delegate;
 
-    private PathAlgorithmManager(AlgorithmManager algorithmManager) {
+    PathAlgorithmManager(AlgorithmManager algorithmManager) {
         this.delegate = algorithmManager;
     }
 

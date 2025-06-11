@@ -13,7 +13,7 @@ public class StructureAlgorithmManager implements AlgorithmManager {
 
     private final AlgorithmManager delegate;
 
-    private StructureAlgorithmManager(AlgorithmManager algorithmManager) {
+    StructureAlgorithmManager(AlgorithmManager algorithmManager) {
         this.delegate = algorithmManager;
     }
 
