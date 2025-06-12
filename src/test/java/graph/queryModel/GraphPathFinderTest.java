@@ -4,6 +4,7 @@ import graph.exceptions.NegativeCycleException;
 import graph.helper.AlgorithmTypeBaseMatcher;
 import graph.helper.TraversalInputBaseMatcher;
 import graph.traversalAlgorithms.AlgorithmManager;
+import graph.traversalAlgorithms.AlgorithmType;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import org.hamcrest.BaseMatcher;
@@ -45,9 +46,17 @@ public class GraphPathFinderTest {
     @Test
     public void ableToFindShortestPathFromANodeToAnother() throws Exception {
         TraversalResult result = new TraversalResult.TraversalResultBuilder().setPath(PATH).build();
-        setUpFindingShortestPath(result);
+        setUpFindingShortestPath(result, BELLMAN_FORD);
 
         assertEquals(PATH, finder.findShortestPath(FROM_NODE_ID, TO_NODE_ID));
+    }
+
+    @Test
+    public void ableToSpecifyWhichShortestPathAlgorithmToUse() throws Exception {
+        TraversalResult result = new TraversalResult.TraversalResultBuilder().setPath(PATH).build();
+        setUpFindingShortestPath(result, DIJKSTRA);
+
+        assertEquals(PATH, finder.findShortestPath(FROM_NODE_ID, TO_NODE_ID, ShortestPathAlgorithm.DIJKSTRA));
     }
 
     @Test
@@ -61,7 +70,7 @@ public class GraphPathFinderTest {
     @Test(expected = NegativeCycleException.class)
     public void exceptionThrownWhenThereIsANegativeCycleWhenFindingShortestPath() throws Exception {
         TraversalResult result = new TraversalResult.TraversalResultBuilder().setException(new NegativeCycleException()).build();
-        setUpFindingShortestPath(result);
+        setUpFindingShortestPath(result, BELLMAN_FORD);
 
         finder.findShortestPath(FROM_NODE_ID, TO_NODE_ID);
     }
@@ -99,14 +108,14 @@ public class GraphPathFinderTest {
         }});
     }
 
-    private void setUpFindingShortestPath(TraversalResult result) {
+    private void setUpFindingShortestPath(TraversalResult result, AlgorithmType algorithmType) {
         BaseMatcher<TraversalInput> baseMatcher = new TraversalInputBaseMatcher.TraversalInputBaseMatcherBuilder()
                 .setFromNodeId(FROM_NODE_ID).setToNodeId(TO_NODE_ID).build();
         context.checking(new Expectations() {{
             exactly(1).of(validator).checkNodeExists(FROM_NODE_ID);
             exactly(1).of(validator).checkNodeExists(TO_NODE_ID);
             exactly(1).of(algorithmManager).runAlgorithm(
-                    with(new AlgorithmTypeBaseMatcher(BELLMAN_FORD)),
+                    with(new AlgorithmTypeBaseMatcher(algorithmType)),
                     with(baseMatcher)
             );
             will(returnValue(result));

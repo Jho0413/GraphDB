@@ -3,6 +3,7 @@ package graph.queryModel;
 import graph.helper.AlgorithmTypeBaseMatcher;
 import graph.helper.TraversalInputBaseMatcher;
 import graph.traversalAlgorithms.AlgorithmManager;
+import graph.traversalAlgorithms.AlgorithmType;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalResult;
 import org.hamcrest.BaseMatcher;
@@ -77,26 +78,32 @@ public class GraphConnectivityAnalyserTest {
 
     @Test
     public void ableToGetStronglyConnectedComponentsFromGraph() {
-        setUpStronglyConnected(COMPONENTS);
+        setUpStronglyConnected(COMPONENTS, TARJAN);
         assertEquals(COMPONENTS, analyser.getStronglyConnectedComponents());
     }
 
     @Test
+    public void ableToSpecifyWhichStronglyConnectedAlgorithmToUse() {
+        setUpStronglyConnected(COMPONENTS, KOSARAJU);
+        assertEquals(COMPONENTS, analyser.getStronglyConnectedComponents(StronglyConnectedAlgorithm.KOSARAJU));
+    }
+
+    @Test
     public void ableToDetermineWhenGraphIsNotStronglyConnected() {
-        setUpStronglyConnected(COMPONENTS);
+        setUpStronglyConnected(COMPONENTS, TARJAN);
         assertFalse(analyser.isStronglyConnected());
     }
 
     @Test
     public void ableToDetermineWhenGraphIsStronglyConnected() {
-        setUpStronglyConnected(Map.of(1, Set.of("1", "2", "3")));
+        setUpStronglyConnected(Map.of(1, Set.of("1", "2", "3")), TARJAN);
         assertTrue(analyser.isStronglyConnected());
     }
 
-    private void setUpStronglyConnected(Map<Integer, Set<String>> components) {
+    private void setUpStronglyConnected(Map<Integer, Set<String>> components, AlgorithmType algorithmType) {
         TraversalResult result = new TraversalResult.TraversalResultBuilder().setComponents(components).build();
         context.checking(new Expectations() {{
-            exactly(1).of(algorithmManager).runAlgorithm(TARJAN, null);
+            exactly(1).of(algorithmManager).runAlgorithm(algorithmType, null);
             will(returnValue(result));
         }});
     }

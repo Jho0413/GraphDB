@@ -38,12 +38,20 @@ public class GraphPathFinder {
     }
 
     public Path findShortestPath(String fromNodeId, String toNodeId) throws Exception {
+        return shortestPathHelper(fromNodeId, toNodeId, ShortestPathAlgorithm.BELLMAN_FORD);
+    }
+
+    public Path findShortestPath(String fromNodeId, String toNodeId, ShortestPathAlgorithm algorithm) throws Exception {
+        return shortestPathHelper(fromNodeId, toNodeId, algorithm);
+    }
+
+    private Path shortestPathHelper(String fromNodeId, String toNodeId, ShortestPathAlgorithm algorithm) throws Exception {
         validateNodes(fromNodeId, toNodeId);
         if (fromNodeId.equals(toNodeId)) {
             return new Path(List.of(fromNodeId));
         }
         TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).build();
-        TraversalResult result = algorithmManager.runAlgorithm(BELLMAN_FORD, input);
+        TraversalResult result = algorithmManager.runAlgorithm(AlgorithmMapper.from(algorithm), input);
         Exception exception = result.getException();
         if (exception != null) {
             throw exception;

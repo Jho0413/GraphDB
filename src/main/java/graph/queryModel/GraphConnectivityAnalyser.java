@@ -43,12 +43,20 @@ public class GraphConnectivityAnalyser {
     }
 
     public Map<Integer, Set<String>> getStronglyConnectedComponents() {
-        TraversalResult result = algorithmManager.runAlgorithm(TARJAN, null);
-        return result.getComponents();
+        return getStronglyConnectedComponentsHelper(StronglyConnectedAlgorithm.TARJAN);
+    }
+
+    public Map<Integer, Set<String>> getStronglyConnectedComponents(StronglyConnectedAlgorithm algorithm) {
+        return getStronglyConnectedComponentsHelper(algorithm);
     }
 
     public boolean isStronglyConnected() {
-        TraversalResult result = algorithmManager.runAlgorithm(TARJAN, null);
-        return result.getComponents().size() == 1;
+        Map<Integer, Set<String>> components = getStronglyConnectedComponents(StronglyConnectedAlgorithm.TARJAN);
+        return components.size() == 1;
+    }
+
+    private Map<Integer, Set<String>> getStronglyConnectedComponentsHelper(StronglyConnectedAlgorithm algorithm) {
+        TraversalResult result = algorithmManager.runAlgorithm(AlgorithmMapper.from(algorithm), null);
+        return result.getComponents();
     }
 }
