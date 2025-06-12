@@ -5,6 +5,7 @@ import graph.traversalAlgorithms.cycles.CyclesAlgorithmManager;
 import graph.traversalAlgorithms.paths.PathAlgorithmManager;
 import graph.traversalAlgorithms.shortestPath.ShortestPathAlgorithmManager;
 import graph.traversalAlgorithms.stronglyConnected.StronglyConnectedAlgorithmManager;
+import graph.traversalAlgorithms.structure.StructureAlgorithmManager;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,7 +26,8 @@ public class TraversalAlgorithmManager implements AlgorithmManager {
                 StronglyConnectedAlgorithmManager.create(graph),
                 CyclesAlgorithmManager.create(graph),
                 PathAlgorithmManager.create(graph),
-                ConnectivityAlgorithmManager.create(graph)
+                ConnectivityAlgorithmManager.create(graph),
+                StructureAlgorithmManager.create(graph)
         );
 
         Map<AlgorithmType, AlgorithmManager> algorithmManagerMap = new HashMap<>();

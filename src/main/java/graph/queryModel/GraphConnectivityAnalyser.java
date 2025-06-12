@@ -21,6 +21,7 @@ public class GraphConnectivityAnalyser {
     }
 
     public boolean allNodesAreReachableFromNodeId(String nodeId) {
+        validator.checkNodeExists(nodeId);
         TraversalInput input = new TraversalInputBuilder().setFromNodeId(nodeId).build();
         TraversalResult result = algorithmManager.runAlgorithm(DFS_REACHABLE_NODES, input);
         return result.getConditionResult();

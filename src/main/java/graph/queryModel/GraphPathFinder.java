@@ -43,7 +43,7 @@ public class GraphPathFinder {
             return new Path(List.of(fromNodeId));
         }
         TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).build();
-        TraversalResult result = algorithmManager.runAlgorithm(DIJKSTRA, input);
+        TraversalResult result = algorithmManager.runAlgorithm(BELLMAN_FORD, input);
         Exception exception = result.getException();
         if (exception != null) {
             throw exception;

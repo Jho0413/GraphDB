@@ -1,6 +1,5 @@
 package graph.queryModel;
 
-import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.traversalAlgorithms.GraphTraversalView;
 

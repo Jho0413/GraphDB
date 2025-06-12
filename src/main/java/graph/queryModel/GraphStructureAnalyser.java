@@ -20,15 +20,15 @@ public class GraphStructureAnalyser {
         this.graph = graph;
     }
 
-    public Integer getInDegree(String nodeId) throws NodeNotFoundException {
+    public int getInDegree(String nodeId) throws NodeNotFoundException {
         return graph.getNodesIdWithEdgeToNode(nodeId).size();
     }
 
-    public Integer getOutDegree(String nodeId) throws NodeNotFoundException {
+    public int getOutDegree(String nodeId) throws NodeNotFoundException {
         return graph.getEdgesFromNode(nodeId).size();
     }
 
-    public Double getGraphDiameter() throws Exception {
+    public double getGraphDiameter() throws Exception {
         TraversalResult result = algorithmManager.runAlgorithm(FLOYD_WARSHALL, null);
         Exception exception = result.getException();
         if (exception != null) {

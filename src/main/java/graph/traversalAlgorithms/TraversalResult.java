@@ -11,7 +11,7 @@ public class TraversalResult {
 
     private final List<Path> allPaths;
     private final Path path;
-    private final boolean conditionResult;
+    private final Boolean conditionResult;
     private final Set<String> nodeIds;
     private final List<String> orderedNodeIds;
     private final Map<Integer, Set<String>> components;
@@ -39,7 +39,7 @@ public class TraversalResult {
         return this.path;
     }
 
-    public boolean getConditionResult() {
+    public Boolean getConditionResult() {
         return this.conditionResult;
     }
 
@@ -64,7 +64,7 @@ public class TraversalResult {
     public static class TraversalResultBuilder {
         private List<Path> allPaths;
         private Path path;
-        private boolean conditionResult;
+        private Boolean conditionResult;
         private Set<String> nodeIds;
         private List<String> orderedNodeIds;
         private Map<Integer, Set<String>> components;
@@ -84,7 +84,7 @@ public class TraversalResult {
             return this;
         }
 
-        public TraversalResultBuilder setConditionResult(boolean result) {
+        public TraversalResultBuilder setConditionResult(Boolean result) {
             this.conditionResult = result;
             return this;
         }
