@@ -1,5 +1,7 @@
 package graph.queryModel;
 
+import graph.exceptions.CycleFoundException;
+import graph.exceptions.NegativeCycleException;
 import graph.exceptions.NodeNotFoundException;
 import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.GraphTraversalView;
@@ -28,9 +30,9 @@ public class GraphStructureAnalyser {
         return graph.getEdgesFromNode(nodeId).size();
     }
 
-    public double getGraphDiameter() throws Exception {
+    public double getGraphDiameter() throws NegativeCycleException, IllegalStateException {
         TraversalResult result = algorithmManager.runAlgorithm(FLOYD_WARSHALL, null);
-        Exception exception = result.getException();
+        NegativeCycleException exception = (NegativeCycleException) result.getException();
         if (exception != null) {
             throw exception;
         }
@@ -61,9 +63,9 @@ public class GraphStructureAnalyser {
         return diameter;
     }
 
-    public Set<String> topologicalSort() throws Exception {
+    public Set<String> topologicalSort() throws CycleFoundException {
         TraversalResult result = algorithmManager.runAlgorithm(TOPOLOGICAL_SORT, null);
-        Exception exception = result.getException();
+        CycleFoundException exception = (CycleFoundException) result.getException();
         if (exception != null) {
             throw exception;
         }

@@ -1,5 +1,7 @@
 package graph.queryModel;
 
+import graph.exceptions.NegativeCycleException;
+import graph.exceptions.NegativeWeightException;
 import graph.exceptions.NodeNotFoundException;
 import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalInput;
@@ -21,7 +23,7 @@ public class GraphPathFinder {
     }
 
     // returns all paths with max length of n (edges) from source to destination (length 0 includes itself)
-    public List<Path> findPathsWithMaxLength(String fromNodeId, String toNodeId, Integer maxLength) {
+    public List<Path> findPathsWithMaxLength(String fromNodeId, String toNodeId, Integer maxLength) throws NodeNotFoundException, IllegalArgumentException {
         validator.testNonNegative(maxLength);
         validateNodes(fromNodeId, toNodeId);
         TraversalInput input = new TraversalInputBuilder()
@@ -33,7 +35,7 @@ public class GraphPathFinder {
     }
 
     // returns all paths from source to destination
-    public List<Path> findAllPaths(String fromNodeId, String toNodeId) {
+    public List<Path> findAllPaths(String fromNodeId, String toNodeId) throws NodeNotFoundException, IllegalArgumentException {
         return findPathsWithMaxLength(fromNodeId, toNodeId, null);
     }
 
@@ -59,9 +61,9 @@ public class GraphPathFinder {
         return result.getPath();
     }
 
-    public double[][] findAllShortestDistances() throws Exception {
+    public double[][] findAllShortestDistances() throws NegativeCycleException {
         TraversalResult result = algorithmManager.runAlgorithm(FLOYD_WARSHALL, null);
-        Exception exception = result.getException();
+        NegativeCycleException exception = (NegativeCycleException) result.getException();
         if (exception != null) {
             throw exception;
         }

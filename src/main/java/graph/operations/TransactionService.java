@@ -112,7 +112,7 @@ public class TransactionService implements TransactionOperations {
     }
 
     @Override
-    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws NodeNotFoundException, IllegalArgumentException, EdgeExistsException {
+    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws IllegalArgumentException, NodeNotFoundException, EdgeExistsException {
         resolver.checkNodeId(source);
         resolver.checkNodeId(target);
         resolver.checkAttributes(properties);

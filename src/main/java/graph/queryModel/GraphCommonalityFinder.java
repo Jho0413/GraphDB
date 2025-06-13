@@ -20,7 +20,7 @@ public class GraphCommonalityFinder {
     }
 
     // returns all common nodes that have an edge from the two nodes
-    public Set<String> findCommonNeighbours(String fromNodeId, String toNodeId) {
+    public Set<String> findCommonNeighbours(String fromNodeId, String toNodeId) throws IllegalArgumentException, NodeNotFoundException {
         return findCommonNodesByExactDepth(fromNodeId, toNodeId, 1);
     }
 
@@ -35,7 +35,7 @@ public class GraphCommonalityFinder {
     }
 
     // returns all common nodes that can be reached at exactly k edges by both nodes
-    public Set<String> findCommonNodesByExactDepth(String fromNodeId, String toNodeId, int depth) {
+    public Set<String> findCommonNodesByExactDepth(String fromNodeId, String toNodeId, int depth) throws IllegalArgumentException, NodeNotFoundException {
         validator.testNonNegative(depth);
         validateNodes(fromNodeId, toNodeId);
         TraversalInput input =

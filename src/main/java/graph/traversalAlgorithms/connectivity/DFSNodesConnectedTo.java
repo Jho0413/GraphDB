@@ -10,6 +10,7 @@ import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 import java.util.HashSet;
 import java.util.Set;
 
+// Returns a set of nodeIds that the node is connected to
 public class DFSNodesConnectedTo implements Algorithm {
 
     private final GraphTraversalView graph;

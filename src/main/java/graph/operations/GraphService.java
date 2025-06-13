@@ -78,7 +78,7 @@ public class GraphService implements GraphOperations {
     }
 
     @Override
-    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws NodeNotFoundException, EdgeExistsException, IllegalArgumentException {
+    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws IllegalArgumentException, NodeNotFoundException, EdgeExistsException {
         checkNodeId(source);
         checkNodeId(target);
         checkAttributes(properties);
@@ -155,7 +155,7 @@ public class GraphService implements GraphOperations {
     }
 
     @Override
-    public Object removeEdgeProperty(String edgeId, String property) throws EdgeNotFoundException{
+    public Object removeEdgeProperty(String edgeId, String property) throws EdgeNotFoundException {
         Edge currentEdge = getEdgeIfExists(edgeId);
         return currentEdge.deleteProperty(property);
     }
@@ -167,13 +167,13 @@ public class GraphService implements GraphOperations {
     }
 
     @Override
-    public List<Edge> getEdgesFromNode(String nodeId) {
+    public List<Edge> getEdgesFromNode(String nodeId) throws NodeNotFoundException {
         checkNodeId(nodeId);
         return this.storage.getEdgesFromNode(nodeId);
     }
 
     @Override
-    public List<String> getNodesIdWithEdgeToNode(String nodeId) {
+    public List<String> getNodesIdWithEdgeToNode(String nodeId) throws NodeNotFoundException {
         checkNodeId(nodeId);
         return this.storage.nodesIdsWithEdgesToNode(nodeId);
     }

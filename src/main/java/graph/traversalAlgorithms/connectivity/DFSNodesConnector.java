@@ -11,6 +11,7 @@ import graph.traversalAlgorithms.TraversalResult.TraversalResultBuilder;
 import java.util.HashSet;
 import java.util.Set;
 
+// Determines if the node with fromNodeId is connected to the node with toNodeId
 class DFSNodesConnector implements Algorithm {
 
     private final String fromNodeId;
@@ -26,7 +27,6 @@ class DFSNodesConnector implements Algorithm {
 
     @Override
     public TraversalResult performAlgorithm() {
-        // when optimising can do both ways
         return new TraversalResultBuilder()
                 .setConditionResult(fromNodeId.equals(toNodeId) || isConnected(fromNodeId))
                 .build();

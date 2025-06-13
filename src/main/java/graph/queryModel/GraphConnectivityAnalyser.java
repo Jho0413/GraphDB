@@ -1,5 +1,6 @@
 package graph.queryModel;
 
+import graph.exceptions.NodeNotFoundException;
 import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalInput;
 import graph.traversalAlgorithms.TraversalInput.TraversalInputBuilder;
@@ -20,14 +21,14 @@ public class GraphConnectivityAnalyser {
         this.validator = validator;
     }
 
-    public boolean allNodesAreReachableFromNodeId(String nodeId) {
+    public boolean allNodesAreReachableFromNodeId(String nodeId) throws NodeNotFoundException {
         validator.checkNodeExists(nodeId);
         TraversalInput input = new TraversalInputBuilder().setFromNodeId(nodeId).build();
         TraversalResult result = algorithmManager.runAlgorithm(DFS_REACHABLE_NODES, input);
         return result.getConditionResult();
     }
 
-    public boolean nodesAreConnected(String fromNodeId, String toNodeId) {
+    public boolean nodesAreConnected(String fromNodeId, String toNodeId) throws NodeNotFoundException {
         validator.checkNodeExists(fromNodeId);
         validator.checkNodeExists(toNodeId);
         TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).build();
@@ -35,7 +36,7 @@ public class GraphConnectivityAnalyser {
         return result.getConditionResult();
     }
 
-    public Set<String> getConnectedNodes(String fromNodeId) {
+    public Set<String> getConnectedNodes(String fromNodeId) throws NodeNotFoundException {
         validator.checkNodeExists(fromNodeId);
         TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).build();
         TraversalResult result = algorithmManager.runAlgorithm(DFS_NODES_CONNECTED_TO, input);

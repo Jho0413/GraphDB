@@ -95,7 +95,7 @@ public class TransactionLogger implements TransactionOperations {
     }
 
     @Override
-    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws NodeNotFoundException, IllegalArgumentException, EdgeExistsException {
+    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws IllegalArgumentException, NodeNotFoundException, EdgeExistsException {
         Edge edge = transaction.addEdge(source, target, properties, weight);
         LoggingInfo loggingInfo = aLoggingInfo(ADD_EDGE).withId(edge.getId())
                 .withSource(source).withTarget(target).withAttributes(properties).withWeight(weight).build();

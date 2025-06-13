@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+// Determines whether all nodes are reachable from the current node id
 class DFSGraphConnector implements Algorithm {
 
     private final GraphTraversalView graph;
