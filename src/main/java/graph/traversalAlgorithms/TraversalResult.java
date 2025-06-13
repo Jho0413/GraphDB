@@ -1,0 +1,126 @@
+package graph.traversalAlgorithms;
+
+import graph.queryModel.Path;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+// class that includes the different possible return types from the traversal algorithms
+public class TraversalResult {
+
+    private final List<Path> allPaths;
+    private final Path path;
+    private final Boolean conditionResult;
+    private final Set<String> nodeIds;
+    private final List<String> orderedNodeIds;
+    private final Map<Integer, Set<String>> components;
+    private final Exception exception;
+    private final double[][] allShortestDistances;
+    private final List<List<String>> cycles;
+
+    private TraversalResult(TraversalResultBuilder builder) {
+        this.allPaths = builder.allPaths;
+        this.path = builder.path;
+        this.conditionResult = builder.conditionResult;
+        this.nodeIds = builder.nodeIds;
+        this.orderedNodeIds = builder.orderedNodeIds;
+        this.components = builder.components;
+        this.exception = builder.exception;
+        this.allShortestDistances = builder.allShortestDistances;
+        this.cycles = builder.cycles;
+    }
+
+    public List<Path> getAllPaths() {
+        return this.allPaths;
+    }
+
+    public Path getPath() {
+        return this.path;
+    }
+
+    public Boolean getConditionResult() {
+        return this.conditionResult;
+    }
+
+    public Set<String> getNodeIds() {
+        return this.nodeIds;
+    }
+
+    public List<String> getOrderedNodeIds() {
+        return this.orderedNodeIds;
+    }
+
+    public Map<Integer, Set<String>> getComponents() {
+        return this.components;
+    }
+
+    public Exception getException() { return this.exception; }
+
+    public double[][] getAllShortestDistances() { return this.allShortestDistances; }
+
+    public List<List<String>> getCycles() { return this.cycles; }
+
+    public static class TraversalResultBuilder {
+        private List<Path> allPaths;
+        private Path path;
+        private Boolean conditionResult;
+        private Set<String> nodeIds;
+        private List<String> orderedNodeIds;
+        private Map<Integer, Set<String>> components;
+        private Exception exception;
+        private double[][] allShortestDistances;
+        private List<List<String>> cycles;
+
+        public TraversalResultBuilder() {}
+
+        public TraversalResultBuilder setAllPaths(List<Path> paths) {
+            this.allPaths = paths;
+            return this;
+        }
+
+        public TraversalResultBuilder setPath(Path path) {
+            this.path = path;
+            return this;
+        }
+
+        public TraversalResultBuilder setConditionResult(Boolean result) {
+            this.conditionResult = result;
+            return this;
+        }
+
+        public TraversalResultBuilder setNodeIds(Set<String> nodeIds) {
+            this.nodeIds = nodeIds;
+            return this;
+        }
+
+        public TraversalResultBuilder setOrderedNodeIds(List<String> nodeIds) {
+            this.orderedNodeIds = nodeIds;
+            return this;
+        }
+
+        public TraversalResultBuilder setComponents(Map<Integer, Set<String>> components) {
+            this.components = components;
+            return this;
+        }
+
+        public TraversalResultBuilder setException(Exception exception) {
+            this.exception = exception;
+            return this;
+        }
+
+        public TraversalResultBuilder setAllShortestDistances(double[][] allShortestDistances) {
+            this.allShortestDistances = allShortestDistances;
+            return this;
+        }
+
+        public TraversalResultBuilder setCycles(List<List<String>> cycles) {
+            this.cycles = cycles;
+            return this;
+        }
+
+        public TraversalResult build() {
+            return new TraversalResult(this);
+        }
+    }
+}

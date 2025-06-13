@@ -1,5 +1,8 @@
 package graph.dataModel;
 
+import graph.exceptions.EdgeExistsException;
+import graph.exceptions.EdgeNotFoundException;
+import graph.exceptions.NodeNotFoundException;
 import graph.operations.TransactionOperations;
 
 import java.util.List;
@@ -14,7 +17,7 @@ public class Transaction implements TransactionOperations {
     }
 
     @Override
-    public Node addNode(Map<String, Object> attributes) {
+    public Node addNode(Map<String, Object> attributes) throws IllegalArgumentException {
         return service.addNode(attributes);
     }
 
@@ -34,32 +37,32 @@ public class Transaction implements TransactionOperations {
     }
 
     @Override
-    public void updateNode(String id, Map<String, Object> attributes) {
+    public void updateNode(String id, Map<String, Object> attributes) throws NodeNotFoundException, IllegalArgumentException {
         service.updateNode(id, attributes);
     }
 
     @Override
-    public void updateNode(String id, String attribute, Object value) {
+    public void updateNode(String id, String attribute, Object value) throws NodeNotFoundException {
         service.updateNode(id, attribute, value);
     }
 
     @Override
-    public Object removeNodeAttribute(String id, String attribute) {
+    public Object removeNodeAttribute(String id, String attribute) throws NodeNotFoundException {
         return service.removeNodeAttribute(id, attribute);
     }
 
     @Override
-    public Node deleteNode(String id) {
+    public Node deleteNode(String id) throws NodeNotFoundException {
         return service.deleteNode(id);
     }
 
     @Override
-    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) {
+    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws IllegalArgumentException, NodeNotFoundException, EdgeExistsException {
         return service.addEdge(source, target, properties, weight);
     }
 
     @Override
-    public Edge getEdgeById(String id) {
+    public Edge getEdgeById(String id) throws EdgeNotFoundException {
         return service.getEdgeById(id);
     }
 
@@ -84,27 +87,27 @@ public class Transaction implements TransactionOperations {
     }
 
     @Override
-    public void updateEdge(String edgeId, double weight) {
+    public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
         service.updateEdge(edgeId, weight);
     }
 
     @Override
-    public void updateEdge(String edgeId, String key, Object value) {
+    public void updateEdge(String edgeId, String key, Object value) throws EdgeNotFoundException {
         service.updateEdge(edgeId, key, value);
     }
 
     @Override
-    public void updateEdge(String edgeId, Map<String, Object> properties) {
+    public void updateEdge(String edgeId, Map<String, Object> properties) throws EdgeNotFoundException, IllegalArgumentException {
         service.updateEdge(edgeId, properties);
     }
 
     @Override
-    public Object removeEdgeProperty(String edgeId, String property) {
+    public Object removeEdgeProperty(String edgeId, String property) throws EdgeNotFoundException {
         return service.removeEdgeProperty(edgeId, property);
     }
 
     @Override
-    public Edge deleteEdge(String edgeId) {
+    public Edge deleteEdge(String edgeId) throws EdgeNotFoundException {
         return service.deleteEdge(edgeId);
     }
 

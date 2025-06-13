@@ -1,0 +1,74 @@
+package graph.queryModel;
+
+import graph.exceptions.CycleFoundException;
+import graph.exceptions.NegativeCycleException;
+import graph.exceptions.NodeNotFoundException;
+import graph.traversalAlgorithms.AlgorithmManager;
+import graph.traversalAlgorithms.GraphTraversalView;
+import graph.traversalAlgorithms.TraversalResult;
+
+import java.util.Set;
+
+import static graph.traversalAlgorithms.AlgorithmType.FLOYD_WARSHALL;
+import static graph.traversalAlgorithms.AlgorithmType.TOPOLOGICAL_SORT;
+
+public class GraphStructureAnalyser {
+
+    private final AlgorithmManager algorithmManager;
+    private final GraphTraversalView graph;
+
+    public GraphStructureAnalyser(AlgorithmManager algorithmManager, GraphTraversalView graph) {
+        this.algorithmManager = algorithmManager;
+        this.graph = graph;
+    }
+
+    public int getInDegree(String nodeId) throws NodeNotFoundException {
+        return graph.getNodesIdWithEdgeToNode(nodeId).size();
+    }
+
+    public int getOutDegree(String nodeId) throws NodeNotFoundException {
+        return graph.getEdgesFromNode(nodeId).size();
+    }
+
+    public double getGraphDiameter() throws NegativeCycleException, IllegalStateException {
+        TraversalResult result = algorithmManager.runAlgorithm(FLOYD_WARSHALL, null);
+        NegativeCycleException exception = (NegativeCycleException) result.getException();
+        if (exception != null) {
+            throw exception;
+        }
+        double diameter = getDiameter(result);
+        // Disconnected graph
+        if (diameter == Double.NEGATIVE_INFINITY) {
+            throw new IllegalStateException("Graph is completely disconnected, diameter is undefined");
+        }
+        return diameter;
+    }
+
+    private double getDiameter(TraversalResult result) {
+        double[][] allShortestDistances = result.getAllShortestDistances();
+
+        double diameter = Double.NEGATIVE_INFINITY;
+        int n = allShortestDistances.length;
+
+        if (n <= 1) return 0.0;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                // we do not count non-connected nodes (positive inf)
+                if (i != j && allShortestDistances[i][j] != Double.POSITIVE_INFINITY) {
+                    diameter = Math.max(diameter, allShortestDistances[i][j]);
+                }
+            }
+        }
+        return diameter;
+    }
+
+    public Set<String> topologicalSort() throws CycleFoundException {
+        TraversalResult result = algorithmManager.runAlgorithm(TOPOLOGICAL_SORT, null);
+        CycleFoundException exception = (CycleFoundException) result.getException();
+        if (exception != null) {
+            throw exception;
+        }
+        return result.getNodeIds();
+    }
+}

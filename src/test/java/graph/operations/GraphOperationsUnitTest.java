@@ -7,8 +7,6 @@ import graph.exceptions.NodeNotFoundException;
 import graph.helper.EdgeBaseMatcher;
 import graph.helper.NodeBaseMatcher;
 import graph.storage.GraphStorage;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Before;
@@ -22,7 +20,6 @@ import graph.dataModel.Node;
 
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;

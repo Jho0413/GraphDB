@@ -10,7 +10,7 @@ import java.util.Map;
 
 public interface OperationsResolver {
 
-    void checkAttributes(Map<String, Object> attributes);
+    void checkAttributes(Map<String, Object> attributes) throws IllegalArgumentException;
     void checkNodeId(String nodeId) throws NodeNotFoundException;
     Node getNodeIfExists(String nodeId) throws NodeNotFoundException;
     void checkEdgeId(String edgeId) throws EdgeNotFoundException;
