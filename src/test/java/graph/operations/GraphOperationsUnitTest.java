@@ -342,14 +342,15 @@ public class GraphOperationsUnitTest {
 
     @Test
     public void retrievesFilteredEdgesByWeightCorrectly() {
-        List<Edge> edges = EDGES;
+        List<Edge> edges = List.of(EDGE);
         context.checking(new Expectations() {{
-            exactly(1).of(storage).getAllEdges();
+            exactly(1).of(storage).getEdgesByWeight(TEST_WEIGHT);
             will(returnValue(edges));
         }});
 
         List<Edge> filteredEdges = this.service.getEdgesByWeight(TEST_WEIGHT);
-        assertThat(filteredEdges.size(), is(2));
+        assertThat(filteredEdges.size(), is(1));
+        assertEquals(EDGE, filteredEdges.getFirst());
     }
 
     // ============= Edge Update Tests =============
@@ -404,6 +405,9 @@ public class GraphOperationsUnitTest {
     public void updatesWeightOfEdgeWhenEdgeExists() {
         Edge mockEdge = EDGE_NO_PROPERTIES;
         getEdgeIfExistsCheck(EDGE_ID, true, mockEdge);
+        context.checking(new Expectations() {{
+            exactly(1).of(storage).updateEdgeWeight(TEST_WEIGHT, TEST_OTHER_WEIGHT, mockEdge);
+        }});
 
         this.service.updateEdge(EDGE_ID, TEST_OTHER_WEIGHT);
         assertThat(mockEdge.getWeight(), is(TEST_OTHER_WEIGHT));
