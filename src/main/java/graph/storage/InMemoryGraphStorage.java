@@ -10,11 +10,18 @@ public class InMemoryGraphStorage implements GraphStorage {
     private final Map<String, Node> nodes;
     private final Map<String, Edge> edges;
     private final Map<String, Map<String, String>> adjacencyList;
+    private final MutableEdgeWeightIndex edgeWeightIndex;
 
-    public InMemoryGraphStorage() {
+    protected InMemoryGraphStorage(MutableEdgeWeightIndex edgeWeightIndex) {
         this.nodes = new HashMap<String, Node>();
         this.edges = new HashMap<String, Edge>();
         this.adjacencyList = new HashMap<>();
+        this.edgeWeightIndex = edgeWeightIndex;
+    }
+
+    public static InMemoryGraphStorage create() {
+        MutableEdgeWeightIndex edgeWeightIndex = new DefaultEdgeWeightIndex();
+        return new InMemoryGraphStorage(edgeWeightIndex);
     }
 
     @Override
@@ -63,12 +70,14 @@ public class InMemoryGraphStorage implements GraphStorage {
     public void putEdge(Edge edge) {
         this.edges.put(edge.getId(), edge);
         adjacencyList.get(edge.getSource()).put(edge.getDestination(), edge.getId());
+        edgeWeightIndex.putEdge(edge);
     }
 
     @Override
     public Edge removeEdge(String id) {
         Edge removedEdge = this.edges.remove(id);
         adjacencyList.get(removedEdge.getSource()).remove(removedEdge.getDestination());
+        edgeWeightIndex.removeEdge(removedEdge);
         return removedEdge;
     }
 
@@ -104,5 +113,30 @@ public class InMemoryGraphStorage implements GraphStorage {
     @Override
     public boolean edgeExists(String source, String target) {
         return adjacencyList.containsKey(source) && adjacencyList.get(source).containsKey(target);
+    }
+
+    @Override
+    public List<Edge> getEdgesByWeight(double weight) {
+        return edgeWeightIndex.getEdgesByWeight(weight);
+    }
+
+    @Override
+    public List<Edge> getEdgesByWeightRange(double min, double max) {
+        return edgeWeightIndex.getEdgesByWeightRange(min, max);
+    }
+
+    @Override
+    public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
+        return edgeWeightIndex.getEdgesWithWeightGreaterThan(weight);
+    }
+
+    @Override
+    public List<Edge> getEdgesWithWeightLessThan(double weight) {
+        return edgeWeightIndex.getEdgesWithWeightLessThan(weight);
+    }
+
+    @Override
+    public void updateEdgeWeight(double previousWeight, double currentWeight, Edge edge) {
+        edgeWeightIndex.updateEdgeWeight(previousWeight, currentWeight, edge);
     }
 }

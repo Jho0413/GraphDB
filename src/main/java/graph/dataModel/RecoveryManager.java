@@ -40,7 +40,7 @@ public class RecoveryManager {
         LoggingInfo transactionLoggingInfo = transaction.getFirst();
         String graphId = transactionLoggingInfo.getSource();
         if (!graphStorageMap.containsKey(graphId)) {
-            graphStorageMap.put(graphId, new InMemoryGraphStorage());
+            graphStorageMap.put(graphId, InMemoryGraphStorage.create());
         }
         GraphStorage graphStorage = graphStorageMap.get(graphId);
         for (int i = 1; i < transaction.size() - 1; i++) {

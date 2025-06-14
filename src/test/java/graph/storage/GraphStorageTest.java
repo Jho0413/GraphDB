@@ -30,7 +30,7 @@ public class GraphStorageTest {
     @Parameters(name = "{0}")
     public static Collection<Object> storages() {
         return Arrays.asList(new Object[] {
-                new InMemoryGraphStorage()
+                new InMemoryGraphStorage(new DefaultEdgeWeightIndex())
         });
     }
 

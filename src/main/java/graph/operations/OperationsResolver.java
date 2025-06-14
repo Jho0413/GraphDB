@@ -8,7 +8,7 @@ import graph.exceptions.NodeNotFoundException;
 
 import java.util.Map;
 
-public interface OperationsResolver {
+interface OperationsResolver {
 
     void checkAttributes(Map<String, Object> attributes) throws IllegalArgumentException;
     void checkNodeId(String nodeId) throws NodeNotFoundException;

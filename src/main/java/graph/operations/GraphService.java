@@ -125,20 +125,30 @@ public class GraphService implements GraphOperations {
 
     @Override
     public List<Edge> getEdgesByWeight(double weight) {
-        List<Edge> edges = this.storage.getAllEdges();
-        List<Edge> filteredEdges = new LinkedList<>();
-        for (Edge edge : edges) {
-            if (edge.getWeight() == weight) {
-                filteredEdges.add(edge);
-            }
-        }
-        return filteredEdges;
+        return this.storage.getEdgesByWeight(weight);
+    }
+
+    @Override
+    public List<Edge> getEdgesByWeightRange(double min, double max) {
+        return this.storage.getEdgesByWeightRange(min, max);
+    }
+
+    @Override
+    public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
+        return this.storage.getEdgesWithWeightGreaterThan(weight);
+    }
+
+    @Override
+    public List<Edge> getEdgesWithWeightLessThan(double weight) {
+        return this.storage.getEdgesWithWeightLessThan(weight);
     }
 
     @Override
     public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
         Edge currentEdge = getEdgeIfExists(edgeId);
+        double previousWeight = currentEdge.getWeight();
         currentEdge.setWeight(weight);
+        this.storage.updateEdgeWeight(previousWeight, weight, currentEdge);
     }
 
     @Override

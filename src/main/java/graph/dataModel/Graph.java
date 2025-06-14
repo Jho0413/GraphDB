@@ -25,7 +25,7 @@ public class Graph implements GraphOperations, GraphTraversalView {
     }
 
     public static Graph createGraph() {
-        GraphStorage storage = new InMemoryGraphStorage();
+        GraphStorage storage = InMemoryGraphStorage.create();
         return createRecoveryGraph(storage, UUID.randomUUID().toString());
     }
 
@@ -101,6 +101,21 @@ public class Graph implements GraphOperations, GraphTraversalView {
     @Override
     public List<Edge> getEdgesByWeight(double weight) {
         return service.getEdgesByWeight(weight);
+    }
+
+    @Override
+    public List<Edge> getEdgesByWeightRange(double min, double max) {
+        return service.getEdgesByWeightRange(min, max);
+    }
+
+    @Override
+    public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
+        return service.getEdgesWithWeightGreaterThan(weight);
+    }
+
+    @Override
+    public List<Edge> getEdgesWithWeightLessThan(double weight) {
+        return service.getEdgesWithWeightLessThan(weight);
     }
 
     @Override
