@@ -129,7 +129,10 @@ public class GraphService implements GraphOperations {
     }
 
     @Override
-    public List<Edge> getEdgesByWeightRange(double min, double max) {
+    public List<Edge> getEdgesByWeightRange(double min, double max) throws IllegalArgumentException {
+        if (min > max) {
+            throw new IllegalArgumentException("min must be smaller or equals to max");
+        }
         return this.storage.getEdgesByWeightRange(min, max);
     }
 
