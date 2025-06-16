@@ -5,7 +5,7 @@ import graph.dataModel.Node;
 
 import java.util.List;
 
-public interface GraphStorage {
+public interface GraphStorage extends EdgeWeightIndex {
     // nodes
     Node getNode(String id);
     void putNode(Node node);

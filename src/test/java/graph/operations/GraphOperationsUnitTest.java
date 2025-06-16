@@ -62,10 +62,11 @@ public class GraphOperationsUnitTest {
     private final double TEST_WEIGHT = 2.0;
     private final double TEST_OTHER_WEIGHT = 3.0;
     private final Edge EDGE = new Edge(EDGE_ID, NODE_ID, NODE_ID_2, TEST_WEIGHT, TEST_ATTRIBUTES);
+    private final Edge EDGE_2 = new Edge(EDGE_ID_2, NODE_ID_2, NODE_ID, TEST_OTHER_WEIGHT, DEFAULT_ATTRIBUTES);
     private final Edge EDGE_NO_PROPERTIES = new Edge(EDGE_ID, NODE_ID, NODE_ID_2, TEST_WEIGHT, DEFAULT_ATTRIBUTES);
     private final List<Edge> EDGES = List.of(
             EDGE,
-            new Edge(EDGE_ID_2, NODE_ID_2, NODE_ID, TEST_OTHER_WEIGHT, DEFAULT_ATTRIBUTES),
+            EDGE_2,
             new Edge(EDGE_ID_3, NODE_ID, NODE_ID_3, TEST_WEIGHT, TEST_OTHER_ATTRIBUTES)
     );
 
@@ -342,14 +343,63 @@ public class GraphOperationsUnitTest {
 
     @Test
     public void retrievesFilteredEdgesByWeightCorrectly() {
-        List<Edge> edges = EDGES;
+        List<Edge> edges = List.of(EDGE);
         context.checking(new Expectations() {{
-            exactly(1).of(storage).getAllEdges();
+            exactly(1).of(storage).getEdgesByWeight(TEST_WEIGHT);
             will(returnValue(edges));
         }});
 
         List<Edge> filteredEdges = this.service.getEdgesByWeight(TEST_WEIGHT);
-        assertThat(filteredEdges.size(), is(2));
+        assertThat(filteredEdges.size(), is(1));
+        assertEquals(EDGE, filteredEdges.getFirst());
+    }
+
+    @Test
+    public void retrievesFilteredEdgesByWeightRangeCorrectly() {
+        List<Edge> edges = List.of(EDGE);
+        context.checking(new Expectations() {{
+            exactly(1).of(storage).getEdgesByWeightRange(TEST_WEIGHT, TEST_OTHER_WEIGHT);
+            will(returnValue(edges));
+        }});
+
+        List<Edge> filteredEdges = this.service.getEdgesByWeightRange(TEST_WEIGHT, TEST_OTHER_WEIGHT);
+        assertThat(filteredEdges.size(), is(1));
+        assertEquals(EDGE, filteredEdges.getFirst());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void throwsIllegalArgumentExceptionIfGivenMinIsGreaterThanMax() {
+        context.checking(new Expectations() {{
+            never(storage);
+        }});
+
+        this.service.getEdgesByWeightRange(TEST_OTHER_WEIGHT, TEST_WEIGHT);
+    }
+
+    @Test
+    public void retrievesFilteredEdgesByGreaterThanGivenWeightCorrectly() {
+        List<Edge> edges = List.of(EDGE_2);
+        context.checking(new Expectations() {{
+            exactly(1).of(storage).getEdgesWithWeightGreaterThan(TEST_WEIGHT);
+            will(returnValue(edges));
+        }});
+
+        List<Edge> filteredEdges = this.service.getEdgesWithWeightGreaterThan(TEST_WEIGHT);
+        assertThat(filteredEdges.size(), is(1));
+        assertEquals(EDGE_2, filteredEdges.getFirst());
+    }
+
+    @Test
+    public void retrievesFilteredEdgesByLessThanGivenWeightCorrectly() {
+        List<Edge> edges = List.of(EDGE);
+        context.checking(new Expectations() {{
+            exactly(1).of(storage).getEdgesWithWeightLessThan(TEST_OTHER_WEIGHT);
+            will(returnValue(edges));
+        }});
+
+        List<Edge> filteredEdges = this.service.getEdgesWithWeightLessThan(TEST_OTHER_WEIGHT);
+        assertThat(filteredEdges.size(), is(1));
+        assertEquals(EDGE, filteredEdges.getFirst());
     }
 
     // ============= Edge Update Tests =============
@@ -404,6 +454,9 @@ public class GraphOperationsUnitTest {
     public void updatesWeightOfEdgeWhenEdgeExists() {
         Edge mockEdge = EDGE_NO_PROPERTIES;
         getEdgeIfExistsCheck(EDGE_ID, true, mockEdge);
+        context.checking(new Expectations() {{
+            exactly(1).of(storage).updateEdgeWeight(TEST_WEIGHT, TEST_OTHER_WEIGHT, mockEdge);
+        }});
 
         this.service.updateEdge(EDGE_ID, TEST_OTHER_WEIGHT);
         assertThat(mockEdge.getWeight(), is(TEST_OTHER_WEIGHT));

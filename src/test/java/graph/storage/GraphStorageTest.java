@@ -10,6 +10,7 @@ import graph.dataModel.Node;
 import graph.dataModel.Edge;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -21,23 +22,24 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 public class GraphStorageTest {
 
-    private final GraphStorage storage;
-
-    public GraphStorageTest(GraphStorage storage) {
-        this.storage = storage;
-    }
+    private GraphStorage storage;
+    private final Edge EDGE_1 = new Edge("edge1", "node1", "node2", 5.0, Map.of());
+    private final Edge EDGE_2 = new Edge("edge2", "node2", "node3", 10.0, Map.of());
+    private final Edge EDGE_3 = new Edge("edge3", "node3", "node4", 20.0, Map.of());
 
     @Parameters(name = "{0}")
     public static Collection<Object> storages() {
         return Arrays.asList(new Object[] {
-                new InMemoryGraphStorage()
+                (Supplier<GraphStorage>) InMemoryGraphStorage::create,
         });
     }
 
+    @Parameterized.Parameter(value = 0)
+    public Supplier<GraphStorage> storageCreator;
+
     @Before
     public void setUp() {
-        new ArrayList<>(storage.getAllNodes()).forEach(node -> storage.removeNode(node.getId()));
-        new ArrayList<>(storage.getAllEdges()).forEach(edge -> storage.removeEdge(edge.getId()));
+        this.storage = storageCreator.get();
     }
 
     private Node createTestNode(String id) {
@@ -56,7 +58,8 @@ public class GraphStorageTest {
         storage.putNode(node2);
     }
 
-    // Node Tests
+    // ============ NODE ============
+
     @Test
     public void shouldBeAbleToAddAndRetrieveNode() {
         Node node = createTestNode("node1");
@@ -98,7 +101,8 @@ public class GraphStorageTest {
         assertThat(nodes, hasItems(node1, node2));
     }
 
-    // Edge tests
+    // ============ EDGE ============
+
     @Test
     public void shouldBeAbleToAddAndRetrieveEdge() {
         Edge edge = createTestEdge("edge1", "node1", "node2");
@@ -171,7 +175,8 @@ public class GraphStorageTest {
         assertThat(edges.size(), is(0));
     }
 
-    // Adjacency list
+    // ============ OTHERS ============
+
     @Test
     public void shouldBeAbleGetEdgesFromNode() {
         Edge edge1 = createTestEdge("edge1", "node1", "node2");
@@ -208,5 +213,73 @@ public class GraphStorageTest {
         assertTrue(storage.edgeExists("node1", "node2"));
         assertFalse(storage.edgeExists("node3", "node1"));
         assertFalse(storage.edgeExists("node1", "nonExistent"));
+    }
+
+    // ============ EDGE WEIGHT QUERIES ============
+
+    @Test
+    public void shouldBeAbleToQueryEdgesByWeight() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node2", "node3");
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_2);
+
+        List<Edge> result = storage.getEdgesByWeight(5.0);
+        assertThat(result.size(), is(1));
+        assertThat(result, hasItems(EDGE_1));
+    }
+
+    @Test
+    public void shouldBeAbleToQueryEdgesByWeightRange() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node2", "node3");
+        initialiseNodes("node3", "node4");
+
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_2);
+        storage.putEdge(EDGE_3);
+
+        List<Edge> result = storage.getEdgesByWeightRange(5.0, 15.0);
+        assertThat(result.size(), is(2));
+        assertThat(result, hasItems(EDGE_1, EDGE_2));
+    }
+
+    @Test
+    public void shouldBeAbleToQueryEdgesWithWeightGreaterThan() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node2", "node3");
+
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_2);
+
+        List<Edge> result = storage.getEdgesWithWeightGreaterThan(9.0);
+        assertThat(result.size(), is(1));
+        assertThat(result, hasItems(EDGE_2));
+    }
+
+    @Test
+    public void shouldBeAbleToQueryEdgesWithWeightLessThan() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node2", "node3");
+
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_2);
+
+        List<Edge> result = storage.getEdgesWithWeightLessThan(9.0);
+        assertThat(result.size(), is(1));
+        assertThat(result, hasItems(EDGE_1));
+    }
+
+    @Test
+    public void shouldBeAbleToUpdateEdgeWithWeight() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node3", "node4");
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_3);
+        storage.updateEdgeWeight(5.0, 20.0, EDGE_1);
+
+        List<Edge> result = storage.getEdgesByWeight(20.0);
+        assertThat(result.size(), is(2));
+        assertThat(result, hasItems(EDGE_1, EDGE_3));
     }
 }
