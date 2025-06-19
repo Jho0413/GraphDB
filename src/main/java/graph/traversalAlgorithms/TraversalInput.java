@@ -26,6 +26,17 @@ public class TraversalInput {
 
     public Boolean getCondition() { return this.condition; }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof TraversalInput otherInput) {
+            return this.getFromNodeId().equals(otherInput.getFromNodeId())
+                    && this.getToNodeId().equals(otherInput.getToNodeId())
+                    && this.getMaxLength().equals(otherInput.getMaxLength())
+                    && this.getCondition().equals(otherInput.getCondition());
+        }
+        return false;
+    }
+
     public static class TraversalInputBuilder {
         private String fromNodeId;
         private String toNodeId;
