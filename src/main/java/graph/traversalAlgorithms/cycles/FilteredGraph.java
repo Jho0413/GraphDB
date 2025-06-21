@@ -2,6 +2,8 @@ package graph.traversalAlgorithms.cycles;
 
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
+import graph.events.GraphListener;
+import graph.events.ObservableGraphView;
 import graph.traversalAlgorithms.GraphTraversalView;
 
 import java.util.HashSet;
@@ -9,7 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class FilteredGraph implements GraphTraversalView {
+class FilteredGraph implements ObservableGraphView {
 
     private final GraphTraversalView graph;
     private final Set<String> filteredNodes = new HashSet<String>();
@@ -61,4 +63,7 @@ class FilteredGraph implements GraphTraversalView {
     public Edge getEdgeById(String id) {
         return null;
     }
+
+    @Override
+    public void addListener(GraphListener listener) {}
 }

@@ -1,5 +1,8 @@
 package graph.traversalAlgorithms.shortestPath;
 
+import graph.dataModel.Graph;
+import graph.dataModel.GraphServiceExtractor;
+import graph.events.ObservableGraphView;
 import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 import org.jmock.Expectations;
@@ -18,6 +21,7 @@ public class ShortestPathAlgorithmManagerTest {
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager delegate = context.mock(AlgorithmManager.class);
     ShortestPathAlgorithmManager manager = new ShortestPathAlgorithmManager(delegate);
+    ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(Graph.createGraph());
 
     @Test
     public void delegatesToDelegateManagerWhenRunningAlgorithm() {
@@ -33,7 +37,7 @@ public class ShortestPathAlgorithmManagerTest {
 
     @Test
     public void returnsCorrectSetOfAlgorithms() {
-        ShortestPathAlgorithmManager manager = ShortestPathAlgorithmManager.create(null);
+        ShortestPathAlgorithmManager manager = ShortestPathAlgorithmManager.create(observableGraph);
         assertEquals(Set.of(DIJKSTRA, BELLMAN_FORD, FLOYD_WARSHALL), manager.getSupportedAlgorithms());
     }
 }

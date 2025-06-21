@@ -1,5 +1,8 @@
 package graph.traversalAlgorithms.paths;
 
+import graph.dataModel.Graph;
+import graph.dataModel.GraphServiceExtractor;
+import graph.events.ObservableGraphView;
 import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 import org.jmock.Expectations;
@@ -18,6 +21,7 @@ public class PathAlgorithmManagerTest {
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager delegate = context.mock(AlgorithmManager.class);
     PathAlgorithmManager manager = new PathAlgorithmManager(delegate);
+    ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(Graph.createGraph());
 
     @Test
     public void delegatesToDelegateManagerWhenRunningAlgorithm() {
@@ -33,7 +37,7 @@ public class PathAlgorithmManagerTest {
 
     @Test
     public void returnsCorrectSetOfAlgorithms() {
-        PathAlgorithmManager manager = PathAlgorithmManager.create(null);
+        PathAlgorithmManager manager = PathAlgorithmManager.create(observableGraph);
         assertEquals(Set.of(DFS_ALL_PATHS), manager.getSupportedAlgorithms());
     }
 }

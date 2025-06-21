@@ -1,5 +1,7 @@
 package graph.traversalAlgorithms;
 
+import java.util.Objects;
+
 public class TraversalInput {
 
     private final String fromNodeId;
@@ -25,6 +27,22 @@ public class TraversalInput {
     public Integer getMaxLength() { return this.maxLength; }
 
     public Boolean getCondition() { return this.condition; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof TraversalInput otherInput) {
+            return Objects.equals(this.getFromNodeId(), otherInput.getFromNodeId()) &&
+                    Objects.equals(this.getToNodeId(), otherInput.getToNodeId()) &&
+                    Objects.equals(this.getMaxLength(), otherInput.getMaxLength()) &&
+                    Objects.equals(this.getCondition(), otherInput.getCondition());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fromNodeId, toNodeId, maxLength, condition);
+    }
 
     public static class TraversalInputBuilder {
         private String fromNodeId;

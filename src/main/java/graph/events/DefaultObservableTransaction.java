@@ -1,53 +1,42 @@
-package graph.dataModel;
+package graph.events;
 
-import graph.events.DefaultObservableGraph;
-import graph.events.InternalGraphOperations;
-import graph.events.ObservableGraphOperations;
+import graph.dataModel.Edge;
+import graph.dataModel.Node;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
-import graph.operations.GraphOperations;
-import graph.operations.GraphService;
-import graph.storage.GraphStorage;
-import graph.storage.InMemoryGraphStorage;
-import graph.traversalAlgorithms.GraphTraversalView;
+import graph.operations.TransactionOperations;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
-public class Graph implements GraphOperations, GraphTraversalView {
+import static graph.events.GraphEvent.*;
 
-    private final ObservableGraphOperations service;
-    private final String id;
+public class DefaultObservableTransaction implements TransactionOperations {
 
-    private Graph(ObservableGraphOperations service, String id) {
+    private final TransactionOperations service;
+    private final Consumer<List<GraphEvent>> callback;
+    private final List<GraphEvent> events;
+
+    public DefaultObservableTransaction(TransactionOperations service, Consumer<List<GraphEvent>> callback) {
         this.service = service;
-        this.id = id;
+        this.callback = callback;
+        this.events = new ArrayList<>();
     }
 
-    protected ObservableGraphOperations getService() {
-        return this.service;
-    }
-
-    public static Graph createGraph() {
-        GraphStorage storage = InMemoryGraphStorage.create();
-        return createRecoveryGraph(storage, UUID.randomUUID().toString());
-    }
-
-    static Graph createRecoveryGraph(GraphStorage storage, String graphId) {
-        InternalGraphOperations service = new GraphService(storage, graphId);
-        return new Graph(new DefaultObservableGraph(service), graphId);
-    }
-
-    public String getId() {
-        return id;
+    @Override
+    public void commit() {
+        service.commit();
+        this.callback.accept(events);
     }
 
     @Override
     public Node addNode(Map<String, Object> attributes) throws IllegalArgumentException {
-        return service.addNode(attributes);
+        Node node = service.addNode(attributes);
+        events.add(ADD_NODE);
+        return node;
     }
 
     @Override
@@ -82,17 +71,26 @@ public class Graph implements GraphOperations, GraphTraversalView {
 
     @Override
     public Node deleteNode(String id) throws NodeNotFoundException {
-        return service.deleteNode(id);
+        Node node = service.deleteNode(id);
+        events.add(DELETE_NODE);
+        return node;
     }
 
     @Override
     public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws IllegalArgumentException, NodeNotFoundException, EdgeExistsException {
-        return service.addEdge(source, target, properties, weight);
+        Edge edge = service.addEdge(source, target, properties, weight);
+        events.add(ADD_EDGE);
+        return edge;
     }
 
     @Override
     public Edge getEdgeById(String id) throws EdgeNotFoundException {
         return service.getEdgeById(id);
+    }
+
+    @Override
+    public Edge getEdgeByNodeIds(String source, String target) throws NodeNotFoundException, EdgeNotFoundException {
+        return service.getEdgeByNodeIds(source, target);
     }
 
     @Override
@@ -111,23 +109,9 @@ public class Graph implements GraphOperations, GraphTraversalView {
     }
 
     @Override
-    public List<Edge> getEdgesByWeightRange(double min, double max) {
-        return service.getEdgesByWeightRange(min, max);
-    }
-
-    @Override
-    public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
-        return service.getEdgesWithWeightGreaterThan(weight);
-    }
-
-    @Override
-    public List<Edge> getEdgesWithWeightLessThan(double weight) {
-        return service.getEdgesWithWeightLessThan(weight);
-    }
-
-    @Override
     public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
         service.updateEdge(edgeId, weight);
+        events.add(UPDATE_EDGE_WEIGHT);
     }
 
     @Override
@@ -147,34 +131,8 @@ public class Graph implements GraphOperations, GraphTraversalView {
 
     @Override
     public Edge deleteEdge(String edgeId) throws EdgeNotFoundException {
-        return service.deleteEdge(edgeId);
-    }
-
-    @Override
-    public List<Edge> getEdgesFromNode(String nodeId) throws NodeNotFoundException {
-        return service.getEdgesFromNode(nodeId);
-    }
-
-    @Override
-    public List<String> getNodesIdWithEdgeToNode(String nodeId) throws NodeNotFoundException {
-        return service.getNodesIdWithEdgeToNode(nodeId);
-    }
-
-    @Override
-    public Edge getEdgeByNodeIds(String source, String target) {
-        return service.getEdgeByNodeIds(source, target);
-    }
-
-    @Override
-    public Transaction createTransaction() {
-        return service.createTransaction();
-    }
-
-    @Override
-    public String toString() {
-        return
-                "Graph [id=" + id + "]\n" +
-                "Nodes: " + getNodes().stream().map(Node::toString).collect(Collectors.joining(", ")) + "\n" +
-                "Edges: " + getEdges().stream().map(Edge::toString).collect(Collectors.joining(", "));
+        Edge edge = service.deleteEdge(edgeId);
+        events.add(DELETE_EDGE);
+        return edge;
     }
 }

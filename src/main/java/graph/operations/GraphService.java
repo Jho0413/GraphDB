@@ -3,6 +3,9 @@ package graph.operations;
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
 import graph.dataModel.Transaction;
+import graph.events.DefaultObservableTransaction;
+import graph.events.GraphEvent;
+import graph.events.InternalGraphOperations;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
@@ -10,8 +13,9 @@ import graph.storage.GraphStorage;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
-public class GraphService implements GraphOperations {
+public class GraphService implements InternalGraphOperations {
 
     private final GraphStorage storage;
     private final String graphId;
@@ -197,6 +201,18 @@ public class GraphService implements GraphOperations {
         try {
             TransactionOperations logger = TransactionLogger.create(graphId, service);
             return new Transaction(logger);
+        } catch (IOException e) {
+            throw new RuntimeException("Error creating transaction");
+        }
+    }
+
+    @Override
+    public Transaction createTransactionWithCallback(Consumer<List<GraphEvent>> callback) {
+        TransactionOperations service = TransactionService.create(storage);
+        try {
+            TransactionOperations logger = TransactionLogger.create(graphId, service);
+            TransactionOperations observableTransaction = new DefaultObservableTransaction(logger, callback);
+            return new Transaction(observableTransaction);
         } catch (IOException e) {
             throw new RuntimeException("Error creating transaction");
         }

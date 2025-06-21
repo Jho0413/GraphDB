@@ -1,5 +1,8 @@
 package graph.traversalAlgorithms.cycles;
 
+import graph.dataModel.Graph;
+import graph.dataModel.GraphServiceExtractor;
+import graph.events.ObservableGraphView;
 import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 import org.jmock.Expectations;
@@ -18,6 +21,7 @@ public class CyclesAlgorithmManagerTest {
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager delegate = context.mock(AlgorithmManager.class);
     CyclesAlgorithmManager manager = new CyclesAlgorithmManager(delegate);
+    ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(Graph.createGraph());
 
     @Test
     public void delegatesToDelegateManagerWhenRunningAlgorithm() {
@@ -33,7 +37,7 @@ public class CyclesAlgorithmManagerTest {
 
     @Test
     public void returnsCorrectSetOfAlgorithms() {
-        CyclesAlgorithmManager manager = CyclesAlgorithmManager.create(null);
+        CyclesAlgorithmManager manager = CyclesAlgorithmManager.create(observableGraph);
         assertEquals(Set.of(BELLMAN_FORD_CYCLE, DFS_HAS_CYCLE, JOHNSONS), manager.getSupportedAlgorithms());
     }
 }

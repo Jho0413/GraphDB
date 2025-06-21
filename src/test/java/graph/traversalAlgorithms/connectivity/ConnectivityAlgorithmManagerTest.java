@@ -1,5 +1,10 @@
 package graph.traversalAlgorithms.connectivity;
 
+import graph.dataModel.Graph;
+import graph.dataModel.GraphServiceExtractor;
+import graph.events.DefaultObservableGraph;
+import graph.events.ObservableGraphView;
+import graph.operations.GraphService;
 import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 import org.jmock.Expectations;
@@ -18,6 +23,7 @@ public class ConnectivityAlgorithmManagerTest {
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager delegate = context.mock(AlgorithmManager.class);
     ConnectivityAlgorithmManager manager = new ConnectivityAlgorithmManager(delegate);
+    ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(Graph.createGraph());
 
     @Test
     public void delegatesToDelegateManagerWhenRunningAlgorithm() {
@@ -33,7 +39,7 @@ public class ConnectivityAlgorithmManagerTest {
 
     @Test
     public void returnsCorrectSetOfAlgorithms() {
-        ConnectivityAlgorithmManager manager = ConnectivityAlgorithmManager.create(null);
+        ConnectivityAlgorithmManager manager = ConnectivityAlgorithmManager.create(observableGraph);
         assertEquals(Set.of(
                 DFS_NODES_CONNECTED,
                 DFS_NODES_CONNECTED_TO,

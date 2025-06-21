@@ -72,7 +72,9 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     public void deleteEdge(String id) {
         deletedEdges.add(id);
         Edge edge = modifiedEdges.remove(id);
-        adjacencyList.get(edge.getSource()).remove(edge.getDestination());
+        if (edge != null) {
+            adjacencyList.get(edge.getSource()).remove(edge.getDestination());
+        }
         operations.add(new DeleteEdge(id));
     }
 

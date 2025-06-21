@@ -5,6 +5,7 @@ import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.exceptions.CycleFoundException;
 import graph.queryModel.Path;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
@@ -14,19 +15,26 @@ import static org.junit.Assert.*;
 
 public class TraversalAlgorithmManagerTest {
 
-    private final Graph graph = Graph.createGraph();
-    Node nodeA = graph.addNode(Map.of("name", "A"));
-    Node nodeB = graph.addNode(Map.of("name", "B"));
-    Node nodeC = graph.addNode(Map.of("name", "C"));
-    Node nodeD = graph.addNode(Map.of("name", "D"));
+    private Graph graph;
+    private TraversalAlgorithmManager manager;
+    Node nodeA, nodeB, nodeC, nodeD;
+    Edge edgeAB, edgeAC, edgeBC, edgeCD, edgeDA;
 
-    Edge edgeAB = graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
-    Edge edgeAC = graph.addEdge(nodeA.getId(), nodeC.getId(), Map.of(), -2.0);
-    Edge edgeBC = graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 3.0);
-    Edge edgeCD = graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 4.0);
-    Edge edgeDA = graph.addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 5.0);
+    @Before
+    public void setUp() {
+        graph = Graph.createGraph();
+        manager = TraversalAlgorithmManager.createManager(graph);
+        nodeA = graph.addNode(Map.of("name", "A"));
+        nodeB = graph.addNode(Map.of("name", "B"));
+        nodeC = graph.addNode(Map.of("name", "C"));
+        nodeD = graph.addNode(Map.of("name", "D"));
 
-    TraversalAlgorithmManager manager = TraversalAlgorithmManager.createManager(graph);
+        edgeAB = graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
+        edgeAC = graph.addEdge(nodeA.getId(), nodeC.getId(), Map.of(), -2.0);
+        edgeBC = graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 3.0);
+        edgeCD = graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 4.0);
+        edgeDA = graph.addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 5.0);
+    }
 
     // ============ SHORTEST PATH ALGORITHMS ============
 
@@ -58,10 +66,11 @@ public class TraversalAlgorithmManagerTest {
 
     @Test
     public void ableToRunDFSNodesConnectedAlgorithm() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder().setFromNodeId(nodeA.getId()).build();
+        TraversalInput input = new TraversalInput.TraversalInputBuilder()
+                .setFromNodeId(nodeD.getId()).setToNodeId(nodeC.getId()).build();
         TraversalResult result = manager.runAlgorithm(DFS_NODES_CONNECTED, input);
-        assertNotNull(result.getNodeIds());
-        assertEquals(Set.of(nodeA.getId(), nodeB.getId(), nodeC.getId(), nodeD.getId()), result.getNodeIds());
+        assertNotNull(result.getConditionResult());
+        assertTrue(result.getConditionResult());
     }
 
     @Test
@@ -74,11 +83,10 @@ public class TraversalAlgorithmManagerTest {
 
     @Test
     public void ableToRunDFSNodesConnectedToAlgorithm() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(nodeD.getId()).setToNodeId(nodeC.getId()).build();
+        TraversalInput input = new TraversalInput.TraversalInputBuilder().setFromNodeId(nodeA.getId()).build();
         TraversalResult result = manager.runAlgorithm(DFS_NODES_CONNECTED_TO, input);
-        assertNotNull(result.getConditionResult());
-        assertTrue(result.getConditionResult());
+        assertNotNull(result.getNodeIds());
+        assertEquals(Set.of(nodeA.getId(), nodeB.getId(), nodeC.getId(), nodeD.getId()), result.getNodeIds());
     }
 
     @Test
@@ -178,5 +186,55 @@ public class TraversalAlgorithmManagerTest {
     @Test(expected = IllegalArgumentException.class)
     public void throwsIllegalArgumentExceptionWhenUnknownAlgorithmTypeGiven() {
         manager.runAlgorithm(null, null);
+    }
+
+    // ============ CACHING ============
+
+    @Test
+    public void resultIsCachedWhenAlgorithmWithInputRunsTheFirstTime() {
+        long start = System.nanoTime();
+        TraversalResult first = manager.runAlgorithm(KOSARAJU, null);
+        long end = System.nanoTime();
+        long coldTimeNs = end - start;
+
+        long startCached = System.nanoTime();
+        TraversalResult second = manager.runAlgorithm(KOSARAJU, null);
+        long endCached = System.nanoTime();
+        long cachedTimeNs = endCached - startCached;
+
+        System.out.println("Cold run time:   " + coldTimeNs + " ns");
+        System.out.println("Cached run time: " + cachedTimeNs + " ns");
+
+        assertEquals(first.getComponents(), second.getComponents());
+        assertTrue( cachedTimeNs < coldTimeNs);
+    }
+
+    @Test
+    public void cacheIsInvalidatedWhenGraphEventThatSatisfiesPredicateOccurs() {
+        TraversalResult first = manager.runAlgorithm(KOSARAJU, null);
+        graph.addNode(Map.of());
+        TraversalResult second = manager.runAlgorithm(KOSARAJU, null);
+
+        assertNotEquals(first.getComponents(), second.getComponents());
+    }
+
+    @Test
+    public void cacheIsNotClearedWhenGraphEventThatDoesNotSatisfyPredicateOccurs() {
+        long start = System.nanoTime();
+        TraversalResult first = manager.runAlgorithm(KOSARAJU, null);
+        long end = System.nanoTime();
+        long coldTimeNs = end - start;
+
+        graph.updateEdge(edgeAB.getId(), 3.0);
+        long startCached = System.nanoTime();
+        TraversalResult second = manager.runAlgorithm(KOSARAJU, null);
+        long endCached = System.nanoTime();
+        long cachedTimeNs = endCached - startCached;
+
+        System.out.println("Cold run time:   " + coldTimeNs + " ns");
+        System.out.println("Cached run time: " + cachedTimeNs + " ns");
+
+        assertEquals(first.getComponents(), second.getComponents());
+        assertTrue(cachedTimeNs < coldTimeNs);
     }
 }
