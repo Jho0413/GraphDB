@@ -1,5 +1,8 @@
 package graph.queryModel;
 
+import graph.dataModel.Graph;
+import graph.dataModel.GraphServiceExtractor;
+import graph.events.ObservableGraphOperations;
 import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalAlgorithmManager;
 
@@ -11,7 +14,7 @@ public class GraphQueryClient {
     private final GraphStructureAnalyser structureAnalyser;
     private final GraphCycleAnalyser cycleAnalyser;
 
-    public static GraphQueryClient createClient(GraphTraversalView graph) {
+    public static GraphQueryClient createClient(Graph graph) {
         GraphQueryValidator validator = new DefaultGraphValidator(graph);
         TraversalAlgorithmManager algorithmManager = TraversalAlgorithmManager.createManager(graph);
         GraphPathFinder pathFinder = new GraphPathFinder(algorithmManager, validator);

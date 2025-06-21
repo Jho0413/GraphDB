@@ -1,6 +1,6 @@
 package graph.traversalAlgorithms.stronglyConnected;
 
-import graph.dataModel.Graph;
+import graph.events.ObservableGraphView;
 import graph.traversalAlgorithms.*;
 
 import java.util.HashMap;
@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import static graph.events.GraphEvent.*;
 import static graph.traversalAlgorithms.AlgorithmType.KOSARAJU;
 import static graph.traversalAlgorithms.AlgorithmType.TARJAN;
 
@@ -19,12 +20,14 @@ public class StronglyConnectedAlgorithmManager implements AlgorithmManager {
         this.delegate = algorithmManager;
     }
 
-    public static StronglyConnectedAlgorithmManager create(GraphTraversalView graph) {
+    public static StronglyConnectedAlgorithmManager create(ObservableGraphView graph) {
         Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(KOSARAJU, Kosaraju::new);
         supportedAlgorithms.put(TARJAN, Tarjan::new);
 
-        return new StronglyConnectedAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));
+        return new StronglyConnectedAlgorithmManager(AlgorithmManagerFactory.createWithCache(
+                supportedAlgorithms, graph, e -> Set.of(ADD_NODE, DELETE_NODE, ADD_EDGE, DELETE_EDGE).contains(e)
+        ));
     }
 
     @Override

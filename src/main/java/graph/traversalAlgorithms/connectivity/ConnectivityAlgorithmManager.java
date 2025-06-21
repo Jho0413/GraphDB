@@ -1,5 +1,6 @@
 package graph.traversalAlgorithms.connectivity;
 
+import graph.events.ObservableGraphView;
 import graph.traversalAlgorithms.*;
 
 import java.util.HashMap;
@@ -7,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import static graph.events.GraphEvent.*;
 import static graph.traversalAlgorithms.AlgorithmType.*;
 
 public class ConnectivityAlgorithmManager implements AlgorithmManager {
@@ -17,14 +19,16 @@ public class ConnectivityAlgorithmManager implements AlgorithmManager {
         this.delegate = algorithmManager;
     }
 
-    public static ConnectivityAlgorithmManager create(GraphTraversalView graph) {
+    public static ConnectivityAlgorithmManager create(ObservableGraphView graph) {
         Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(DFS_NODES_CONNECTED, DFSNodesConnectedTo::new);
         supportedAlgorithms.put(DFS_NODES_CONNECTED_TO, DFSNodesConnector::new);
         supportedAlgorithms.put(DFS_REACHABLE_NODES, DFSGraphConnector::new);
         supportedAlgorithms.put(BFS_COMMON_NODES_BY_DEPTH, BFSCommonNodesByDepth::new);
 
-        return new ConnectivityAlgorithmManager(new BaseAlgorithmManager(supportedAlgorithms, graph));
+        return new ConnectivityAlgorithmManager(AlgorithmManagerFactory.createWithCache(
+                supportedAlgorithms, graph, e -> Set.of(DELETE_NODE, ADD_EDGE, DELETE_EDGE).contains(e)
+        ));
     }
 
     @Override

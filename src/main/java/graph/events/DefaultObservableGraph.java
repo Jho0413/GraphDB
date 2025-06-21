@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static graph.events.GraphEvent.*;
 
-public class DefaultObservableGraph implements ObservableGraphWithOperations {
+public class DefaultObservableGraph implements ObservableGraphOperations {
 
     private final GraphOperations service;
     private final List<GraphListener> listeners;

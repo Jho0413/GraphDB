@@ -1,6 +1,6 @@
 package graph.queryModel;
 
-import graph.traversalAlgorithms.GraphTraversalView;
+import graph.dataModel.Graph;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,8 +11,7 @@ public class GraphQueryClientTest {
 
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
-    GraphTraversalView graph = context.mock(GraphTraversalView.class);
-    GraphQueryClient client = GraphQueryClient.createClient(graph);
+    GraphQueryClient client = GraphQueryClient.createClient(Graph.createGraph());
 
     @Test
     public void creatingClientInitialisesAllComponents() {

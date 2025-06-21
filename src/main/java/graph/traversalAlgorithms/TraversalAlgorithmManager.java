@@ -1,5 +1,9 @@
 package graph.traversalAlgorithms;
 
+import graph.dataModel.Graph;
+import graph.dataModel.GraphServiceExtractor;
+import graph.events.ObservableGraphOperations;
+import graph.events.ObservableGraphView;
 import graph.traversalAlgorithms.connectivity.ConnectivityAlgorithmManager;
 import graph.traversalAlgorithms.cycles.CyclesAlgorithmManager;
 import graph.traversalAlgorithms.paths.PathAlgorithmManager;
@@ -20,14 +24,15 @@ public class TraversalAlgorithmManager implements AlgorithmManager {
         this.algorithmManagerMap = algorithmManagerMap;
     }
 
-    public static TraversalAlgorithmManager createManager(GraphTraversalView graph) {
+    public static TraversalAlgorithmManager createManager(Graph graph) {
+        ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(graph);
         List<AlgorithmManager> algorithmManagers = List.of(
-                ShortestPathAlgorithmManager.create(graph),
-                StronglyConnectedAlgorithmManager.create(graph),
-                CyclesAlgorithmManager.create(graph),
-                PathAlgorithmManager.create(graph),
-                ConnectivityAlgorithmManager.create(graph),
-                StructureAlgorithmManager.create(graph)
+                ShortestPathAlgorithmManager.create(observableGraph),
+                StronglyConnectedAlgorithmManager.create(observableGraph),
+                CyclesAlgorithmManager.create(observableGraph),
+                PathAlgorithmManager.create(observableGraph),
+                ConnectivityAlgorithmManager.create(observableGraph),
+                StructureAlgorithmManager.create(observableGraph)
         );
 
         Map<AlgorithmType, AlgorithmManager> algorithmManagerMap = new HashMap<>();

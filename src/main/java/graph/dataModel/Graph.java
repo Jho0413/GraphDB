@@ -1,5 +1,7 @@
 package graph.dataModel;
 
+import graph.events.DefaultObservableGraph;
+import graph.events.ObservableGraphOperations;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
@@ -16,12 +18,16 @@ import java.util.stream.Collectors;
 
 public class Graph implements GraphOperations, GraphTraversalView {
 
-    private final GraphOperations service;
+    private final ObservableGraphOperations service;
     private final String id;
 
-    private Graph(GraphOperations service, String id) {
+    private Graph(ObservableGraphOperations service, String id) {
         this.service = service;
         this.id = id;
+    }
+
+    protected ObservableGraphOperations getService() {
+        return this.service;
     }
 
     public static Graph createGraph() {
@@ -31,7 +37,7 @@ public class Graph implements GraphOperations, GraphTraversalView {
 
     static Graph createRecoveryGraph(GraphStorage storage, String graphId) {
         GraphOperations service = new GraphService(storage, graphId);
-        return new Graph(service, graphId);
+        return new Graph(new DefaultObservableGraph(service), graphId);
     }
 
     public String getId() {
