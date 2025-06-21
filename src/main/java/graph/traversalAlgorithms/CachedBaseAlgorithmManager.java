@@ -3,8 +3,8 @@ package graph.traversalAlgorithms;
 import graph.events.GraphEvent;
 import graph.events.ObservableGraph;
 import graph.events.GraphListener;
+import graph.storage.LRUCache;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -12,13 +12,18 @@ import java.util.function.Predicate;
 public class CachedBaseAlgorithmManager implements AlgorithmManager, GraphListener {
 
     private final AlgorithmManager algorithmManager;
-    private final Map<CacheQueryKey, TraversalResult> cache = new LinkedHashMap<>(5);
+    private Map<CacheQueryKey, TraversalResult> cache;
     private final Predicate<GraphEvent> eventPredicate;
 
     public CachedBaseAlgorithmManager(AlgorithmManager algorithmManager, ObservableGraph graph, Predicate<GraphEvent> eventPredicate) {
         this.algorithmManager = algorithmManager;
         this.eventPredicate = eventPredicate;
+        this.cache = new LRUCache<>(5);
         graph.addListener(this);
+    }
+
+    protected void setCacheCapacity(int capacity) {
+        cache = new LRUCache<>(capacity);
     }
 
     @Override

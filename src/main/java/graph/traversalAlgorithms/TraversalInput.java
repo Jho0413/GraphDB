@@ -1,5 +1,7 @@
 package graph.traversalAlgorithms;
 
+import java.util.Objects;
+
 public class TraversalInput {
 
     private final String fromNodeId;
@@ -29,10 +31,10 @@ public class TraversalInput {
     @Override
     public boolean equals(Object o) {
         if (o instanceof TraversalInput otherInput) {
-            return this.getFromNodeId().equals(otherInput.getFromNodeId())
-                    && this.getToNodeId().equals(otherInput.getToNodeId())
-                    && this.getMaxLength().equals(otherInput.getMaxLength())
-                    && this.getCondition().equals(otherInput.getCondition());
+            return Objects.equals(this.getFromNodeId(), otherInput.getFromNodeId()) &&
+                    Objects.equals(this.getToNodeId(), otherInput.getToNodeId()) &&
+                    Objects.equals(this.getMaxLength(), otherInput.getMaxLength()) &&
+                    Objects.equals(this.getCondition(), otherInput.getCondition());
         }
         return false;
     }
