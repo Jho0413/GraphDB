@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graph.events.GraphEvent.*;
 import static org.junit.Assert.assertEquals;
@@ -147,5 +148,14 @@ public class DefaultObservableGraphTest {
         }});
 
         graph.updateEdge(EDGE_ID, WEIGHT);
+    }
+
+    @Test
+    public void transactionWithCallbackIsCalledWhenCreatingATransaction() {
+        context.checking(new Expectations() {{
+            oneOf(service).createTransactionWithCallback(with(any(Consumer.class)));
+        }});
+
+        graph.createTransaction();
     }
 }

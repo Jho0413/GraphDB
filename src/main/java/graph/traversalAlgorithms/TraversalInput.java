@@ -39,6 +39,11 @@ public class TraversalInput {
         return false;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(fromNodeId, toNodeId, maxLength, condition);
+    }
+
     public static class TraversalInputBuilder {
         private String fromNodeId;
         private String toNodeId;

@@ -21,8 +21,8 @@ public class ConnectivityAlgorithmManager implements AlgorithmManager {
 
     public static ConnectivityAlgorithmManager create(ObservableGraphView graph) {
         Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
-        supportedAlgorithms.put(DFS_NODES_CONNECTED, DFSNodesConnectedTo::new);
-        supportedAlgorithms.put(DFS_NODES_CONNECTED_TO, DFSNodesConnector::new);
+        supportedAlgorithms.put(DFS_NODES_CONNECTED, DFSNodesConnector::new);
+        supportedAlgorithms.put(DFS_NODES_CONNECTED_TO, DFSNodesConnectedTo::new);
         supportedAlgorithms.put(DFS_REACHABLE_NODES, DFSGraphConnector::new);
         supportedAlgorithms.put(BFS_COMMON_NODES_BY_DEPTH, BFSCommonNodesByDepth::new);
 
