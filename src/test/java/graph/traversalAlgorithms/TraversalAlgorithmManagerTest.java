@@ -66,10 +66,11 @@ public class TraversalAlgorithmManagerTest {
 
     @Test
     public void ableToRunDFSNodesConnectedAlgorithm() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder().setFromNodeId(nodeA.getId()).build();
+        TraversalInput input = new TraversalInput.TraversalInputBuilder()
+                .setFromNodeId(nodeD.getId()).setToNodeId(nodeC.getId()).build();
         TraversalResult result = manager.runAlgorithm(DFS_NODES_CONNECTED, input);
-        assertNotNull(result.getNodeIds());
-        assertEquals(Set.of(nodeA.getId(), nodeB.getId(), nodeC.getId(), nodeD.getId()), result.getNodeIds());
+        assertNotNull(result.getConditionResult());
+        assertTrue(result.getConditionResult());
     }
 
     @Test
@@ -82,11 +83,10 @@ public class TraversalAlgorithmManagerTest {
 
     @Test
     public void ableToRunDFSNodesConnectedToAlgorithm() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(nodeD.getId()).setToNodeId(nodeC.getId()).build();
+        TraversalInput input = new TraversalInput.TraversalInputBuilder().setFromNodeId(nodeA.getId()).build();
         TraversalResult result = manager.runAlgorithm(DFS_NODES_CONNECTED_TO, input);
-        assertNotNull(result.getConditionResult());
-        assertTrue(result.getConditionResult());
+        assertNotNull(result.getNodeIds());
+        assertEquals(Set.of(nodeA.getId(), nodeB.getId(), nodeC.getId(), nodeD.getId()), result.getNodeIds());
     }
 
     @Test
