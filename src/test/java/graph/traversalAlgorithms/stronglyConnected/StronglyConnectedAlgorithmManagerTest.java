@@ -1,5 +1,8 @@
 package graph.traversalAlgorithms.stronglyConnected;
 
+import graph.dataModel.Graph;
+import graph.dataModel.GraphServiceExtractor;
+import graph.events.ObservableGraphView;
 import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 import org.jmock.Expectations;
@@ -18,6 +21,7 @@ public class StronglyConnectedAlgorithmManagerTest {
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager delegate = context.mock(AlgorithmManager.class);
     StronglyConnectedAlgorithmManager manager = new StronglyConnectedAlgorithmManager(delegate);
+    ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(Graph.createGraph());
 
     @Test
     public void delegatesToDelegateManagerWhenRunningAlgorithm() {
@@ -33,7 +37,7 @@ public class StronglyConnectedAlgorithmManagerTest {
 
     @Test
     public void returnsCorrectSetOfAlgorithms() {
-        StronglyConnectedAlgorithmManager manager = StronglyConnectedAlgorithmManager.create(null);
+        StronglyConnectedAlgorithmManager manager = StronglyConnectedAlgorithmManager.create(observableGraph);
         assertEquals(Set.of(KOSARAJU, TARJAN), manager.getSupportedAlgorithms());
     }
 }

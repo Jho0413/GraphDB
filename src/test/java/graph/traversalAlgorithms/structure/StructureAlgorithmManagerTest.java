@@ -1,5 +1,8 @@
 package graph.traversalAlgorithms.structure;
 
+import graph.dataModel.Graph;
+import graph.dataModel.GraphServiceExtractor;
+import graph.events.ObservableGraphView;
 import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.TraversalResult;
 import org.jmock.Expectations;
@@ -18,6 +21,7 @@ public class StructureAlgorithmManagerTest {
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager delegate = context.mock(AlgorithmManager.class);
     StructureAlgorithmManager manager = new StructureAlgorithmManager(delegate);
+    ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(Graph.createGraph());
 
     @Test
     public void delegatesToDelegateManagerWhenRunningAlgorithm() {
@@ -33,7 +37,7 @@ public class StructureAlgorithmManagerTest {
 
     @Test
     public void returnsCorrectSetOfAlgorithms() {
-        StructureAlgorithmManager manager = StructureAlgorithmManager.create(null);
+        StructureAlgorithmManager manager = StructureAlgorithmManager.create(observableGraph);
         assertEquals(Set.of(TOPOLOGICAL_SORT), manager.getSupportedAlgorithms());
     }
 }
