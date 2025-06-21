@@ -6,20 +6,20 @@ import graph.dataModel.Transaction;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
-import graph.operations.GraphOperations;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graph.events.GraphEvent.*;
 
 public class DefaultObservableGraph implements ObservableGraphOperations {
 
-    private final GraphOperations service;
+    private final InternalGraphOperations service;
     private final List<GraphListener> listeners;
 
-    public DefaultObservableGraph(GraphOperations service) {
+    public DefaultObservableGraph(InternalGraphOperations service) {
         this.service = service;
         this.listeners = new ArrayList<GraphListener>();
     }
@@ -160,7 +160,8 @@ public class DefaultObservableGraph implements ObservableGraphOperations {
 
     @Override
     public Transaction createTransaction() {
-        return service.createTransaction();
+        Consumer<List<GraphEvent>> callback = graphEvents -> graphEvents.forEach(this::notifyListeners);
+        return service.createTransactionWithCallback(callback);
     }
 
     private void notifyListeners(GraphEvent event) {

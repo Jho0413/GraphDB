@@ -4,7 +4,6 @@ import graph.dataModel.Edge;
 import graph.dataModel.Node;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
-import graph.operations.GraphOperations;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Before;
@@ -21,7 +20,7 @@ public class DefaultObservableGraphTest {
 
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
-    GraphOperations service = context.mock(GraphOperations.class);
+    InternalGraphOperations service = context.mock(InternalGraphOperations.class);
     GraphListener listener = context.mock(GraphListener.class, "l1");
     GraphListener listener2 = context.mock(GraphListener.class, "l2");
 
