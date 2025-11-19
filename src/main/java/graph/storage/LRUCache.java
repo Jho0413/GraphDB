@@ -13,6 +13,9 @@ public class LRUCache<K, V> implements Cache<K, V> {
     private final Map<K, Node<K, V>> store = new HashMap<>();
 
     public LRUCache(int maxSize) {
+        if (maxSize <= 0) {
+            throw new IllegalArgumentException("Cache maxSize must be positive");
+        }
         this.maxSize = maxSize;
     }
 
