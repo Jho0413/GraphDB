@@ -3,16 +3,16 @@ package graph.traversalAlgorithms;
 import graph.events.GraphEvent;
 import graph.events.ObservableGraph;
 import graph.events.GraphListener;
+import graph.storage.Cache;
 import graph.storage.LRUCache;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
 public class CachedBaseAlgorithmManager implements AlgorithmManager, GraphListener {
 
     private final AlgorithmManager algorithmManager;
-    private Map<CacheQueryKey, TraversalResult> cache;
+    private Cache<CacheQueryKey, TraversalResult> cache;
     private final Predicate<GraphEvent> eventPredicate;
 
     public CachedBaseAlgorithmManager(AlgorithmManager algorithmManager, ObservableGraph graph, Predicate<GraphEvent> eventPredicate) {
