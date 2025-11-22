@@ -5,6 +5,7 @@ import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.dataModel.Transaction;
 import graph.queryModel.GraphQueryClient;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,12 +14,17 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
-public class GraphTransactionQueryIntegrationTest {
+public class GraphQueryCacheInvalidationIntegrationTest {
 
     private Graph graph;
     private GraphQueryClient queryClient;
     Node alice, bob, acme, city;
     Edge aliceBob;
+
+    @After
+    public void tearDown() throws Exception {
+        java.nio.file.Files.deleteIfExists(java.nio.file.Path.of("log"));
+    }
 
     @Before
     public void setUp() {
@@ -57,12 +63,23 @@ public class GraphTransactionQueryIntegrationTest {
         Transaction tx = graph.createTransaction();
         Edge edge = tx.deleteEdge(aliceBob.getId());
 
-        Set<String> second_nodes = queryClient.connectivity().getConnectedNodes(alice.getId());
-        assertEquals(Set.of(alice.getId(), bob.getId(), acme.getId(), city.getId()), second_nodes);
+        Set<String> duringNodes = queryClient.connectivity().getConnectedNodes(alice.getId());
+        assertEquals(Set.of(alice.getId(), bob.getId(), acme.getId(), city.getId()), duringNodes);
 
         tx.commit();
 
-        Set<String> third_nodes = queryClient.connectivity().getConnectedNodes(alice.getId());
-        assertEquals(Set.of(alice.getId(), acme.getId(), city.getId()), third_nodes);
+        Set<String> afterNodes = queryClient.connectivity().getConnectedNodes(alice.getId());
+        assertEquals(Set.of(alice.getId(), acme.getId(), city.getId()), afterNodes);
+    }
+
+    @Test
+    public void queryResultsReflectGraphModifications() {
+        Set<String> beforeNodes = queryClient.connectivity().getConnectedNodes(alice.getId());
+        assertEquals(Set.of(alice.getId(), bob.getId(), acme.getId(), city.getId()), beforeNodes);
+
+        graph.deleteEdge(aliceBob.getId());
+
+        Set<String> afterNodes = queryClient.connectivity().getConnectedNodes(alice.getId());
+        assertEquals(Set.of(alice.getId(), acme.getId(), city.getId()), afterNodes);
     }
 }

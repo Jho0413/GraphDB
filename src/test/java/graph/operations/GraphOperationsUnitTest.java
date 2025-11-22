@@ -9,6 +9,7 @@ import graph.helper.NodeBaseMatcher;
 import graph.storage.GraphStorage;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,6 +37,11 @@ public class GraphOperationsUnitTest {
 
     @Parameterized.Parameter(value = 0)
     public BiFunction<GraphStorage, String, GraphOperations> serviceCreator;
+
+    @After
+    public void tearDown() throws Exception {
+        java.nio.file.Files.deleteIfExists(java.nio.file.Path.of("log"));
+    }
 
     @Before
     public void setUp() {

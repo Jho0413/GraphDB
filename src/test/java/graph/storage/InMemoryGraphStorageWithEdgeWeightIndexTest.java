@@ -1,6 +1,7 @@
 package graph.storage;
 
 import graph.dataModel.Edge;
+import graph.dataModel.Node;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Rule;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class InMemoryGraphStorageWithEdgeWeightIndexTest {
 
@@ -75,5 +77,33 @@ public class InMemoryGraphStorageWithEdgeWeightIndexTest {
         }});
 
         storage.updateEdgeWeight(10.0, 20.0, edge);
+    }
+
+    @Test
+    public void removingNodeRemovesItsEdgesFromIndexQueries() {
+        InMemoryGraphStorage storage = new InMemoryGraphStorage(new DefaultEdgeWeightIndex());
+        storage.putNode(new Node(edge.getSource(), Map.of()));
+        storage.putNode(new Node(edge.getDestination(), Map.of()));
+        storage.putEdge(edge);
+        assertEquals(1, storage.getEdgesByWeight(10.0).size());
+
+        storage.removeNode(edge.getSource());
+
+        assertTrue(storage.getEdgesByWeight(10.0).isEmpty());
+        assertTrue(storage.getEdgesByWeightRange(5.0, 15.0).isEmpty());
+    }
+
+    @Test
+    public void removingAnEdgeRemovesTheEdgeFromIndexQueries() {
+        InMemoryGraphStorage storage = new InMemoryGraphStorage(new DefaultEdgeWeightIndex());
+        storage.putNode(new Node(edge.getSource(), Map.of()));
+        storage.putNode(new Node(edge.getDestination(), Map.of()));
+        storage.putEdge(edge);
+        assertEquals(1, storage.getEdgesByWeight(10.0).size());
+
+        storage.removeEdge(edge.getId());
+
+        assertTrue(storage.getEdgesByWeight(10.0).isEmpty());
+        assertTrue(storage.getEdgesByWeightRange(5.0, 15.0).isEmpty());
     }
 }

@@ -37,10 +37,11 @@ public class InMemoryGraphStorage implements GraphStorage {
 
     @Override
     public Node removeNode(String id) {
-        edges.entrySet().removeIf(entry -> {
-            Edge edge = entry.getValue();
-            return edge.getSource().equals(id) || edge.getDestination().equals(id);
-        });
+        List<String> edgesToRemove = edges.values().stream()
+                .filter(edge -> edge.getSource().equals(id) || edge.getDestination().equals(id))
+                .map(Edge::getId)
+                .toList();
+        edgesToRemove.forEach(this::removeEdge);
         adjacencyList.remove(id);
         adjacencyList.forEach((key, neighbours) -> neighbours.remove(id));
         return this.nodes.remove(id);

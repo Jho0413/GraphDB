@@ -3,8 +3,10 @@ package graph.traversalAlgorithms;
 import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
+import graph.dataModel.Transaction;
 import graph.exceptions.CycleFoundException;
 import graph.queryModel.Path;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,6 +21,11 @@ public class TraversalAlgorithmManagerTest {
     private TraversalAlgorithmManager manager;
     Node nodeA, nodeB, nodeC, nodeD;
     Edge edgeAB, edgeAC, edgeBC, edgeCD, edgeDA;
+
+    @After
+    public void tearDown() throws Exception {
+        java.nio.file.Files.deleteIfExists(java.nio.file.Path.of("log"));
+    }
 
     @Before
     public void setUp() {
@@ -236,5 +243,17 @@ public class TraversalAlgorithmManagerTest {
 
         assertEquals(first.getComponents(), second.getComponents());
         assertTrue(cachedTimeNs < coldTimeNs);
+    }
+
+    @Test
+    public void cacheIsInvalidatedAfterCommittedTransactionChangesGraph() {
+        TraversalResult initial = manager.runAlgorithm(KOSARAJU, null);
+
+        Transaction transaction = graph.createTransaction();
+        transaction.deleteEdge(edgeAB.getId());
+        transaction.commit();
+
+        TraversalResult afterCommit = manager.runAlgorithm(KOSARAJU, null);
+        assertNotEquals(initial.getComponents(), afterCommit.getComponents());
     }
 }
