@@ -164,7 +164,7 @@ public class TraversalAlgorithmManagerTest {
 
     @Test
     public void ableToRunKosarajuAlgorithm() {
-        TraversalResult result = manager.runAlgorithm(TARJAN, null);
+        TraversalResult result = manager.runAlgorithm(KOSARAJU, null);
         assertNotNull(result.getComponents());
         assertEquals(1, result.getComponents().size());
         assertEquals(

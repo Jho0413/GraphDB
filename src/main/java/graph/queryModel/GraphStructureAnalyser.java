@@ -7,7 +7,7 @@ import graph.traversalAlgorithms.AlgorithmManager;
 import graph.traversalAlgorithms.GraphTraversalView;
 import graph.traversalAlgorithms.TraversalResult;
 
-import java.util.Set;
+import java.util.List;
 
 import static graph.traversalAlgorithms.AlgorithmType.FLOYD_WARSHALL;
 import static graph.traversalAlgorithms.AlgorithmType.TOPOLOGICAL_SORT;
@@ -63,12 +63,12 @@ public class GraphStructureAnalyser {
         return diameter;
     }
 
-    public Set<String> topologicalSort() throws CycleFoundException {
+    public List<String> topologicalSort() throws CycleFoundException {
         TraversalResult result = algorithmManager.runAlgorithm(TOPOLOGICAL_SORT, null);
         CycleFoundException exception = (CycleFoundException) result.getException();
         if (exception != null) {
             throw exception;
         }
-        return result.getNodeIds();
+        return result.getOrderedNodeIds();
     }
 }

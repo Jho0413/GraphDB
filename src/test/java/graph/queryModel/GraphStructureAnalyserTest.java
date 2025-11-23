@@ -13,7 +13,6 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static graph.traversalAlgorithms.AlgorithmType.FLOYD_WARSHALL;
 import static graph.traversalAlgorithms.AlgorithmType.TOPOLOGICAL_SORT;
@@ -109,13 +108,13 @@ public class GraphStructureAnalyserTest {
 
     @Test
     public void ableToPerformTopologicalSortOnGraph() throws Exception {
-        Set<String> nodeIds = Set.of("n1", "n2", "n3");
+        List<String> orderedNodeIds = List.of("n1", "n2", "n3");
         context.checking(new Expectations() {{
             exactly(1).of(manager).runAlgorithm(TOPOLOGICAL_SORT, null);
-            will(returnValue(new TraversalResult.TraversalResultBuilder().setNodeIds(nodeIds).build()));
+            will(returnValue(new TraversalResult.TraversalResultBuilder().setOrderedNodeIds(orderedNodeIds).build()));
         }});
 
-        assertEquals(nodeIds, analyser.topologicalSort());
+        assertEquals(orderedNodeIds, analyser.topologicalSort());
     }
 
     @Test(expected = CycleFoundException.class)
