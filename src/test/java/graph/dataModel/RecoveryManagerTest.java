@@ -254,6 +254,62 @@ public class RecoveryManagerTest {
         checkNodeComponents("n1", ATTRIBUTES, graphs.get("g2").getNodeById("n1"));
     }
 
+    // ============ Defensive recovery ============
+
+    @Test
+    public void skipAddEdgeWhenEndpointsAreMissing() throws IOException {
+        when(reader.readFromFile()).thenReturn(List.of(List.of(
+                beginTransactionInfo,
+                addNodeInfo,
+                addEdgeInfo,
+                commitInfo
+        )));
+
+        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
+        Graph graph = graphs.get("g1");
+        assertNotNull(graph);
+        assertEquals(1, graph.getNodes().size());
+        assertTrue("edge should be skipped because target is missing", graph.getEdges().isEmpty());
+    }
+
+    @Test
+    public void skipEdgeUpdatesWhenEdgeIsMissing() throws IOException {
+        when(reader.readFromFile()).thenReturn(List.of(List.of(
+                beginTransactionInfo,
+                addNodeInfo,
+                addNode2Info,
+                updateEdgePropsInfo,
+                updateEdgePropInfo,
+                updateEdgeWeightInfo,
+                removeEdgePropInfo,
+                deleteEdgeInfo,
+                commitInfo
+        )));
+
+        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
+        Graph graph = graphs.get("g1");
+        assertNotNull(graph);
+        assertEquals(2, graph.getNodes().size());
+        assertTrue("edge updates should be skipped when edge is missing", graph.getEdges().isEmpty());
+    }
+
+    @Test
+    public void skipNodeUpdatesWhenNodeIsMissing() throws IOException {
+        when(reader.readFromFile()).thenReturn(List.of(List.of(
+                beginTransactionInfo,
+                updateNodeAttrsInfo,
+                updateNodeAttrInfo,
+                removeNodeAttrInfo,
+                deleteNodeInfo,
+                commitInfo
+        )));
+
+        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
+        Graph graph = graphs.get("g1");
+        assertNotNull(graph);
+        assertTrue("no nodes should be present because updates were skipped", graph.getNodes().isEmpty());
+    }
+
     // ============ Helper Functions ============
 
     private void checkNodeComponents(String id, Map<String, Object> attributes, Node node) {

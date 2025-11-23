@@ -73,24 +73,44 @@ public class RecoveryManager {
 
     private void updateNodeAttrs(GraphStorage storage, LoggingInfo loggingInfo) {
         Node node = storage.getNode(loggingInfo.getId());
+        if (node == null) {
+            System.out.println("Skipping updateNodeAttrs for missing node " + loggingInfo.getId());
+            return;
+        }
         node.setAttributes(loggingInfo.getAttributes());
     }
 
     private void updateNodeAttr(GraphStorage storage, LoggingInfo loggingInfo) {
         Node node = storage.getNode(loggingInfo.getId());
+        if (node == null) {
+            System.out.println("Skipping updateNodeAttr for missing node " + loggingInfo.getId());
+            return;
+        }
         node.setAttribute(loggingInfo.getKey(), loggingInfo.getValue());
     }
 
     private void removeNode(GraphStorage storage, LoggingInfo loggingInfo) {
         Node node = storage.getNode(loggingInfo.getId());
+        if (node == null) {
+            System.out.println("Skipping removeNode for missing node " + loggingInfo.getId());
+            return;
+        }
         node.deleteAttribute(loggingInfo.getKey());
     }
 
     private void deleteNode(GraphStorage storage, LoggingInfo loggingInfo) {
+        if (!storage.containsNode(loggingInfo.getId())) {
+            System.out.println("Skipping deleteNode for missing node " + loggingInfo.getId());
+            return;
+        }
         storage.removeNode(loggingInfo.getId());
     }
 
     private void addEdge(GraphStorage storage, LoggingInfo loggingInfo) {
+        if (!storage.containsNode(loggingInfo.getSource()) || !storage.containsNode(loggingInfo.getTarget())) {
+            System.out.println("Skipping addEdge for missing endpoint(s): " + loggingInfo.getSource() + " -> " + loggingInfo.getTarget());
+            return;
+        }
         Edge edge = new Edge(
                 loggingInfo.getId(),
                 loggingInfo.getSource(),
@@ -103,25 +123,45 @@ public class RecoveryManager {
 
     private void updateEdgeProps(GraphStorage storage, LoggingInfo loggingInfo) {
         Edge edge = storage.getEdge(loggingInfo.getId());
+        if (edge == null) {
+            System.out.println("Skipping updateEdgeProps for missing edge " + loggingInfo.getId());
+            return;
+        }
         edge.setProperties(loggingInfo.getAttributes());
     }
 
     private void updateEdgeProp(GraphStorage storage, LoggingInfo loggingInfo) {
         Edge edge = storage.getEdge(loggingInfo.getId());
+        if (edge == null) {
+            System.out.println("Skipping updateEdgeProp for missing edge " + loggingInfo.getId());
+            return;
+        }
         edge.setProperty(loggingInfo.getKey(), loggingInfo.getValue());
     }
 
     private void updateEdgeWeight(GraphStorage storage, LoggingInfo loggingInfo) {
         Edge edge = storage.getEdge(loggingInfo.getId());
+        if (edge == null) {
+            System.out.println("Skipping updateEdgeWeight for missing edge " + loggingInfo.getId());
+            return;
+        }
         edge.setWeight(loggingInfo.getWeight());
     }
 
     private void removeEdge(GraphStorage storage, LoggingInfo loggingInfo) {
         Edge edge = storage.getEdge(loggingInfo.getId());
+        if (edge == null) {
+            System.out.println("Skipping removeEdge for missing edge " + loggingInfo.getId());
+            return;
+        }
         edge.deleteProperty(loggingInfo.getKey());
     }
 
     private void deleteEdge(GraphStorage storage, LoggingInfo loggingInfo) {
+        if (!storage.containsEdge(loggingInfo.getId())) {
+            System.out.println("Skipping deleteEdge for missing edge " + loggingInfo.getId());
+            return;
+        }
         storage.removeEdge(loggingInfo.getId());
     }
 }
