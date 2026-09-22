@@ -5,7 +5,6 @@ import graph.dataModel.Graph;
 import graph.dataModel.Node;
 import graph.dataModel.Transaction;
 import graph.queryModel.GraphQueryClient;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,11 +19,6 @@ public class GraphQueryCacheInvalidationIntegrationTest {
     private GraphQueryClient queryClient;
     Node alice, bob, acme, city;
     Edge aliceBob;
-
-    @After
-    public void tearDown() throws Exception {
-        java.nio.file.Files.deleteIfExists(java.nio.file.Path.of("log"));
-    }
 
     @Before
     public void setUp() {

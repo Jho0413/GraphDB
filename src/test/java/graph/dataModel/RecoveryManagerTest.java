@@ -1,27 +1,26 @@
 package graph.dataModel;
 
-import graph.WAL.LoggingInfo;
-import graph.WAL.WALReader;
+import graph.WAL.CommitLog;
+import graph.WAL.WalRecord;
+import graph.WAL.WalRecord.*;
 import graph.helper.EdgeBaseMatcher;
 import graph.helper.NodeBaseMatcher;
+import graph.operations.AddOrUpdateEdge;
+import graph.operations.AddOrUpdateNode;
+import graph.operations.DeleteEdge;
+import graph.operations.DeleteNode;
+import graph.operations.GraphOperation;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static graph.WAL.LoggingInfo.LoggingInfoBuilder.aLoggingInfo;
-import static graph.WAL.LoggingOperations.*;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
 
 public class RecoveryManagerTest {
 
-    @Mock
-    private WALReader reader;
     private RecoveryManager recoveryManager;
 
     // ============ Test data ============
@@ -29,288 +28,173 @@ public class RecoveryManagerTest {
     Map<String, Object> ATTRIBUTES2 = Map.of("location", "here");
     Map<String, Object> COMBINED_ATTRS_1_2 = Map.of("name", "test", "location", "here");
 
-    // ============ Transaction operations ============
-    LoggingInfo beginTransactionInfo = aLoggingInfo(BEGIN_TRANSACTION).withId("t1").withSource("g1").build();
-    LoggingInfo beginTransactionInfo2 = aLoggingInfo(BEGIN_TRANSACTION).withId("t2").withSource("g2").build();
-    LoggingInfo commitInfo = aLoggingInfo(COMMIT).build();
-
-    // ============ Node logging info ============
-    LoggingInfo addNodeInfo = aLoggingInfo(ADD_NODE).withId("n1").withAttributes(ATTRIBUTES).build();
-    LoggingInfo addNode2Info = aLoggingInfo(ADD_NODE).withId("n2").withAttributes(ATTRIBUTES2).build();
-    LoggingInfo updateNodeAttrsInfo = aLoggingInfo(UPDATE_NODE_ATTRS).withId("n1").withAttributes(ATTRIBUTES2).build();
-    LoggingInfo updateNodeAttrInfo = aLoggingInfo(UPDATE_NODE_ATTR).withId("n1").withKey("location").withValue("here").build();
-    LoggingInfo removeNodeAttrInfo = aLoggingInfo(REMOVE_NODE).withId("n1").withKey("name").build();
-    LoggingInfo deleteNodeInfo = aLoggingInfo(DELETE_NODE).withId("n1").build();
-
-    // ============ Edge logging info ============
-    LoggingInfo addEdgeInfo = aLoggingInfo(ADD_EDGE).withId("e1").withSource("n1").withTarget("n2").withWeight(1.5).withAttributes(ATTRIBUTES).build();
-    LoggingInfo updateEdgePropsInfo = aLoggingInfo(UPDATE_EDGE_PROPS).withId("e1").withAttributes(ATTRIBUTES2).build();
-    LoggingInfo updateEdgePropInfo = aLoggingInfo(UPDATE_EDGE_PROP).withId("e1").withKey("location").withValue("here").build();
-    LoggingInfo updateEdgeWeightInfo = aLoggingInfo(UPDATE_EDGE_WEIGHT).withId("e1").withWeight(2.0).build();
-    LoggingInfo removeEdgePropInfo = aLoggingInfo(REMOVE_EDGE).withId("e1").withKey("name").build();
-    LoggingInfo deleteEdgeInfo = aLoggingInfo(DELETE_EDGE).withId("e1").build();
+    GraphOperation addNode1 = new AddOrUpdateNode(new Node("n1", ATTRIBUTES));
+    GraphOperation addNode2 = new AddOrUpdateNode(new Node("n2", ATTRIBUTES2));
+    GraphOperation updateNode1 = new AddOrUpdateNode(new Node("n1", COMBINED_ATTRS_1_2));
+    GraphOperation deleteNode1 = new DeleteNode("n1");
+    GraphOperation addEdge = new AddOrUpdateEdge(new Edge("e1", "n1", "n2", 1.5, ATTRIBUTES));
+    GraphOperation updateEdge = new AddOrUpdateEdge(new Edge("e1", "n1", "n2", 2.0, COMBINED_ATTRS_1_2));
+    GraphOperation deleteEdge = new DeleteEdge("e1");
 
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
-        recoveryManager = new RecoveryManager(reader);
+        recoveryManager = new RecoveryManager(CommitLog.NONE);
     }
 
-    // ============ Node Operations ============
+    // ============ Graph lifecycle ============
 
     @Test
-    public void ableToRecoverFromAddNodeLogs() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo, addNodeInfo, commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
+    public void recoversEmptyGraphsFromCreateRecords() {
+        Map<String, Graph> graphs = recoveryManager.recover(List.of(new GraphCreated("g1")));
         assertEquals(1, graphs.size());
-        List<Node> nodes = graphs.get("g1").getNodes();
-        checkNodeComponents("n1", ATTRIBUTES, nodes.getFirst());
-    }
-
-    @Test
-    public void ableToRecoverFromUpdateNodeLogs() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo, addNodeInfo, updateNodeAttrsInfo, commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        assertEquals(1, graphs.size());
-        List<Node> nodes = graphs.get("g1").getNodes();
-        checkNodeComponents("n1", COMBINED_ATTRS_1_2, nodes.getFirst());
-    }
-
-    @Test
-    public void ableToRecoverFromUpdateNodeAttrLog() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo, addNodeInfo, updateNodeAttrInfo, commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        List<Node> nodes = graphs.get("g1").getNodes();
-        checkNodeComponents("n1", COMBINED_ATTRS_1_2, nodes.getFirst());
-    }
-
-    @Test
-    public void ableToRecoverFromRemoveNodeAttrLog() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo, addNodeInfo, removeNodeAttrInfo, commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        List<Node> nodes = graphs.get("g1").getNodes();
-        checkNodeComponents("n1", Map.of(), nodes.getFirst());
-    }
-
-    @Test
-    public void ableToRecoverFromDeleteNodeLog() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo, addNodeInfo, deleteNodeInfo, commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
         assertTrue(graphs.get("g1").getNodes().isEmpty());
     }
 
-    // ============ Edge Operations ============
+    @Test
+    public void droppedGraphsAreNotRecovered() {
+        List<WalRecord> log = new ArrayList<>();
+        log.add(new GraphCreated("g1"));
+        log.addAll(transaction("g1", addNode1));
+        log.add(new GraphDropped("g1"));
+
+        assertTrue(recoveryManager.recover(log).isEmpty());
+    }
 
     @Test
-    public void ableToRecoverFromAddEdgeLog() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo,
-                addNodeInfo,
-                addNode2Info,
-                addEdgeInfo,
-                commitInfo
-        )));
+    public void transactionsForUnknownGraphsAreSkipped() {
+        assertTrue(recoveryManager.recover(transaction("unknown", addNode1)).isEmpty());
+    }
 
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
+    // ============ Node operations ============
+
+    @Test
+    public void ableToRecoverAddedNodes() {
+        Map<String, Graph> graphs = recover(transaction("g1", addNode1));
+        checkNodeComponents("n1", ATTRIBUTES, graphs.get("g1").getNodes().getFirst());
+    }
+
+    @Test
+    public void updatesReplaceTheWholeNode() {
+        Map<String, Graph> graphs = recover(transaction("g1", addNode1, updateNode1));
+        checkNodeComponents("n1", COMBINED_ATTRS_1_2, graphs.get("g1").getNodeById("n1"));
+    }
+
+    @Test
+    public void ableToRecoverDeletedNodes() {
+        Map<String, Graph> graphs = recover(transaction("g1", addNode1, deleteNode1));
+        assertTrue(graphs.get("g1").getNodes().isEmpty());
+    }
+
+    // ============ Edge operations ============
+
+    @Test
+    public void ableToRecoverAddedEdges() {
+        Map<String, Graph> graphs = recover(transaction("g1", addNode1, addNode2, addEdge));
         List<Edge> edges = graphs.get("g1").getEdges();
         assertEquals(1, edges.size());
         checkEdgeComponents("e1", "n1", "n2", 1.5, ATTRIBUTES, edges.getFirst());
-
     }
 
     @Test
-    public void ableToRecoverFromUpdateEdgePropsLog() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo,
-                addNodeInfo,
-                addNode2Info,
-                addEdgeInfo,
-                updateEdgePropsInfo,
-                commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        List<Edge> edges = graphs.get("g1").getEdges();
-        checkEdgeComponents("e1", "n1", "n2", 1.5, COMBINED_ATTRS_1_2, edges.getFirst());
-
+    public void updatesReplaceTheWholeEdge() {
+        Map<String, Graph> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, updateEdge));
+        checkEdgeComponents("e1", "n1", "n2", 2.0, COMBINED_ATTRS_1_2, graphs.get("g1").getEdgeById("e1"));
     }
 
     @Test
-    public void ableToRecoverFromUpdateEdgePropLog() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo,
-                addNodeInfo,
-                addNode2Info,
-                addEdgeInfo,
-                updateEdgePropInfo,
-                commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        List<Edge> edges = graphs.get("g1").getEdges();
-        checkEdgeComponents("e1", "n1", "n2", 1.5, COMBINED_ATTRS_1_2, edges.getFirst());
-
-    }
-
-    @Test
-    public void ableToRecoverFromUpdateEdgeWeightLog() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo,
-                addNodeInfo,
-                addNode2Info,
-                addEdgeInfo,
-                updateEdgeWeightInfo,
-                commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        List<Edge> edges = graphs.get("g1").getEdges();
-        checkEdgeComponents("e1", "n1", "n2", 2.0, ATTRIBUTES, edges.getFirst());
-
-    }
-
-    @Test
-    public void ableToRecoverFromRemoveEdgePropLog() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo,
-                addNodeInfo,
-                addNode2Info,
-                addEdgeInfo,
-                removeEdgePropInfo,
-                commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        List<Edge> edges = graphs.get("g1").getEdges();
-        checkEdgeComponents("e1", "n1", "n2", 1.5, Map.of(), edges.getFirst());
-    }
-
-    @Test
-    public void ableToRecoverFromDeleteEdgeLog() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo,
-                addNodeInfo,
-                addNode2Info,
-                addEdgeInfo,
-                deleteEdgeInfo,
-                commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
+    public void ableToRecoverDeletedEdges() {
+        Map<String, Graph> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, deleteEdge));
         assertTrue(graphs.get("g1").getEdges().isEmpty());
     }
 
-    // ============ Transactions Specific ============
+    // ============ Transactions ============
 
     @Test
-    public void ableToRecoverFromMultipleTransactionLogs() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(
-                List.of(beginTransactionInfo, addNodeInfo, commitInfo),
-                List.of(beginTransactionInfo, addNode2Info, removeNodeAttrInfo, addEdgeInfo, commitInfo)
-        ));
+    public void ableToRecoverFromMultipleTransactions() {
+        List<WalRecord> log = new ArrayList<>();
+        log.add(new GraphCreated("g1"));
+        log.addAll(transaction("g1", addNode1));
+        log.addAll(transaction("g1", addNode2, addEdge));
 
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        List<Edge> edges = graphs.get("g1").getEdges();
-        List<Node> nodes = graphs.get("g1").getNodes();
-        assertEquals(2, nodes.size());
-        assertEquals(1, edges.size());
-        if (nodes.getFirst().getId().equals("n1")) {
-            checkNodeComponents("n1", Map.of(), nodes.getFirst());
-            checkNodeComponents("n2", ATTRIBUTES2, nodes.getLast());
-        } else {
-            checkNodeComponents("n1", Map.of(), nodes.getLast());
-            checkNodeComponents("n2", ATTRIBUTES2, nodes.getFirst());
-        }
-        checkEdgeComponents("e1", "n1", "n2", 1.5, ATTRIBUTES, edges.getFirst());
+        Graph graph = recoveryManager.recover(log).get("g1");
+        assertEquals(2, graph.getNodes().size());
+        checkEdgeComponents("e1", "n1", "n2", 1.5, ATTRIBUTES, graph.getEdges().getFirst());
     }
 
     @Test
-    public void ableToRecoverFromTransactionsFromDifferentGraphs() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(
-                List.of(beginTransactionInfo, addNodeInfo, commitInfo),
-                List.of(beginTransactionInfo2, addNodeInfo, commitInfo)
-        ));
+    public void ableToRecoverTransactionsFromDifferentGraphs() {
+        List<WalRecord> log = new ArrayList<>();
+        log.add(new GraphCreated("g1"));
+        log.add(new GraphCreated("g2"));
+        log.addAll(transaction("g1", addNode1));
+        log.addAll(transaction("g2", addNode1));
 
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
+        Map<String, Graph> graphs = recoveryManager.recover(log);
         assertEquals(2, graphs.size());
-        assertTrue(graphs.containsKey("g1"));
-        assertTrue(graphs.containsKey("g2"));
         checkNodeComponents("n1", ATTRIBUTES, graphs.get("g1").getNodeById("n1"));
         checkNodeComponents("n1", ATTRIBUTES, graphs.get("g2").getNodeById("n1"));
+    }
+
+    @Test
+    public void transactionWithoutCommitRecordIsNotApplied() {
+        List<WalRecord> log = new ArrayList<>();
+        log.add(new GraphCreated("g1"));
+        log.add(new TransactionBegin("g1", "t1"));
+        log.add(new Operation(addNode1));
+        log.addAll(transaction("g1", addNode2));
+
+        Graph graph = recoveryManager.recover(log).get("g1");
+        assertEquals(1, graph.getNodes().size());
+        assertEquals("n2", graph.getNodes().getFirst().getId());
+    }
+
+    @Test
+    public void recoveredGraphsLogFutureCommitsToTheGivenLog() {
+        List<List<GraphOperation>> logged = new ArrayList<>();
+        RecoveryManager manager = new RecoveryManager((graphId, operations) -> logged.add(operations));
+
+        Graph graph = manager.recover(List.of(new GraphCreated("g1"))).get("g1");
+        Transaction transaction = graph.createTransaction();
+        transaction.addNode(ATTRIBUTES);
+        transaction.commit();
+
+        assertEquals(1, logged.size());
     }
 
     // ============ Defensive recovery ============
 
     @Test
-    public void skipAddEdgeWhenEndpointsAreMissing() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo,
-                addNodeInfo,
-                addEdgeInfo,
-                commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        Graph graph = graphs.get("g1");
-        assertNotNull(graph);
+    public void skipAddEdgeWhenEndpointsAreMissing() {
+        Graph graph = recover(transaction("g1", addNode1, addEdge)).get("g1");
         assertEquals(1, graph.getNodes().size());
         assertTrue("edge should be skipped because target is missing", graph.getEdges().isEmpty());
     }
 
     @Test
-    public void skipEdgeUpdatesWhenEdgeIsMissing() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo,
-                addNodeInfo,
-                addNode2Info,
-                updateEdgePropsInfo,
-                updateEdgePropInfo,
-                updateEdgeWeightInfo,
-                removeEdgePropInfo,
-                deleteEdgeInfo,
-                commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        Graph graph = graphs.get("g1");
-        assertNotNull(graph);
-        assertEquals(2, graph.getNodes().size());
-        assertTrue("edge updates should be skipped when edge is missing", graph.getEdges().isEmpty());
-    }
-
-    @Test
-    public void skipNodeUpdatesWhenNodeIsMissing() throws IOException {
-        when(reader.readFromFile()).thenReturn(List.of(List.of(
-                beginTransactionInfo,
-                updateNodeAttrsInfo,
-                updateNodeAttrInfo,
-                removeNodeAttrInfo,
-                deleteNodeInfo,
-                commitInfo
-        )));
-
-        Map<String, Graph> graphs = recoveryManager.recoverGraphs();
-        Graph graph = graphs.get("g1");
-        assertNotNull(graph);
-        assertTrue("no nodes should be present because updates were skipped", graph.getNodes().isEmpty());
+    public void skipDeletesOfMissingNodesAndEdges() {
+        Graph graph = recover(transaction("g1", addNode2, deleteEdge, deleteNode1)).get("g1");
+        assertEquals(1, graph.getNodes().size());
+        assertTrue(graph.getEdges().isEmpty());
     }
 
     // ============ Helper Functions ============
+
+    private Map<String, Graph> recover(List<WalRecord> transaction) {
+        List<WalRecord> log = new ArrayList<>();
+        log.add(new GraphCreated("g1"));
+        log.addAll(transaction);
+        return recoveryManager.recover(log);
+    }
+
+    private static List<WalRecord> transaction(String graphId, GraphOperation... operations) {
+        List<WalRecord> records = new ArrayList<>();
+        records.add(new TransactionBegin(graphId, "tx"));
+        for (GraphOperation operation : operations) {
+            records.add(new Operation(operation));
+        }
+        records.add(new TransactionCommit("tx"));
+        return records;
+    }
 
     private void checkNodeComponents(String id, Map<String, Object> attributes, Node node) {
         assertTrue(new NodeBaseMatcher(attributes).matches(node));

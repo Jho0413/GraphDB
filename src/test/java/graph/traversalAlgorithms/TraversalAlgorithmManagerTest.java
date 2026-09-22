@@ -6,7 +6,6 @@ import graph.dataModel.Node;
 import graph.dataModel.Transaction;
 import graph.exceptions.CycleFoundException;
 import graph.queryModel.Path;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,11 +20,6 @@ public class TraversalAlgorithmManagerTest {
     private TraversalAlgorithmManager manager;
     Node nodeA, nodeB, nodeC, nodeD;
     Edge edgeAB, edgeAC, edgeBC, edgeCD, edgeDA;
-
-    @After
-    public void tearDown() throws Exception {
-        java.nio.file.Files.deleteIfExists(java.nio.file.Path.of("log"));
-    }
 
     @Before
     public void setUp() {
@@ -199,21 +193,10 @@ public class TraversalAlgorithmManagerTest {
 
     @Test
     public void resultIsCachedWhenAlgorithmWithInputRunsTheFirstTime() {
-        long start = System.nanoTime();
         TraversalResult first = manager.runAlgorithm(KOSARAJU, null);
-        long end = System.nanoTime();
-        long coldTimeNs = end - start;
-
-        long startCached = System.nanoTime();
         TraversalResult second = manager.runAlgorithm(KOSARAJU, null);
-        long endCached = System.nanoTime();
-        long cachedTimeNs = endCached - startCached;
 
-        System.out.println("Cold run time:   " + coldTimeNs + " ns");
-        System.out.println("Cached run time: " + cachedTimeNs + " ns");
-
-        assertEquals(first.getComponents(), second.getComponents());
-        assertTrue( cachedTimeNs < coldTimeNs);
+        assertSame("second run should be served from the cache", first, second);
     }
 
     @Test
@@ -227,22 +210,11 @@ public class TraversalAlgorithmManagerTest {
 
     @Test
     public void cacheIsNotClearedWhenGraphEventThatDoesNotSatisfyPredicateOccurs() {
-        long start = System.nanoTime();
         TraversalResult first = manager.runAlgorithm(KOSARAJU, null);
-        long end = System.nanoTime();
-        long coldTimeNs = end - start;
-
         graph.updateEdge(edgeAB.getId(), 3.0);
-        long startCached = System.nanoTime();
         TraversalResult second = manager.runAlgorithm(KOSARAJU, null);
-        long endCached = System.nanoTime();
-        long cachedTimeNs = endCached - startCached;
 
-        System.out.println("Cold run time:   " + coldTimeNs + " ns");
-        System.out.println("Cached run time: " + cachedTimeNs + " ns");
-
-        assertEquals(first.getComponents(), second.getComponents());
-        assertTrue(cachedTimeNs < coldTimeNs);
+        assertSame("weight changes should not invalidate strongly connected components", first, second);
     }
 
     @Test

@@ -3,12 +3,9 @@ package graph;
 import graph.dataModel.Edge;
 import graph.dataModel.Graph;
 import graph.dataModel.Node;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -33,11 +30,6 @@ public class GraphIntegrationTest {
         nodeA = graph.addNode(Map.of("name", "A"));
         nodeB = graph.addNode(Map.of("name", "B"));
         nodeC = graph.addNode(Map.of("name", "C"));
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        Files.deleteIfExists(Path.of("log"));
     }
 
     @Test

@@ -7,7 +7,7 @@
 ## Key Features
 
 - **ACID Transactions with Write-Ahead Logging (WAL)**  
-Transactions are fully atomic and durable. All changes are logged before being applied to the main graph, ensuring recovery in case of failure.
+A committed transaction is written to a binary, checksummed log as one block and forced to disk (`fsync`) before it is applied to the graph, so every acknowledged commit survives a crash. On startup the log is replayed; a transaction torn by a crash is discarded.
 
 - **Read Committed Isolation via Staged Updates**  
 Each transaction operates in an isolated workspace, reading only from the committed graph state and writing to a temporary storage. Upon commit, changes are flushed atomically to the main state. This prevents dirty reads and ensures **Read Committed isolation level**.
@@ -80,13 +80,18 @@ mvn test
 ## Core Concepts
 
 ### Graph Management
-Create and manage multiple graphs via a singleton `GraphDB` instance:
+Create and manage multiple graphs through a `GraphDB`. Its data (the write-ahead log) lives in a directory, `graphdb-data/` by default; graphs and their committed transactions are recovered automatically when it is opened again:
 
 ```java
-GraphDB db = GraphDB.getInstance();
+GraphDB db = GraphDB.getInstance();                 // uses ./graphdb-data
+// or: GraphDB db = GraphDB.open(Path.of("my-data"));
 Graph graph = db.createGraph();
 String graphId = graph.getId();
+// ...
+db.close();
 ```
+
+> **Note:** Only graphs created through a `GraphDB` are durable. `Graph.createGraph()` creates a standalone in-memory graph whose transactions are not logged.
 
 ### Transactions
 All modifications to a graph **must** be performed within a transaction. This ensures data consistency and atomicity.
