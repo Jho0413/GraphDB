@@ -1,167 +1,82 @@
 package graph.dataModel;
 
-import graph.WAL.LoggingInfo;
-import graph.WAL.LoggingOperations;
-import graph.WAL.WALReader;
+import graph.WAL.CommitLog;
+import graph.WAL.WalRecord;
+import graph.WAL.WalRecord.*;
+import graph.operations.AddOrUpdateEdge;
+import graph.operations.AddOrUpdateNode;
+import graph.operations.DeleteEdge;
+import graph.operations.DeleteNode;
+import graph.operations.GraphOperation;
 import graph.storage.GraphStorage;
 import graph.storage.InMemoryGraphStorage;
 
-import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 
-import static graph.WAL.LoggingOperations.*;
-
+/**
+ * Rebuilds graphs by replaying the write-ahead log (redo-only). Only transactions whose commit record was
+ * logged are applied, in log order, using the same operations the original commit applied.
+ */
 public class RecoveryManager {
 
-    private final WALReader reader;
-    private final Map<String, GraphStorage> graphStorageMap = new HashMap<>();
+    private final CommitLog commitLog;
+    private final Map<String, GraphStorage> storages = new LinkedHashMap<>();
 
-    public RecoveryManager(WALReader reader) {
-        this.reader = reader;
+    /** @param commitLog the log that recovered graphs will write their future commits to */
+    public RecoveryManager(CommitLog commitLog) {
+        this.commitLog = commitLog;
     }
 
-    public Map<String, Graph> recoverGraphs() {
-        try {
-            List<List<LoggingInfo>> transactionLoggingInfos = reader.readFromFile();
-            transactionLoggingInfos.forEach(this::recoverTransaction);
-        } catch (IOException ignored) {}
+    public Map<String, Graph> recover(List<WalRecord> records) {
+        String transactionGraphId = null;
+        List<GraphOperation> transactionOperations = new ArrayList<>();
 
-        Map<String, Graph> graphMap = new HashMap<>();
-        graphStorageMap.forEach((graphId, storage) ->
-                graphMap.put(graphId, Graph.createRecoveryGraph(storage, graphId))
-        );
-        return graphMap;
-    }
-
-    private void recoverTransaction(List<LoggingInfo> transaction) {
-        LoggingInfo transactionLoggingInfo = transaction.getFirst();
-        String graphId = transactionLoggingInfo.getSource();
-        if (!graphStorageMap.containsKey(graphId)) {
-            graphStorageMap.put(graphId, InMemoryGraphStorage.create());
+        for (WalRecord record : records) {
+            switch (record) {
+                case GraphCreated r -> storages.putIfAbsent(r.graphId(), InMemoryGraphStorage.create());
+                case GraphDropped r -> storages.remove(r.graphId());
+                case TransactionBegin r -> {
+                    transactionGraphId = r.graphId();
+                    transactionOperations.clear();
+                }
+                case Operation r -> transactionOperations.add(r.operation());
+                case TransactionCommit r -> {
+                    GraphStorage storage = storages.get(transactionGraphId);
+                    // A transaction for a graph that was never created or has been dropped is not replayed.
+                    if (storage != null) {
+                        transactionOperations.forEach(operation -> applySafely(storage, operation));
+                    }
+                    transactionGraphId = null;
+                    transactionOperations.clear();
+                }
+            }
         }
-        GraphStorage graphStorage = graphStorageMap.get(graphId);
-        for (int i = 1; i < transaction.size() - 1; i++) {
-            applyRecoveryOpToGraph(graphStorage, transaction.get(i));
+
+        Map<String, Graph> graphs = new LinkedHashMap<>();
+        storages.forEach((graphId, storage) -> graphs.put(graphId, Graph.create(storage, graphId, commitLog)));
+        return graphs;
+    }
+
+    /**
+     * Graphs can still be modified outside transactions, and those writes are not logged, so a logged
+     * operation may refer to a node or edge that recovery never saw. Such operations are skipped.
+     */
+    private void applySafely(GraphStorage storage, GraphOperation operation) {
+        boolean applicable = switch (operation) {
+            case AddOrUpdateEdge op -> storage.containsNode(op.edge().getSource())
+                    && storage.containsNode(op.edge().getDestination());
+            case DeleteEdge op -> storage.containsEdge(op.edgeId());
+            case DeleteNode op -> storage.containsNode(op.nodeId());
+            case AddOrUpdateNode op -> true;
+            default -> true;
+        };
+        if (applicable) {
+            operation.apply(storage);
+        } else {
+            System.out.println("Skipping unreplayable WAL operation: " + operation);
         }
-    }
-
-    private void applyRecoveryOpToGraph(GraphStorage storage, LoggingInfo loggingInfo) {
-        Map<LoggingOperations, BiConsumer<GraphStorage, LoggingInfo>> operations = Map.ofEntries(
-                Map.entry(ADD_NODE, this::addNode),
-                Map.entry(UPDATE_NODE_ATTRS, this::updateNodeAttrs),
-                Map.entry(UPDATE_NODE_ATTR, this::updateNodeAttr),
-                Map.entry(REMOVE_NODE, this::removeNode),
-                Map.entry(DELETE_NODE, this::deleteNode),
-                Map.entry(ADD_EDGE, this::addEdge),
-                Map.entry(UPDATE_EDGE_PROPS, this::updateEdgeProps),
-                Map.entry(UPDATE_EDGE_PROP, this::updateEdgeProp),
-                Map.entry(UPDATE_EDGE_WEIGHT, this::updateEdgeWeight),
-                Map.entry(REMOVE_EDGE, this::removeEdge),
-                Map.entry(DELETE_EDGE, this::deleteEdge)
-        );
-        LoggingOperations operation = loggingInfo.getOperation();
-        operations.get(operation).accept(storage, loggingInfo);
-    }
-
-    private void addNode(GraphStorage storage, LoggingInfo loggingInfo) {
-        Node node = new Node(loggingInfo.getId(), loggingInfo.getAttributes());
-        storage.putNode(node);
-    }
-
-    private void updateNodeAttrs(GraphStorage storage, LoggingInfo loggingInfo) {
-        Node node = storage.getNode(loggingInfo.getId());
-        if (node == null) {
-            System.out.println("Skipping updateNodeAttrs for missing node " + loggingInfo.getId());
-            return;
-        }
-        node.setAttributes(loggingInfo.getAttributes());
-    }
-
-    private void updateNodeAttr(GraphStorage storage, LoggingInfo loggingInfo) {
-        Node node = storage.getNode(loggingInfo.getId());
-        if (node == null) {
-            System.out.println("Skipping updateNodeAttr for missing node " + loggingInfo.getId());
-            return;
-        }
-        node.setAttribute(loggingInfo.getKey(), loggingInfo.getValue());
-    }
-
-    private void removeNode(GraphStorage storage, LoggingInfo loggingInfo) {
-        Node node = storage.getNode(loggingInfo.getId());
-        if (node == null) {
-            System.out.println("Skipping removeNode for missing node " + loggingInfo.getId());
-            return;
-        }
-        node.deleteAttribute(loggingInfo.getKey());
-    }
-
-    private void deleteNode(GraphStorage storage, LoggingInfo loggingInfo) {
-        if (!storage.containsNode(loggingInfo.getId())) {
-            System.out.println("Skipping deleteNode for missing node " + loggingInfo.getId());
-            return;
-        }
-        storage.removeNode(loggingInfo.getId());
-    }
-
-    private void addEdge(GraphStorage storage, LoggingInfo loggingInfo) {
-        if (!storage.containsNode(loggingInfo.getSource()) || !storage.containsNode(loggingInfo.getTarget())) {
-            System.out.println("Skipping addEdge for missing endpoint(s): " + loggingInfo.getSource() + " -> " + loggingInfo.getTarget());
-            return;
-        }
-        Edge edge = new Edge(
-                loggingInfo.getId(),
-                loggingInfo.getSource(),
-                loggingInfo.getTarget(),
-                loggingInfo.getWeight(),
-                loggingInfo.getAttributes()
-        );
-        storage.putEdge(edge);
-    }
-
-    private void updateEdgeProps(GraphStorage storage, LoggingInfo loggingInfo) {
-        Edge edge = storage.getEdge(loggingInfo.getId());
-        if (edge == null) {
-            System.out.println("Skipping updateEdgeProps for missing edge " + loggingInfo.getId());
-            return;
-        }
-        edge.setProperties(loggingInfo.getAttributes());
-    }
-
-    private void updateEdgeProp(GraphStorage storage, LoggingInfo loggingInfo) {
-        Edge edge = storage.getEdge(loggingInfo.getId());
-        if (edge == null) {
-            System.out.println("Skipping updateEdgeProp for missing edge " + loggingInfo.getId());
-            return;
-        }
-        edge.setProperty(loggingInfo.getKey(), loggingInfo.getValue());
-    }
-
-    private void updateEdgeWeight(GraphStorage storage, LoggingInfo loggingInfo) {
-        Edge edge = storage.getEdge(loggingInfo.getId());
-        if (edge == null) {
-            System.out.println("Skipping updateEdgeWeight for missing edge " + loggingInfo.getId());
-            return;
-        }
-        edge.setWeight(loggingInfo.getWeight());
-    }
-
-    private void removeEdge(GraphStorage storage, LoggingInfo loggingInfo) {
-        Edge edge = storage.getEdge(loggingInfo.getId());
-        if (edge == null) {
-            System.out.println("Skipping removeEdge for missing edge " + loggingInfo.getId());
-            return;
-        }
-        edge.deleteProperty(loggingInfo.getKey());
-    }
-
-    private void deleteEdge(GraphStorage storage, LoggingInfo loggingInfo) {
-        if (!storage.containsEdge(loggingInfo.getId())) {
-            System.out.println("Skipping deleteEdge for missing edge " + loggingInfo.getId());
-            return;
-        }
-        storage.removeEdge(loggingInfo.getId());
     }
 }

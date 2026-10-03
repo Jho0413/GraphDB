@@ -1,5 +1,6 @@
 package graph.operations;
 
+import graph.WAL.CommitLog;
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
 import graph.dataModel.Transaction;
@@ -11,7 +12,6 @@ import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -19,10 +19,16 @@ public class GraphService implements InternalGraphOperations {
 
     private final GraphStorage storage;
     private final String graphId;
+    private final CommitLog commitLog;
 
     public GraphService(GraphStorage storage, String graphId) {
+        this(storage, graphId, CommitLog.NONE);
+    }
+
+    public GraphService(GraphStorage storage, String graphId, CommitLog commitLog) {
         this.storage = storage;
         this.graphId = graphId;
+        this.commitLog = commitLog;
     }
 
     @Override
@@ -197,25 +203,13 @@ public class GraphService implements InternalGraphOperations {
 
     @Override
     public Transaction createTransaction() {
-        TransactionOperations service = TransactionService.create(storage);
-        try {
-            TransactionOperations logger = TransactionLogger.create(graphId, service);
-            return new Transaction(logger);
-        } catch (IOException e) {
-            throw new RuntimeException("Error creating transaction");
-        }
+        return new Transaction(TransactionService.create(storage, graphId, commitLog));
     }
 
     @Override
     public Transaction createTransactionWithCallback(Consumer<List<GraphEvent>> callback) {
-        TransactionOperations service = TransactionService.create(storage);
-        try {
-            TransactionOperations logger = TransactionLogger.create(graphId, service);
-            TransactionOperations observableTransaction = new DefaultObservableTransaction(logger, callback);
-            return new Transaction(observableTransaction);
-        } catch (IOException e) {
-            throw new RuntimeException("Error creating transaction");
-        }
+        TransactionOperations service = TransactionService.create(storage, graphId, commitLog);
+        return new Transaction(new DefaultObservableTransaction(service, callback));
     }
 
     private Node getNodeIfExists(String nodeId) throws NodeNotFoundException {

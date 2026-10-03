@@ -1,5 +1,6 @@
 package graph.dataModel;
 
+import graph.WAL.CommitLog;
 import graph.events.DefaultObservableGraph;
 import graph.events.InternalGraphOperations;
 import graph.events.ObservableGraphOperations;
@@ -31,13 +32,18 @@ public class Graph implements GraphOperations, GraphTraversalView {
         return this.service;
     }
 
+    /** Creates a standalone in-memory graph. Its transactions are not logged, so it does not survive a restart. */
     public static Graph createGraph() {
-        GraphStorage storage = InMemoryGraphStorage.create();
-        return createRecoveryGraph(storage, UUID.randomUUID().toString());
+        return create(InMemoryGraphStorage.create(), UUID.randomUUID().toString(), CommitLog.NONE);
     }
 
-    static Graph createRecoveryGraph(GraphStorage storage, String graphId) {
-        InternalGraphOperations service = new GraphService(storage, graphId);
+    /** Creates an empty graph whose committed transactions are made durable through {@code commitLog}. */
+    public static Graph createGraph(String graphId, CommitLog commitLog) {
+        return create(InMemoryGraphStorage.create(), graphId, commitLog);
+    }
+
+    static Graph create(GraphStorage storage, String graphId, CommitLog commitLog) {
+        InternalGraphOperations service = new GraphService(storage, graphId, commitLog);
         return new Graph(new DefaultObservableGraph(service), graphId);
     }
 

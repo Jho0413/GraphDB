@@ -1,5 +1,6 @@
 package graph.operations;
 
+import graph.WAL.CommitLog;
 import graph.dataModel.Edge;
 import graph.dataModel.Node;
 import graph.exceptions.EdgeExistsException;
@@ -16,17 +17,26 @@ public class TransactionService implements TransactionOperations {
     private final GraphStorage storage;
     private final TransactionStorage transactionStorage;
     private final OperationsResolver resolver;
+    private final String graphId;
+    private final CommitLog commitLog;
 
     protected TransactionService(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver) {
+        this(storage, transactionStorage, resolver, null, CommitLog.NONE);
+    }
+
+    protected TransactionService(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver,
+                                 String graphId, CommitLog commitLog) {
         this.storage = storage;
         this.transactionStorage = transactionStorage;
         this.resolver = resolver;
+        this.graphId = graphId;
+        this.commitLog = commitLog;
     }
 
-    static TransactionService create(GraphStorage storage) {
+    static TransactionService create(GraphStorage storage, String graphId, CommitLog commitLog) {
         TransactionStorage transactionStorage = new TransactionTemporaryStorage();
         OperationsResolver resolver = new TransactionOperationsResolver(storage, transactionStorage);
-        return new TransactionService(storage, transactionStorage, resolver);
+        return new TransactionService(storage, transactionStorage, resolver, graphId, commitLog);
     }
 
     @Override
@@ -223,6 +233,9 @@ public class TransactionService implements TransactionOperations {
 
     @Override
     public void commit() {
-        this.transactionStorage.getOperations().forEach(operation -> operation.apply(this.storage));
+        List<GraphOperation> operations = this.transactionStorage.getOperations();
+        // Write-ahead: the transaction must be durable before any of it is applied to the graph.
+        this.commitLog.logCommit(this.graphId, operations);
+        operations.forEach(operation -> operation.apply(this.storage));
     }
 }
