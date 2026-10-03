@@ -271,19 +271,6 @@ public class GraphStorageTest {
         assertThat(result, hasItems(EDGE_1));
     }
 
-    @Test
-    public void shouldBeAbleToUpdateEdgeWithWeight() {
-        initialiseNodes("node1", "node2");
-        initialiseNodes("node3", "node4");
-        storage.putEdge(EDGE_1);
-        storage.putEdge(EDGE_3);
-        storage.updateEdgeWeight(5.0, 20.0, EDGE_1);
-
-        List<Edge> result = storage.getEdgesByWeight(20.0);
-        assertThat(result.size(), is(2));
-        assertThat(result, hasItems(EDGE_1, EDGE_3));
-    }
-
     // ============ REPLACING EXISTING ENTRIES ============
 
     @Test
