@@ -1,10 +1,6 @@
 package graph.wal;
 
 import graph.wal.WalRecord.*;
-import graph.transaction.AddOrUpdateEdge;
-import graph.transaction.AddOrUpdateNode;
-import graph.transaction.DeleteEdge;
-import graph.transaction.DeleteNode;
 import graph.transaction.GraphOperation;
 import graph.storage.GraphStorage;
 import graph.storage.InMemoryGraphStorage;
@@ -40,7 +36,7 @@ public class RecoveryManager {
                     GraphStorage storage = storages.get(transactionGraphId);
                     // A transaction for a graph that was never created or has been dropped is not replayed.
                     if (storage != null) {
-                        transactionOperations.forEach(operation -> applySafely(storage, operation));
+                        transactionOperations.forEach(operation -> operation.apply(storage));
                     }
                     transactionGraphId = null;
                     transactionOperations.clear();
@@ -49,25 +45,5 @@ public class RecoveryManager {
         }
 
         return storages;
-    }
-
-    /**
-     * Graphs can still be modified outside transactions, and those writes are not logged, so a logged
-     * operation may refer to a node or edge that recovery never saw. Such operations are skipped.
-     */
-    private void applySafely(GraphStorage storage, GraphOperation operation) {
-        boolean applicable = switch (operation) {
-            case AddOrUpdateEdge op -> storage.containsNode(op.edge().getSource())
-                    && storage.containsNode(op.edge().getDestination());
-            case DeleteEdge op -> storage.containsEdge(op.edgeId());
-            case DeleteNode op -> storage.containsNode(op.nodeId());
-            case AddOrUpdateNode op -> true;
-            default -> true;
-        };
-        if (applicable) {
-            operation.apply(storage);
-        } else {
-            System.out.println("Skipping unreplayable WAL operation: " + operation);
-        }
     }
 }

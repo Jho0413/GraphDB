@@ -32,7 +32,8 @@ public class InMemoryGraphStorage implements GraphStorage {
     @Override
     public void putNode(Node node) {
         this.nodes.put(node.getId(), node);
-        this.adjacencyList.put(node.getId(), new HashMap<>());
+        // Replacing an existing node must keep its edges.
+        this.adjacencyList.putIfAbsent(node.getId(), new HashMap<>());
     }
 
     @Override
@@ -69,17 +70,29 @@ public class InMemoryGraphStorage implements GraphStorage {
 
     @Override
     public void putEdge(Edge edge) {
-        this.edges.put(edge.getId(), edge);
-        adjacencyList.get(edge.getSource()).put(edge.getDestination(), edge.getId());
+        Edge previous = this.edges.put(edge.getId(), edge);
+        if (previous != null) {
+            // Replacing an existing edge: drop the old version from the adjacency list and weight index.
+            neighbours(previous.getSource()).remove(previous.getDestination());
+            edgeWeightIndex.removeEdge(previous);
+        }
+        neighbours(edge.getSource()).put(edge.getDestination(), edge.getId());
         edgeWeightIndex.putEdge(edge);
     }
 
     @Override
     public Edge removeEdge(String id) {
         Edge removedEdge = this.edges.remove(id);
-        adjacencyList.get(removedEdge.getSource()).remove(removedEdge.getDestination());
-        edgeWeightIndex.removeEdge(removedEdge);
+        if (removedEdge != null) {
+            neighbours(removedEdge.getSource()).remove(removedEdge.getDestination());
+            edgeWeightIndex.removeEdge(removedEdge);
+        }
         return removedEdge;
+    }
+
+    /** Outgoing edges of a node by destination. Created on demand: an edge's source may already be gone. */
+    private Map<String, String> neighbours(String nodeId) {
+        return adjacencyList.computeIfAbsent(nodeId, id -> new HashMap<>());
     }
 
     @Override

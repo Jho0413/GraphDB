@@ -16,6 +16,7 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -281,5 +282,50 @@ public class GraphStorageTest {
         List<Edge> result = storage.getEdgesByWeight(20.0);
         assertThat(result.size(), is(2));
         assertThat(result, hasItems(EDGE_1, EDGE_3));
+    }
+
+    // ============ REPLACING EXISTING ENTRIES ============
+
+    @Test
+    public void replacingANodeKeepsItsEdges() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+
+        storage.putNode(new Node("node1", Map.of("name", "updated")));
+
+        assertThat(storage.getEdgesFromNode("node1"), hasItems(EDGE_1));
+        assertTrue(storage.edgeExists("node1", "node2"));
+        assertThat(storage.nodesIdsWithEdgesToNode("node2"), hasItems("node1"));
+    }
+
+    @Test
+    public void replacingAnEdgeWithANewWeightMovesItInTheWeightIndex() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+        Edge reweighted = new Edge("edge1", "node1", "node2", 7.0, Map.of());
+
+        storage.putEdge(reweighted);
+
+        assertTrue(storage.getEdgesByWeight(5.0).isEmpty());
+        assertThat(storage.getEdgesByWeight(7.0), is(List.of(reweighted)));
+        assertThat(storage.getEdgesByWeightRange(0.0, 100.0), is(List.of(reweighted)));
+    }
+
+    // ============ OPERATIONS ON MISSING ENTRIES ============
+    // Concurrent transactions can commit an operation whose target another transaction already removed. Storage
+    // applies these without failing, so the live commit and log replay always end in the same state.
+
+    @Test
+    public void removingAMissingEdgeIsANoOp() {
+        initialiseNodes("node1", "node2");
+        assertNull(storage.removeEdge("missing"));
+        assertTrue(storage.getAllEdges().isEmpty());
+    }
+
+    @Test
+    public void anEdgeWhoseSourceIsMissingIsStillStored() {
+        storage.putNode(createTestNode("node2"));
+        storage.putEdge(EDGE_1);
+        assertThat(storage.getAllEdges(), is(List.of(EDGE_1)));
     }
 }

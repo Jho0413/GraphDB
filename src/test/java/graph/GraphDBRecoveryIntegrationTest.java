@@ -186,6 +186,45 @@ public class GraphDBRecoveryIntegrationTest {
         db = GraphDB.open(dataDirectory);
     }
 
+    @Test
+    public void conflictingConcurrentTransactionsReplayToTheSameState() {
+        Graph graph = db.createGraph();
+        Transaction setup = graph.createTransaction();
+        Node a = setup.addNode(Map.of("name", "A"));
+        Node b = setup.addNode(Map.of("name", "B"));
+        Edge ab = setup.addEdge(a.getId(), b.getId(), Map.of(), 1.0);
+        setup.commit();
+
+        // Both stage a change to A's edges, then the other transaction removes A first.
+        Transaction addsEdgeFromA = graph.createTransaction();
+        Node c = addsEdgeFromA.addNode(Map.of("name", "C"));
+        addsEdgeFromA.addEdge(a.getId(), c.getId(), Map.of(), 2.0);
+        Transaction deletesEdgeFromA = graph.createTransaction();
+        deletesEdgeFromA.deleteEdge(ab.getId());
+
+        Transaction deletesA = graph.createTransaction();
+        deletesA.deleteNode(a.getId());
+        deletesA.commit();
+        addsEdgeFromA.commit();
+        deletesEdgeFromA.commit();
+
+        List<String> liveNodes = nodeIds(graph);
+        List<String> liveEdges = edgeIds(graph);
+        reopen();
+
+        Graph recovered = db.getGraph(graph.getId());
+        assertEquals(liveNodes, nodeIds(recovered));
+        assertEquals(liveEdges, edgeIds(recovered));
+    }
+
+    private static List<String> nodeIds(Graph graph) {
+        return graph.getNodes().stream().map(Node::getId).sorted().toList();
+    }
+
+    private static List<String> edgeIds(Graph graph) {
+        return graph.getEdges().stream().map(Edge::getId).sorted().toList();
+    }
+
     private void reopen() {
         db.close();
         db = GraphDB.open(dataDirectory);

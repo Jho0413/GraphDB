@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 /* Note: Johnsons only finds elementary cycles (not all possible cyclic paths) */
@@ -22,14 +23,14 @@ public class JohnsonsTest {
     @Before
     public void setup() {
         graph = Graph.createGraph();
-        nodeA = graph.addNode(Map.of("name", "A"));
-        nodeB = graph.addNode(Map.of("name", "B"));
-        nodeC = graph.addNode(Map.of("name", "C"));
-        nodeD = graph.addNode(Map.of("name", "D"));
-        nodeE = graph.addNode(Map.of("name", "E"));
-        nodeF = graph.addNode(Map.of("name", "F"));
-        nodeG = graph.addNode(Map.of("name", "G"));
-        nodeH = graph.addNode(Map.of("name", "H"));
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
+        nodeE = write(graph).addNode(Map.of("name", "E"));
+        nodeF = write(graph).addNode(Map.of("name", "F"));
+        nodeG = write(graph).addNode(Map.of("name", "G"));
+        nodeH = write(graph).addNode(Map.of("name", "H"));
     }
 
     private List<List<String>> runAndGetCycles() {
@@ -46,8 +47,8 @@ public class JohnsonsTest {
     @Test
     public void returnsEmptyListIfThereAreNoCycles() {
         // A -> B -> C
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
 
         List<List<String>> cycles = runAndGetCycles();
         assertTrue(cycles.isEmpty());
@@ -57,12 +58,12 @@ public class JohnsonsTest {
     public void returnsNodesInvolvedInCycleWhenThereIsACycle() {
         // A -> B -> C -> A
         // A -> D -> E
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
-        graph.addEdge(nodeA.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
 
         List<List<String>> cycles = runAndGetCycles();
         assertEquals(1, cycles.size());
@@ -72,14 +73,14 @@ public class JohnsonsTest {
     @Test
     public void returnsListOfCyclesWhenThereAreDisconnectedCycles() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
         // D -> E -> F -> D
-        graph.addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeF.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeF.getId(), nodeD.getId(), Map.of(), 1.0);
 
         List<List<String>> cycles = runAndGetCycles();
         assertEquals(2, cycles.size());
@@ -90,18 +91,18 @@ public class JohnsonsTest {
     @Test
     public void returnsAllElementaryCyclesWhenNestedCyclesArePresent() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
         // B -> D -> E -> B
-        graph.addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeE.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeE.getId(), nodeB.getId(), Map.of(), 1.0);
 
         // D -> G -> D
-        graph.addEdge(nodeD.getId(), nodeG.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeG.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeG.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeG.getId(), nodeD.getId(), Map.of(), 1.0);
 
         List<List<String>> cycles = runAndGetCycles();
         assertEquals(3, cycles.size());
@@ -113,16 +114,16 @@ public class JohnsonsTest {
     @Test
     public void returnsCorrectCyclesWhenThereAreBranchesFromACycle() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
         // B -> D -> E
-        graph.addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
 
         // C -> E
-        graph.addEdge(nodeC.getId(), nodeE.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeE.getId(), Map.of(), 1.0);
 
         List<List<String>> cycles = runAndGetCycles();
         assertEquals(1, cycles.size());
@@ -132,14 +133,14 @@ public class JohnsonsTest {
     @Test
     public void returnsCycleWhenThereIsALargeCycle() {
         // A -> B -> C -> D -> E -> F -> G -> H -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeF.getId(), nodeG.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeG.getId(), nodeH.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeH.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeF.getId(), nodeG.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeG.getId(), nodeH.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeH.getId(), nodeA.getId(), Map.of(), 1.0);
 
         List<List<String>> cycles = runAndGetCycles();
         assertEquals(1, cycles.size());
@@ -148,7 +149,7 @@ public class JohnsonsTest {
 
     @Test
     public void returnsCycleWhenThereIsASelfCycle() {
-        graph.addEdge(nodeA.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeA.getId(), Map.of(), 1.0);
 
         List<List<String>> cycles = runAndGetCycles();
         assertEquals(1, cycles.size());

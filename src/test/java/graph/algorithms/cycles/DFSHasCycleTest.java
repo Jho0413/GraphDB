@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 public class DFSHasCycleTest {
@@ -19,12 +20,12 @@ public class DFSHasCycleTest {
     @Before
     public void setup() {
         graph = Graph.createGraph();
-        nodeA = graph.addNode(Map.of("name", "A"));
-        nodeB = graph.addNode(Map.of("name", "B"));
-        nodeC = graph.addNode(Map.of("name", "C"));
-        nodeD = graph.addNode(Map.of("name", "D"));
-        nodeE = graph.addNode(Map.of("name", "E"));
-        nodeF = graph.addNode(Map.of("name", "F"));
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
+        nodeE = write(graph).addNode(Map.of("name", "E"));
+        nodeF = write(graph).addNode(Map.of("name", "F"));
     }
 
     private boolean runAndCheckCycle() {
@@ -36,8 +37,8 @@ public class DFSHasCycleTest {
     @Test
     public void returnsFalseWhenThereAreNoCycles() {
         // A -> B -> C
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
 
         boolean hasCycle = runAndCheckCycle();
         assertFalse(hasCycle);
@@ -46,9 +47,9 @@ public class DFSHasCycleTest {
     @Test
     public void returnsTrueWhenThereIsACycle() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
         boolean hasCycle = runAndCheckCycle();
         assertTrue(hasCycle);
@@ -57,13 +58,13 @@ public class DFSHasCycleTest {
     @Test
     public void returnsTrueWhenThereAreDisconnectedGraphsAndOneHasACycle() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
         // D -> E -> F
-        graph.addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
 
         boolean hasCycle = runAndCheckCycle();
         assertTrue(hasCycle);
@@ -72,13 +73,13 @@ public class DFSHasCycleTest {
     @Test
     public void detectsCycleWhenMultiplePathsFormSingleCycle() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
         // B -> D -> C
-        graph.addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 1.0);
 
         boolean hasCycle = runAndCheckCycle();
         assertTrue(hasCycle);

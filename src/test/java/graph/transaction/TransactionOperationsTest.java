@@ -34,7 +34,7 @@ public class TransactionOperationsTest {
     private final TransactionStorage transactionStorage = context.mock(TransactionStorage.class);
     private final OperationsResolver resolver = context.mock(OperationsResolver.class);
 
-    private TransactionOperations service;
+    private Transaction service;
 
     private final Map<String, Object> TEST_ATTRIBUTES = Map.of("name", "test");
     private final Map<String, Object> TEST_ATTRIBUTES_2 = Map.of("name", "test2");
@@ -57,7 +57,7 @@ public class TransactionOperationsTest {
     private final List<Edge> TRANSACTION_EDGES = List.of(TRANSACTION_EDGE);
 
     @Parameterized.Parameter(value = 0)
-    public TriFunction<GraphStorage, TransactionStorage, OperationsResolver, TransactionOperations> serviceCreator;
+    public TriFunction<GraphStorage, TransactionStorage, OperationsResolver, Transaction> serviceCreator;
 
     @Before
     public void setUp() {
@@ -67,7 +67,8 @@ public class TransactionOperationsTest {
     @Parameterized.Parameters(name="{0}")
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
-                (TriFunction<GraphStorage, TransactionStorage, OperationsResolver, TransactionOperations>) TransactionService::new
+                (TriFunction<GraphStorage, TransactionStorage, OperationsResolver, Transaction>) (storage, transactionStorage, resolver) ->
+                        new Transaction(storage, transactionStorage, resolver, new GraphCommitter(storage, "g1", CommitLog.NONE))
         });
     }
 

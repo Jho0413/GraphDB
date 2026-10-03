@@ -10,6 +10,7 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Set;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 public class GraphQueryCacheInvalidationIntegrationTest {
@@ -32,20 +33,20 @@ public class GraphQueryCacheInvalidationIntegrationTest {
         Map<String, Object> acmeAttr = Map.of("name", "Acme Inc.", "type", "Company");
         Map<String, Object> cityAttr = Map.of("name", "Metropolis", "type", "Location");
 
-        alice = graph.addNode(aliceAttr);
-        bob = graph.addNode(bobAttr);
-        acme = graph.addNode(acmeAttr);
-        city = graph.addNode(cityAttr);
+        alice = write(graph).addNode(aliceAttr);
+        bob = write(graph).addNode(bobAttr);
+        acme = write(graph).addNode(acmeAttr);
+        city = write(graph).addNode(cityAttr);
 
         Map<String, Object> worksAtProps = Map.of("relation", "worksAt", "since", 2020);
         Map<String, Object> livesInProps = Map.of("relation", "livesIn");
         Map<String, Object> friendsWithProps = Map.of("relation", "friends");
 
-        graph.addEdge(alice.getId(), acme.getId(), worksAtProps, 1.0);
-        graph.addEdge(bob.getId(), acme.getId(), worksAtProps, 1.2);
-        graph.addEdge(alice.getId(), city.getId(), livesInProps, 0.5);
-        graph.addEdge(bob.getId(), city.getId(), livesInProps, 0.6);
-        aliceBob = graph.addEdge(alice.getId(), bob.getId(), friendsWithProps, 0.9);
+        write(graph).addEdge(alice.getId(), acme.getId(), worksAtProps, 1.0);
+        write(graph).addEdge(bob.getId(), acme.getId(), worksAtProps, 1.2);
+        write(graph).addEdge(alice.getId(), city.getId(), livesInProps, 0.5);
+        write(graph).addEdge(bob.getId(), city.getId(), livesInProps, 0.6);
+        aliceBob = write(graph).addEdge(alice.getId(), bob.getId(), friendsWithProps, 0.9);
     }
 
     @Test
@@ -70,7 +71,7 @@ public class GraphQueryCacheInvalidationIntegrationTest {
         Set<String> beforeNodes = queryClient.connectivity().getConnectedNodes(alice.getId());
         assertEquals(Set.of(alice.getId(), bob.getId(), acme.getId(), city.getId()), beforeNodes);
 
-        graph.deleteEdge(aliceBob.getId());
+        write(graph).deleteEdge(aliceBob.getId());
 
         Set<String> afterNodes = queryClient.connectivity().getConnectedNodes(alice.getId());
         assertEquals(Set.of(alice.getId(), acme.getId(), city.getId()), afterNodes);

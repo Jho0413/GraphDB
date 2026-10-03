@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.util.*;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -22,21 +23,21 @@ public class BFSCommonNodesByDepthTest {
     public void setup() {
         graph = Graph.createGraph();
 
-        nodeA = graph.addNode(Map.of("name", "A"));
-        nodeB = graph.addNode(Map.of("name", "B"));
-        nodeC = graph.addNode(Map.of("name", "C"));
-        nodeD = graph.addNode(Map.of("name", "D"));
-        nodeE = graph.addNode(Map.of("name", "E"));
-        nodeF = graph.addNode(Map.of("name", "F"));
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
+        nodeE = write(graph).addNode(Map.of("name", "E"));
+        nodeF = write(graph).addNode(Map.of("name", "F"));
 
         // A -> B -> C -> E
         // A -> D -> E
         // F isolated
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeE.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeA.getId(), nodeD.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeE.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeE.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeD.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeE.getId(), Collections.emptyMap(), 1.0);
     }
 
     @Test

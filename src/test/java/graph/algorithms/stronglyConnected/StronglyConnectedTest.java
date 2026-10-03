@@ -14,6 +14,7 @@ import org.junit.runners.Parameterized;
 import java.util.*;
 import java.util.function.BiFunction;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
@@ -36,12 +37,12 @@ public class StronglyConnectedTest {
     @Before
     public void setup() {
         graph = Graph.createGraph();
-        nodeA = graph.addNode(Map.of("name", "A"));
-        nodeB = graph.addNode(Map.of("name", "B"));
-        nodeC = graph.addNode(Map.of("name", "C"));
-        nodeD = graph.addNode(Map.of("name", "D"));
-        nodeE = graph.addNode(Map.of("name", "E"));
-        nodeF = graph.addNode(Map.of("name", "F"));
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
+        nodeE = write(graph).addNode(Map.of("name", "E"));
+        nodeF = write(graph).addNode(Map.of("name", "F"));
     }
 
     private TraversalResult runStronglyConnectedAlgorithm() {
@@ -52,9 +53,9 @@ public class StronglyConnectedTest {
     @Test
     public void detectsAStronglyConnectedComponentWithMoreThanOneNode() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
         TraversalResult result = runStronglyConnectedAlgorithm();
         Map<Integer, Set<String>> components = result.getComponents();
@@ -68,13 +69,13 @@ public class StronglyConnectedTest {
         // A -> B -> A
         // C -> D -> C
         // E -> F
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), 1.0);
 
-        graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 1.0);
 
-        graph.addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
 
         TraversalResult result = runStronglyConnectedAlgorithm();
         Map<Integer, Set<String>> components = result.getComponents();
@@ -94,11 +95,11 @@ public class StronglyConnectedTest {
     @Test
     public void edgesExistWithNoCycleDoNotFormStronglyConnectedComponents() {
         // A -> B -> C -> D -> E -> F
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
 
         TraversalResult result = runStronglyConnectedAlgorithm();
         Map<Integer, Set<String>> components = result.getComponents();

@@ -1,9 +1,7 @@
 package graph.algorithms.connectivity;
 
 import graph.Graph;
-import graph.DefaultObservableGraph;
 import graph.events.ObservableGraphView;
-import graph.GraphService;
 import graph.algorithms.AlgorithmManager;
 import graph.algorithms.TraversalResult;
 import org.jmock.Expectations;

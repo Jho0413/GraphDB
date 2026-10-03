@@ -7,6 +7,8 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static graph.testsupport.AutoCommitWriter.write;
+
 public class DefaultGraphValidatorTest {
 
     private final Graph graph = Graph.createGraph();
@@ -19,7 +21,7 @@ public class DefaultGraphValidatorTest {
 
     @Test
     public void doesNotThrowExceptionIfNodeExists() {
-        Node node = graph.addNode(Map.of());
+        Node node = write(graph).addNode(Map.of());
         validator.checkNodeExists(node.getId());
     }
 
