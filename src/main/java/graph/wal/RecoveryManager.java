@@ -62,7 +62,6 @@ public class RecoveryManager {
             case DeleteEdge op -> storage.containsEdge(op.edgeId());
             case DeleteNode op -> storage.containsNode(op.nodeId());
             case AddOrUpdateNode op -> true;
-            default -> true;
         };
         if (applicable) {
             operation.apply(storage);

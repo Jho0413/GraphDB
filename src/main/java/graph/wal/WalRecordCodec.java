@@ -147,7 +147,6 @@ final class WalRecordCodec {
                 out.writeByte(DELETE_EDGE);
                 writeString(out, op.edgeId());
             }
-            default -> throw new IllegalArgumentException("Cannot log operation type " + operation.getClass().getName());
         }
     }
 }
