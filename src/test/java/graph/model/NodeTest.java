@@ -12,9 +12,8 @@ import static org.junit.Assert.*;
 public class NodeTest {
 
     @Test
-    public void ableToGetAndSetAttribute() {
-        Node node = new Node("node1", new HashMap<>());
-        node.setAttribute("size", "large");
+    public void ableToGetAttribute() {
+        Node node = new Node("node1", Map.of("size", "large"));
         assertThat(node.getAttribute("size"), is("large"));
     }
 
@@ -44,30 +43,6 @@ public class NodeTest {
     }
 
     @Test
-    public void ableToSetMultipleAttributes() {
-        Map<String, Object> attributes = new HashMap<>();
-        attributes.put("size", "large");
-        attributes.put("color", "blue");
-
-        Node node = new Node("node1", new HashMap<>());
-        node.setAttributes(attributes);
-
-        assertThat(node.getAttribute("size"), is("large"));
-        assertThat(node.getAttribute("color"), is("blue"));
-    }
-
-    @Test
-    public void ableToDeleteAttribute() {
-        Map<String, Object> attributes = new HashMap<>();
-        Node node = new Node("node1", attributes);
-        node.setAttribute("size", "large");
-        assertTrue(node.hasAttribute("size"));
-        assertThat(node.deleteAttribute("size"), is("large"));
-        assertNull(node.deleteAttribute("size"));
-        assertFalse(node.hasAttribute("size"));
-    }
-
-    @Test
     public void ableToGetNodeId() {
         Node node = new Node("node1", new HashMap<>());
         assertThat(node.getId(), is("node1"));
@@ -85,5 +60,21 @@ public class NodeTest {
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), containsString("Attribute size not found"));
         }
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void attributesCannotBeModifiedThroughTheReturnedMap() {
+        Node node = new Node("node1", Map.of("size", "large"));
+        node.getAttributes().put("size", "small");
+    }
+
+    @Test
+    public void attributesMayHaveNullValues() {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("size", null);
+        Node node = new Node("node1", attributes);
+
+        assertTrue(node.hasAttribute("size"));
+        assertNull(node.getAttributes().get("size"));
     }
 }

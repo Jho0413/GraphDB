@@ -94,7 +94,7 @@ db.close();
 > **Note:** Only graphs created through a `GraphDB` are durable. `Graph.createGraph()` creates a standalone in-memory graph whose transactions are not logged.
 
 ### Transactions
-A `Graph` is read-only: the only way to modify it is through a transaction, so every change is written to the log before it is applied. `Graph` exposes reads (`GraphReader`); a `Transaction` exposes both reads and writes (`GraphReader` + `GraphWriter`).
+A `Graph` is read-only: the only way to modify it is through a transaction, so every change is written to the log before it is applied. `Graph` exposes reads (`GraphReader`); a `Transaction` exposes both reads and writes (`GraphReader` + `GraphWriter`). The `Node` and `Edge` objects that reads return are immutable, so they cannot be used to change the graph either.
 
 > **Note:** If any operation within the transaction throws an exception, the transaction will **not commit** and the exception will be propagated. This guarantees that partial or faulty changes are never applied.
 

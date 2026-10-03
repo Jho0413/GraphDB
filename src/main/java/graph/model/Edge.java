@@ -4,12 +4,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Edge {
+/**
+ * An immutable, directed, weighted edge. Reads return the stored object itself, which is safe because it cannot be
+ * changed; to change an edge, use a {@code Transaction}.
+ */
+public final class Edge {
 
     private final String id;
     private final String from;
     private final String to;
-    private double weight;
+    private final double weight;
     private final Map<String, Object> properties;
 
     public Edge(String id, String from, String to, double weight, Map<String, Object> properties) {
@@ -17,21 +21,12 @@ public class Edge {
         this.from = from;
         this.to = to;
         this.weight = weight;
-        this.properties = new HashMap<>(properties);
+        // A copy of a HashMap rather than Map.copyOf: property values may be null.
+        this.properties = Collections.unmodifiableMap(new HashMap<>(properties));
     }
 
     public String getId() {
         return id;
-    }
-
-    public void setProperty(String key, Object value) {
-        properties.put(key, value);
-    }
-
-    public void setProperties(Map<String, Object> properties) {
-        for (Map.Entry<String, Object> entry : properties.entrySet()) {
-            setProperty(entry.getKey(), entry.getValue());
-        }
     }
 
     public Object getProperty(String key) {
@@ -47,19 +42,11 @@ public class Edge {
     }
 
     public Map<String, Object> getProperties() {
-        return Collections.unmodifiableMap(properties);
-    }
-
-    public Object deleteProperty(String key) {
-        return properties.remove(key);
+        return properties;
     }
 
     public double getWeight() {
         return weight;
-    }
-
-    public void setWeight(double weight) {
-        this.weight = weight;
     }
 
     public String getSource() {
