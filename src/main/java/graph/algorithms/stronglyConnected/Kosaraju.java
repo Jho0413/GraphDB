@@ -1,7 +1,6 @@
 package graph.algorithms.stronglyConnected;
 
 import graph.model.Edge;
-import graph.model.Graph;
 import graph.model.Node;
 import graph.algorithms.Algorithm;
 import graph.algorithms.GraphTraversalView;

@@ -1,7 +1,6 @@
 package graph.algorithms.connectivity;
 
 import graph.model.Edge;
-import graph.model.Graph;
 import graph.algorithms.Algorithm;
 import graph.algorithms.GraphTraversalView;
 import graph.algorithms.TraversalInput;

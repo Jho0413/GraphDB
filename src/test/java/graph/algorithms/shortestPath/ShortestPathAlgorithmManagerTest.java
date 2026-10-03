@@ -1,7 +1,6 @@
 package graph.algorithms.shortestPath;
 
 import graph.model.Graph;
-import graph.model.GraphServiceExtractor;
 import graph.events.ObservableGraphView;
 import graph.algorithms.AlgorithmManager;
 import graph.algorithms.TraversalResult;
@@ -21,7 +20,7 @@ public class ShortestPathAlgorithmManagerTest {
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager delegate = context.mock(AlgorithmManager.class);
     ShortestPathAlgorithmManager manager = new ShortestPathAlgorithmManager(delegate);
-    ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(Graph.createGraph());
+    ObservableGraphView observableGraph = Graph.createGraph();
 
     @Test
     public void delegatesToDelegateManagerWhenRunningAlgorithm() {

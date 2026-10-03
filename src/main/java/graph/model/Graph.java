@@ -2,8 +2,10 @@ package graph.model;
 
 import graph.wal.CommitLog;
 import graph.events.DefaultObservableGraph;
+import graph.events.GraphListener;
 import graph.events.InternalGraphOperations;
 import graph.events.ObservableGraphOperations;
+import graph.events.ObservableGraphView;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
@@ -11,14 +13,13 @@ import graph.transaction.GraphOperations;
 import graph.transaction.GraphService;
 import graph.storage.GraphStorage;
 import graph.storage.InMemoryGraphStorage;
-import graph.algorithms.GraphTraversalView;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class Graph implements GraphOperations, GraphTraversalView {
+public class Graph implements GraphOperations, ObservableGraphView {
 
     private final ObservableGraphOperations service;
     private final String id;
@@ -26,10 +27,6 @@ public class Graph implements GraphOperations, GraphTraversalView {
     private Graph(ObservableGraphOperations service, String id) {
         this.service = service;
         this.id = id;
-    }
-
-    protected ObservableGraphOperations getService() {
-        return this.service;
     }
 
     /** Creates a standalone in-memory graph. Its transactions are not logged, so it does not survive a restart. */
@@ -49,6 +46,11 @@ public class Graph implements GraphOperations, GraphTraversalView {
 
     public String getId() {
         return id;
+    }
+
+    @Override
+    public void addListener(GraphListener listener) {
+        service.addListener(listener);
     }
 
     @Override

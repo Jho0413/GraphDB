@@ -1,8 +1,5 @@
 package graph.algorithms;
 
-import graph.model.Graph;
-import graph.model.GraphServiceExtractor;
-import graph.events.ObservableGraphOperations;
 import graph.events.ObservableGraphView;
 import graph.algorithms.connectivity.ConnectivityAlgorithmManager;
 import graph.algorithms.cycles.CyclesAlgorithmManager;
@@ -24,8 +21,7 @@ public class TraversalAlgorithmManager implements AlgorithmManager {
         this.algorithmManagerMap = algorithmManagerMap;
     }
 
-    public static TraversalAlgorithmManager createManager(Graph graph) {
-        ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(graph);
+    public static TraversalAlgorithmManager createManager(ObservableGraphView observableGraph) {
         List<AlgorithmManager> algorithmManagers = List.of(
                 ShortestPathAlgorithmManager.create(observableGraph),
                 StronglyConnectedAlgorithmManager.create(observableGraph),

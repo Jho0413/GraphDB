@@ -1,7 +1,6 @@
 package graph.algorithms.connectivity;
 
 import graph.model.Graph;
-import graph.model.GraphServiceExtractor;
 import graph.events.DefaultObservableGraph;
 import graph.events.ObservableGraphView;
 import graph.transaction.GraphService;
@@ -23,7 +22,7 @@ public class ConnectivityAlgorithmManagerTest {
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager delegate = context.mock(AlgorithmManager.class);
     ConnectivityAlgorithmManager manager = new ConnectivityAlgorithmManager(delegate);
-    ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(Graph.createGraph());
+    ObservableGraphView observableGraph = Graph.createGraph();
 
     @Test
     public void delegatesToDelegateManagerWhenRunningAlgorithm() {

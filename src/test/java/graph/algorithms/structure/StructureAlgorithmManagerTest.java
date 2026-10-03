@@ -1,7 +1,6 @@
 package graph.algorithms.structure;
 
 import graph.model.Graph;
-import graph.model.GraphServiceExtractor;
 import graph.events.ObservableGraphView;
 import graph.algorithms.AlgorithmManager;
 import graph.algorithms.TraversalResult;
@@ -21,7 +20,7 @@ public class StructureAlgorithmManagerTest {
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager delegate = context.mock(AlgorithmManager.class);
     StructureAlgorithmManager manager = new StructureAlgorithmManager(delegate);
-    ObservableGraphView observableGraph = GraphServiceExtractor.extractObservable(Graph.createGraph());
+    ObservableGraphView observableGraph = Graph.createGraph();
 
     @Test
     public void delegatesToDelegateManagerWhenRunningAlgorithm() {
