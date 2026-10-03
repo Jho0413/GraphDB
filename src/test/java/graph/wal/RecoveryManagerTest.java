@@ -149,17 +149,19 @@ public class RecoveryManagerTest {
         assertEquals("n2", graph.getAllNodes().getFirst().getId());
     }
 
-    // ============ Defensive recovery ============
+    // ============ Replay does exactly what the live commit did ============
+    // Concurrent transactions can log an operation whose target was already removed (Read Committed does not
+    // validate at commit). Replay applies it just as the live commit did instead of skipping or failing.
 
     @Test
-    public void skipAddEdgeWhenEndpointsAreMissing() {
+    public void edgeToAMissingNodeIsReplayedAsTheLiveCommitStoredIt() {
         GraphStorage graph = recover(transaction("g1", addNode1, addEdge)).get("g1");
         assertEquals(1, graph.getAllNodes().size());
-        assertTrue("edge should be skipped because target is missing", graph.getAllEdges().isEmpty());
+        assertEquals(1, graph.getAllEdges().size());
     }
 
     @Test
-    public void skipDeletesOfMissingNodesAndEdges() {
+    public void deletesOfMissingNodesAndEdgesAreNoOps() {
         GraphStorage graph = recover(transaction("g1", addNode2, deleteEdge, deleteNode1)).get("g1");
         assertEquals(1, graph.getAllNodes().size());
         assertTrue(graph.getAllEdges().isEmpty());
