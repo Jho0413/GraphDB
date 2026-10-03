@@ -1,29 +1,35 @@
 package graph;
 
 import graph.model.Edge;
+import graph.model.GraphReader;
 import graph.model.Node;
-import graph.transaction.Transaction;
 import graph.transaction.CommitLog;
+import graph.transaction.GraphCommitter;
+import graph.transaction.Transaction;
 import graph.events.GraphListener;
 import graph.events.ObservableGraphView;
-import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
 import graph.storage.InMemoryGraphStorage;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class Graph implements GraphOperations, ObservableGraphView {
+/**
+ * A graph's committed state. Reads go straight to storage; the only way to change a graph is through a
+ * {@link Transaction}, so every change is logged before it is applied.
+ */
+public class Graph implements GraphReader, ObservableGraphView {
 
-    private final ObservableGraphOperations service;
+    private final GraphStorage storage;
+    private final GraphCommitter committer;
     private final String id;
 
-    private Graph(ObservableGraphOperations service, String id) {
-        this.service = service;
+    private Graph(GraphStorage storage, GraphCommitter committer, String id) {
+        this.storage = storage;
+        this.committer = committer;
         this.id = id;
     }
 
@@ -38,142 +44,95 @@ public class Graph implements GraphOperations, ObservableGraphView {
     }
 
     static Graph create(GraphStorage storage, String graphId, CommitLog commitLog) {
-        InternalGraphOperations service = new GraphService(storage, graphId, commitLog);
-        return new Graph(new DefaultObservableGraph(service), graphId);
+        return new Graph(storage, new GraphCommitter(storage, graphId, commitLog), graphId);
     }
 
     public String getId() {
         return id;
     }
 
-    @Override
-    public void addListener(GraphListener listener) {
-        service.addListener(listener);
+    public Transaction createTransaction() {
+        return committer.createTransaction();
     }
 
     @Override
-    public Node addNode(Map<String, Object> attributes) throws IllegalArgumentException {
-        return service.addNode(attributes);
+    public void addListener(GraphListener listener) {
+        committer.addListener(listener);
     }
 
     @Override
     public Node getNodeById(String id) throws NodeNotFoundException {
-        return service.getNodeById(id);
+        checkNodeId(id);
+        return storage.getNode(id);
     }
 
     @Override
     public List<Node> getNodes() {
-        return service.getNodes();
-    }
-
-    @Override
-    public List<Node> getNodesByAttribute(String attribute, Object value) {
-        return service.getNodesByAttribute(attribute, value);
-    }
-
-    @Override
-    public void updateNode(String id, Map<String, Object> attributes) throws NodeNotFoundException, IllegalArgumentException {
-        service.updateNode(id, attributes);
-    }
-
-    @Override
-    public void updateNode(String id, String attribute, Object value) throws NodeNotFoundException {
-        service.updateNode(id, attribute, value);
-    }
-
-    @Override
-    public Object removeNodeAttribute(String id, String attribute) throws NodeNotFoundException {
-        return service.removeNodeAttribute(id, attribute);
-    }
-
-    @Override
-    public Node deleteNode(String id) throws NodeNotFoundException {
-        return service.deleteNode(id);
-    }
-
-    @Override
-    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws IllegalArgumentException, NodeNotFoundException, EdgeExistsException {
-        return service.addEdge(source, target, properties, weight);
+        return storage.getAllNodes();
     }
 
     @Override
     public Edge getEdgeById(String id) throws EdgeNotFoundException {
-        return service.getEdgeById(id);
+        if (!storage.containsEdge(id)) {
+            throw new EdgeNotFoundException(id);
+        }
+        return storage.getEdge(id);
+    }
+
+    @Override
+    public Edge getEdgeByNodeIds(String source, String target) throws NodeNotFoundException, EdgeNotFoundException {
+        checkNodeId(source);
+        checkNodeId(target);
+        if (storage.edgeExists(source, target)) {
+            return storage.getEdgeByNodeIds(source, target);
+        }
+        throw new EdgeNotFoundException(source, target);
     }
 
     @Override
     public List<Edge> getEdges() {
-        return service.getEdges();
-    }
-
-    @Override
-    public List<Edge> getEdgesByProperty(String property, Object value) {
-        return service.getEdgesByProperty(property, value);
+        return storage.getAllEdges();
     }
 
     @Override
     public List<Edge> getEdgesByWeight(double weight) {
-        return service.getEdgesByWeight(weight);
+        return storage.getEdgesByWeight(weight);
     }
 
     @Override
-    public List<Edge> getEdgesByWeightRange(double min, double max) {
-        return service.getEdgesByWeightRange(min, max);
+    public List<Edge> getEdgesByWeightRange(double min, double max) throws IllegalArgumentException {
+        if (min > max) {
+            throw new IllegalArgumentException("min must be smaller or equals to max");
+        }
+        return storage.getEdgesByWeightRange(min, max);
     }
 
     @Override
     public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
-        return service.getEdgesWithWeightGreaterThan(weight);
+        return storage.getEdgesWithWeightGreaterThan(weight);
     }
 
     @Override
     public List<Edge> getEdgesWithWeightLessThan(double weight) {
-        return service.getEdgesWithWeightLessThan(weight);
-    }
-
-    @Override
-    public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
-        service.updateEdge(edgeId, weight);
-    }
-
-    @Override
-    public void updateEdge(String edgeId, String key, Object value) throws EdgeNotFoundException {
-        service.updateEdge(edgeId, key, value);
-    }
-
-    @Override
-    public void updateEdge(String edgeId, Map<String, Object> properties) throws EdgeNotFoundException, IllegalArgumentException {
-        service.updateEdge(edgeId, properties);
-    }
-
-    @Override
-    public Object removeEdgeProperty(String edgeId, String property) throws EdgeNotFoundException {
-        return service.removeEdgeProperty(edgeId, property);
-    }
-
-    @Override
-    public Edge deleteEdge(String edgeId) throws EdgeNotFoundException {
-        return service.deleteEdge(edgeId);
+        return storage.getEdgesWithWeightLessThan(weight);
     }
 
     @Override
     public List<Edge> getEdgesFromNode(String nodeId) throws NodeNotFoundException {
-        return service.getEdgesFromNode(nodeId);
+        checkNodeId(nodeId);
+        return storage.getEdgesFromNode(nodeId);
     }
 
     @Override
     public List<String> getNodesIdWithEdgeToNode(String nodeId) throws NodeNotFoundException {
-        return service.getNodesIdWithEdgeToNode(nodeId);
+        checkNodeId(nodeId);
+        return storage.nodesIdsWithEdgesToNode(nodeId);
     }
 
-    @Override
-    public Edge getEdgeByNodeIds(String source, String target) {
-        return service.getEdgeByNodeIds(source, target);
-    }
-
-    @Override
-    public Transaction createTransaction() {
-        return service.createTransaction();
+    private void checkNodeId(String nodeId) throws NodeNotFoundException {
+        if (!storage.containsNode(nodeId)) {
+            throw new NodeNotFoundException(nodeId);
+        }
     }
 
     @Override
