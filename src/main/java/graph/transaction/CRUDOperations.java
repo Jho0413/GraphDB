@@ -9,7 +9,7 @@ import graph.exceptions.NodeNotFoundException;
 import java.util.List;
 import java.util.Map;
 
-interface CRUDOperations {
+public interface CRUDOperations {
     // Node methods
     Node addNode(Map<String, Object> attributes) throws IllegalArgumentException;
     Node getNodeById(String id) throws NodeNotFoundException;

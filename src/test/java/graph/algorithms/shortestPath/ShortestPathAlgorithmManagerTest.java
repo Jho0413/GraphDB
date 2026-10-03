@@ -1,6 +1,6 @@
 package graph.algorithms.shortestPath;
 
-import graph.model.Graph;
+import graph.Graph;
 import graph.events.ObservableGraphView;
 import graph.algorithms.AlgorithmManager;
 import graph.algorithms.TraversalResult;

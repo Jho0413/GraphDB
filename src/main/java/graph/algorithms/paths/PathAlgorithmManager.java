@@ -1,5 +1,6 @@
 package graph.algorithms.paths;
 
+import graph.model.GraphView;
 import graph.events.ObservableGraphView;
 import graph.algorithms.*;
 
@@ -20,7 +21,7 @@ public class PathAlgorithmManager implements AlgorithmManager {
     }
 
     public static PathAlgorithmManager create(ObservableGraphView graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(DFS_ALL_PATHS, DFSAllPaths::new);
 
         return new PathAlgorithmManager(AlgorithmManagerFactory.createWithCache(

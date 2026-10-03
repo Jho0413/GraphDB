@@ -1,11 +1,10 @@
 package graph.algorithms;
 
 import graph.model.Edge;
-import graph.model.Graph;
+import graph.Graph;
 import graph.model.Node;
-import graph.model.Transaction;
+import graph.transaction.Transaction;
 import graph.exceptions.CycleFoundException;
-import graph.query.Path;
 import org.junit.Before;
 import org.junit.Test;
 

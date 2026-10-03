@@ -1,4 +1,4 @@
-package graph.storage;
+package graph.util;
 
 import org.junit.Before;
 import org.junit.Test;

@@ -3,7 +3,7 @@ package graph.algorithms.stronglyConnected;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.algorithms.Algorithm;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import graph.algorithms.TraversalResult.TraversalResultBuilder;
@@ -13,13 +13,13 @@ import java.util.stream.Collectors;
 
 class Kosaraju implements Algorithm {
 
-    private final GraphTraversalView graph;
+    private final GraphView graph;
     private final Set<String> notVisited;
     private final Map<Integer, Set<String>> components = new HashMap<>();
     private int counter = 1;
     private final Stack<String> stack = new Stack<>();
 
-    Kosaraju(TraversalInput input, GraphTraversalView graph) {
+    Kosaraju(TraversalInput input, GraphView graph) {
         this.graph = graph;
         this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
     }

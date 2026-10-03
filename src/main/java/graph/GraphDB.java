@@ -2,8 +2,7 @@ package graph;
 
 import graph.wal.WalReader;
 import graph.wal.WriteAheadLog;
-import graph.model.Graph;
-import graph.model.RecoveryManager;
+import graph.wal.RecoveryManager;
 import graph.exceptions.GraphNotFoundException;
 import graph.exceptions.WalException;
 import graph.query.GraphQueryClient;
@@ -12,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,7 +53,9 @@ public class GraphDB implements AutoCloseable {
                         + " bytes of incomplete write-ahead log at the end of " + walFile);
             }
             WriteAheadLog wal = WriteAheadLog.open(walFile, log.validLength());
-            Map<String, Graph> graphs = new RecoveryManager(wal).recover(log.records());
+            Map<String, Graph> graphs = new LinkedHashMap<>();
+            new RecoveryManager().recover(log.records())
+                    .forEach((graphId, storage) -> graphs.put(graphId, Graph.create(storage, graphId, wal)));
             return new GraphDB(graphs, wal, lock);
         } catch (RuntimeException e) {
             lock.close();

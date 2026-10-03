@@ -1,8 +1,8 @@
 package graph.algorithms.shortestPath;
 
-import graph.query.Path;
+import graph.algorithms.Path;
 import graph.algorithms.Algorithm;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalResult;
 
 import java.util.HashMap;
@@ -15,9 +15,9 @@ abstract class ShortestPathAlgorithm<N extends NodeStats> implements Algorithm {
     protected final Map<String, N> store = new HashMap<>();
     protected final String fromNodeId;
     protected final String toNodeId;
-    protected final GraphTraversalView graph;
+    protected final GraphView graph;
 
-    ShortestPathAlgorithm(String fromNodeId, String toNodeId, GraphTraversalView graph) {
+    ShortestPathAlgorithm(String fromNodeId, String toNodeId, GraphView graph) {
         this.fromNodeId = fromNodeId;
         this.toNodeId = toNodeId;
         this.graph = graph;

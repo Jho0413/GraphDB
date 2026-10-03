@@ -1,12 +1,13 @@
-package graph.transaction;
+package graph;
 
-import graph.wal.CommitLog;
+import graph.transaction.TransactionOperations;
+import graph.transaction.TransactionService;
+import graph.transaction.CommitLog;
 import graph.model.Edge;
 import graph.model.Node;
-import graph.model.Transaction;
-import graph.events.DefaultObservableTransaction;
+import graph.transaction.Transaction;
+import graph.transaction.DefaultObservableTransaction;
 import graph.events.GraphEvent;
-import graph.events.InternalGraphOperations;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;

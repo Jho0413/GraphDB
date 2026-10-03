@@ -1,7 +1,6 @@
 package graph;
 
 import graph.model.Edge;
-import graph.model.Graph;
 import graph.model.Node;
 import org.junit.Before;
 import org.junit.Test;

@@ -1,6 +1,5 @@
 package graph.algorithms;
 
-import graph.query.Path;
 
 import java.util.List;
 import java.util.Map;

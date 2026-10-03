@@ -1,5 +1,6 @@
 package graph.algorithms.connectivity;
 
+import graph.model.GraphView;
 import graph.events.ObservableGraphView;
 import graph.algorithms.*;
 
@@ -20,7 +21,7 @@ public class ConnectivityAlgorithmManager implements AlgorithmManager {
     }
 
     public static ConnectivityAlgorithmManager create(ObservableGraphView graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(DFS_NODES_CONNECTED, DFSNodesConnector::new);
         supportedAlgorithms.put(DFS_NODES_CONNECTED_TO, DFSNodesConnectedTo::new);
         supportedAlgorithms.put(DFS_REACHABLE_NODES, DFSGraphConnector::new);

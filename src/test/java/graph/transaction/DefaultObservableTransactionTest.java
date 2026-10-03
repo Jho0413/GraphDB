@@ -1,9 +1,9 @@
-package graph.events;
+package graph.transaction;
 
+import graph.events.GraphEvent;
 import graph.model.Edge;
 import graph.model.Node;
 
-import graph.transaction.TransactionOperations;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Rule;

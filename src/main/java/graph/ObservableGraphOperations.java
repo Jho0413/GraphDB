@@ -1,5 +1,6 @@
-package graph.events;
+package graph;
 
-import graph.transaction.GraphOperations;
+import graph.events.ObservableGraphView;
+
 
 public interface ObservableGraphOperations extends ObservableGraphView, GraphOperations {}

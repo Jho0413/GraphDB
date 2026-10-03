@@ -4,7 +4,7 @@ import graph.exceptions.CycleFoundException;
 import graph.exceptions.NegativeCycleException;
 import graph.exceptions.NodeNotFoundException;
 import graph.algorithms.AlgorithmManager;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalResult;
 
 import java.util.List;
@@ -15,9 +15,9 @@ import static graph.algorithms.AlgorithmType.TOPOLOGICAL_SORT;
 public class GraphStructureAnalyser {
 
     private final AlgorithmManager algorithmManager;
-    private final GraphTraversalView graph;
+    private final GraphView graph;
 
-    public GraphStructureAnalyser(AlgorithmManager algorithmManager, GraphTraversalView graph) {
+    public GraphStructureAnalyser(AlgorithmManager algorithmManager, GraphView graph) {
         this.algorithmManager = algorithmManager;
         this.graph = graph;
     }

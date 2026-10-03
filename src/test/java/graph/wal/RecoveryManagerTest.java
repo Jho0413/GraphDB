@@ -1,7 +1,7 @@
-package graph.model;
+package graph.wal;
 
-import graph.wal.CommitLog;
-import graph.wal.WalRecord;
+import graph.model.Edge;
+import graph.model.Node;
 import graph.wal.WalRecord.*;
 import graph.util.EdgeBaseMatcher;
 import graph.util.NodeBaseMatcher;
@@ -10,6 +10,7 @@ import graph.transaction.AddOrUpdateNode;
 import graph.transaction.DeleteEdge;
 import graph.transaction.DeleteNode;
 import graph.transaction.GraphOperation;
+import graph.storage.GraphStorage;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,16 +39,16 @@ public class RecoveryManagerTest {
 
     @Before
     public void setUp() {
-        recoveryManager = new RecoveryManager(CommitLog.NONE);
+        recoveryManager = new RecoveryManager();
     }
 
     // ============ Graph lifecycle ============
 
     @Test
     public void recoversEmptyGraphsFromCreateRecords() {
-        Map<String, Graph> graphs = recoveryManager.recover(List.of(new GraphCreated("g1")));
+        Map<String, GraphStorage> graphs = recoveryManager.recover(List.of(new GraphCreated("g1")));
         assertEquals(1, graphs.size());
-        assertTrue(graphs.get("g1").getNodes().isEmpty());
+        assertTrue(graphs.get("g1").getAllNodes().isEmpty());
     }
 
     @Test
@@ -69,42 +70,42 @@ public class RecoveryManagerTest {
 
     @Test
     public void ableToRecoverAddedNodes() {
-        Map<String, Graph> graphs = recover(transaction("g1", addNode1));
-        checkNodeComponents("n1", ATTRIBUTES, graphs.get("g1").getNodes().getFirst());
+        Map<String, GraphStorage> graphs = recover(transaction("g1", addNode1));
+        checkNodeComponents("n1", ATTRIBUTES, graphs.get("g1").getAllNodes().getFirst());
     }
 
     @Test
     public void updatesReplaceTheWholeNode() {
-        Map<String, Graph> graphs = recover(transaction("g1", addNode1, updateNode1));
-        checkNodeComponents("n1", COMBINED_ATTRS_1_2, graphs.get("g1").getNodeById("n1"));
+        Map<String, GraphStorage> graphs = recover(transaction("g1", addNode1, updateNode1));
+        checkNodeComponents("n1", COMBINED_ATTRS_1_2, graphs.get("g1").getNode("n1"));
     }
 
     @Test
     public void ableToRecoverDeletedNodes() {
-        Map<String, Graph> graphs = recover(transaction("g1", addNode1, deleteNode1));
-        assertTrue(graphs.get("g1").getNodes().isEmpty());
+        Map<String, GraphStorage> graphs = recover(transaction("g1", addNode1, deleteNode1));
+        assertTrue(graphs.get("g1").getAllNodes().isEmpty());
     }
 
     // ============ Edge operations ============
 
     @Test
     public void ableToRecoverAddedEdges() {
-        Map<String, Graph> graphs = recover(transaction("g1", addNode1, addNode2, addEdge));
-        List<Edge> edges = graphs.get("g1").getEdges();
+        Map<String, GraphStorage> graphs = recover(transaction("g1", addNode1, addNode2, addEdge));
+        List<Edge> edges = graphs.get("g1").getAllEdges();
         assertEquals(1, edges.size());
         checkEdgeComponents("e1", "n1", "n2", 1.5, ATTRIBUTES, edges.getFirst());
     }
 
     @Test
     public void updatesReplaceTheWholeEdge() {
-        Map<String, Graph> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, updateEdge));
-        checkEdgeComponents("e1", "n1", "n2", 2.0, COMBINED_ATTRS_1_2, graphs.get("g1").getEdgeById("e1"));
+        Map<String, GraphStorage> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, updateEdge));
+        checkEdgeComponents("e1", "n1", "n2", 2.0, COMBINED_ATTRS_1_2, graphs.get("g1").getEdge("e1"));
     }
 
     @Test
     public void ableToRecoverDeletedEdges() {
-        Map<String, Graph> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, deleteEdge));
-        assertTrue(graphs.get("g1").getEdges().isEmpty());
+        Map<String, GraphStorage> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, deleteEdge));
+        assertTrue(graphs.get("g1").getAllEdges().isEmpty());
     }
 
     // ============ Transactions ============
@@ -116,9 +117,9 @@ public class RecoveryManagerTest {
         log.addAll(transaction("g1", addNode1));
         log.addAll(transaction("g1", addNode2, addEdge));
 
-        Graph graph = recoveryManager.recover(log).get("g1");
-        assertEquals(2, graph.getNodes().size());
-        checkEdgeComponents("e1", "n1", "n2", 1.5, ATTRIBUTES, graph.getEdges().getFirst());
+        GraphStorage graph = recoveryManager.recover(log).get("g1");
+        assertEquals(2, graph.getAllNodes().size());
+        checkEdgeComponents("e1", "n1", "n2", 1.5, ATTRIBUTES, graph.getAllEdges().getFirst());
     }
 
     @Test
@@ -129,10 +130,10 @@ public class RecoveryManagerTest {
         log.addAll(transaction("g1", addNode1));
         log.addAll(transaction("g2", addNode1));
 
-        Map<String, Graph> graphs = recoveryManager.recover(log);
+        Map<String, GraphStorage> graphs = recoveryManager.recover(log);
         assertEquals(2, graphs.size());
-        checkNodeComponents("n1", ATTRIBUTES, graphs.get("g1").getNodeById("n1"));
-        checkNodeComponents("n1", ATTRIBUTES, graphs.get("g2").getNodeById("n1"));
+        checkNodeComponents("n1", ATTRIBUTES, graphs.get("g1").getNode("n1"));
+        checkNodeComponents("n1", ATTRIBUTES, graphs.get("g2").getNode("n1"));
     }
 
     @Test
@@ -143,43 +144,30 @@ public class RecoveryManagerTest {
         log.add(new Operation(addNode1));
         log.addAll(transaction("g1", addNode2));
 
-        Graph graph = recoveryManager.recover(log).get("g1");
-        assertEquals(1, graph.getNodes().size());
-        assertEquals("n2", graph.getNodes().getFirst().getId());
-    }
-
-    @Test
-    public void recoveredGraphsLogFutureCommitsToTheGivenLog() {
-        List<List<GraphOperation>> logged = new ArrayList<>();
-        RecoveryManager manager = new RecoveryManager((graphId, operations) -> logged.add(operations));
-
-        Graph graph = manager.recover(List.of(new GraphCreated("g1"))).get("g1");
-        Transaction transaction = graph.createTransaction();
-        transaction.addNode(ATTRIBUTES);
-        transaction.commit();
-
-        assertEquals(1, logged.size());
+        GraphStorage graph = recoveryManager.recover(log).get("g1");
+        assertEquals(1, graph.getAllNodes().size());
+        assertEquals("n2", graph.getAllNodes().getFirst().getId());
     }
 
     // ============ Defensive recovery ============
 
     @Test
     public void skipAddEdgeWhenEndpointsAreMissing() {
-        Graph graph = recover(transaction("g1", addNode1, addEdge)).get("g1");
-        assertEquals(1, graph.getNodes().size());
-        assertTrue("edge should be skipped because target is missing", graph.getEdges().isEmpty());
+        GraphStorage graph = recover(transaction("g1", addNode1, addEdge)).get("g1");
+        assertEquals(1, graph.getAllNodes().size());
+        assertTrue("edge should be skipped because target is missing", graph.getAllEdges().isEmpty());
     }
 
     @Test
     public void skipDeletesOfMissingNodesAndEdges() {
-        Graph graph = recover(transaction("g1", addNode2, deleteEdge, deleteNode1)).get("g1");
-        assertEquals(1, graph.getNodes().size());
-        assertTrue(graph.getEdges().isEmpty());
+        GraphStorage graph = recover(transaction("g1", addNode2, deleteEdge, deleteNode1)).get("g1");
+        assertEquals(1, graph.getAllNodes().size());
+        assertTrue(graph.getAllEdges().isEmpty());
     }
 
     // ============ Helper Functions ============
 
-    private Map<String, Graph> recover(List<WalRecord> transaction) {
+    private Map<String, GraphStorage> recover(List<WalRecord> transaction) {
         List<WalRecord> log = new ArrayList<>();
         log.add(new GraphCreated("g1"));
         log.addAll(transaction);

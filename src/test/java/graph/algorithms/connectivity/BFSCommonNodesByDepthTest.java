@@ -1,6 +1,6 @@
 package graph.algorithms.connectivity;
 
-import graph.model.Graph;
+import graph.Graph;
 import graph.model.Node;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;

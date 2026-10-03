@@ -1,8 +1,8 @@
 package graph.algorithms.paths;
 
-import graph.model.Graph;
+import graph.Graph;
 import graph.model.Node;
-import graph.query.Path;
+import graph.algorithms.Path;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import org.junit.Before;

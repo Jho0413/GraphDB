@@ -1,8 +1,7 @@
-package graph.storage;
+package graph.transaction;
 
 import graph.model.Edge;
 import graph.model.Node;
-import graph.transaction.*;
 
 import java.util.*;
 

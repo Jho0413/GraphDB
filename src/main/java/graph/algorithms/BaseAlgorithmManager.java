@@ -1,10 +1,11 @@
 package graph.algorithms;
 
+import graph.model.GraphView;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
-public class BaseAlgorithmManager<T extends GraphTraversalView> implements AlgorithmManager {
+public class BaseAlgorithmManager<T extends GraphView> implements AlgorithmManager {
 
     private final Map<AlgorithmType, BiFunction<TraversalInput, T, Algorithm>> supportedAlgorithms;
     private final T graph;

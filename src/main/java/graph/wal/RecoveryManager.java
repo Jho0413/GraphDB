@@ -1,7 +1,5 @@
-package graph.model;
+package graph.wal;
 
-import graph.wal.CommitLog;
-import graph.wal.WalRecord;
 import graph.wal.WalRecord.*;
 import graph.transaction.AddOrUpdateEdge;
 import graph.transaction.AddOrUpdateNode;
@@ -22,15 +20,10 @@ import java.util.Map;
  */
 public class RecoveryManager {
 
-    private final CommitLog commitLog;
     private final Map<String, GraphStorage> storages = new LinkedHashMap<>();
 
-    /** @param commitLog the log that recovered graphs will write their future commits to */
-    public RecoveryManager(CommitLog commitLog) {
-        this.commitLog = commitLog;
-    }
-
-    public Map<String, Graph> recover(List<WalRecord> records) {
+    /** @return the recovered storage of every graph that exists at the end of the log, by graph id */
+    public Map<String, GraphStorage> recover(List<WalRecord> records) {
         String transactionGraphId = null;
         List<GraphOperation> transactionOperations = new ArrayList<>();
 
@@ -55,9 +48,7 @@ public class RecoveryManager {
             }
         }
 
-        Map<String, Graph> graphs = new LinkedHashMap<>();
-        storages.forEach((graphId, storage) -> graphs.put(graphId, Graph.create(storage, graphId, commitLog)));
-        return graphs;
+        return storages;
     }
 
     /**

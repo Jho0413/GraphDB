@@ -1,5 +1,6 @@
 package graph.algorithms.cycles;
 
+import graph.model.GraphView;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.algorithms.*;
@@ -16,7 +17,7 @@ class Johnsons implements Algorithm {
     private final Map<String, Set<String>> blockedMap = new HashMap<>();
     private final Set<String> blockedSet = new HashSet<>();
 
-    Johnsons(TraversalInput input, GraphTraversalView graph) {
+    Johnsons(TraversalInput input, GraphView graph) {
         this.filteredGraph = new FilteredGraph(graph);
     }
 

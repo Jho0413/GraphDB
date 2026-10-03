@@ -1,5 +1,6 @@
 package graph.query;
 
+import graph.algorithms.Path;
 import graph.exceptions.NegativeCycleException;
 import graph.util.AlgorithmTypeBaseMatcher;
 import graph.util.TraversalInputBaseMatcher;

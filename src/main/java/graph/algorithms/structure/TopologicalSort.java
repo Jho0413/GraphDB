@@ -4,7 +4,7 @@ import graph.model.Edge;
 import graph.model.Node;
 import graph.exceptions.CycleFoundException;
 import graph.algorithms.Algorithm;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 
@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 
 class TopologicalSort implements Algorithm {
 
-    private final GraphTraversalView graph;
+    private final GraphView graph;
     private final Set<String> notVisited;
     private final List<String> order = new LinkedList<String>();
 
-    TopologicalSort(TraversalInput input, GraphTraversalView graph) {
+    TopologicalSort(TraversalInput input, GraphView graph) {
         this.graph = graph;
         this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
     }

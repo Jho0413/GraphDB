@@ -1,5 +1,6 @@
-package graph.events;
+package graph;
 
+import graph.events.GraphListener;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.exceptions.EdgeNotFoundException;

@@ -4,7 +4,7 @@ import graph.model.Edge;
 import graph.model.Node;
 import graph.events.GraphListener;
 import graph.events.ObservableGraphView;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 
 import java.util.HashSet;
 import java.util.List;
@@ -13,10 +13,10 @@ import java.util.stream.Collectors;
 
 class FilteredGraph implements ObservableGraphView {
 
-    private final GraphTraversalView graph;
+    private final GraphView graph;
     private final Set<String> filteredNodes = new HashSet<String>();
 
-    FilteredGraph(GraphTraversalView graph) {
+    FilteredGraph(GraphView graph) {
         this.graph = graph;
     }
 

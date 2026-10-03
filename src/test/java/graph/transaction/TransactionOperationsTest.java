@@ -7,7 +7,6 @@ import graph.util.EdgeBaseMatcher;
 import graph.util.NodeBaseMatcher;
 import graph.util.TriFunction;
 import graph.storage.GraphStorage;
-import graph.storage.TransactionStorage;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Before;

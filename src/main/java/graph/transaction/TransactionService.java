@@ -1,14 +1,11 @@
 package graph.transaction;
 
-import graph.wal.CommitLog;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
-import graph.storage.TransactionStorage;
-import graph.storage.TransactionTemporaryStorage;
 
 import java.util.*;
 
@@ -33,7 +30,7 @@ public class TransactionService implements TransactionOperations {
         this.commitLog = commitLog;
     }
 
-    static TransactionService create(GraphStorage storage, String graphId, CommitLog commitLog) {
+    public static TransactionService create(GraphStorage storage, String graphId, CommitLog commitLog) {
         TransactionStorage transactionStorage = new TransactionTemporaryStorage();
         OperationsResolver resolver = new TransactionOperationsResolver(storage, transactionStorage);
         return new TransactionService(storage, transactionStorage, resolver, graphId, commitLog);

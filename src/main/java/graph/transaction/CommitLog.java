@@ -1,6 +1,5 @@
-package graph.wal;
+package graph.transaction;
 
-import graph.transaction.GraphOperation;
 
 import java.util.List;
 

@@ -3,7 +3,7 @@ package graph.algorithms.cycles;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.algorithms.Algorithm;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import graph.algorithms.TraversalResult.TraversalResultBuilder;
@@ -13,11 +13,11 @@ import java.util.Set;
 
 class DFSHasCycle implements Algorithm {
 
-    private final GraphTraversalView graph;
+    private final GraphView graph;
     private final Set<String> visited = new HashSet<>();
     private final Set<String> inStack = new HashSet<>();
 
-    DFSHasCycle(TraversalInput input, GraphTraversalView graph) {
+    DFSHasCycle(TraversalInput input, GraphView graph) {
         this.graph = graph;
     }
 

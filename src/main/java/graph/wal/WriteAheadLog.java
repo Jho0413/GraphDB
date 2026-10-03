@@ -1,5 +1,6 @@
 package graph.wal;
 
+import graph.transaction.CommitLog;
 import graph.wal.WalRecord.*;
 import graph.exceptions.WalException;
 import graph.transaction.GraphOperation;

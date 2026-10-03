@@ -3,14 +3,14 @@ package graph.algorithms.shortestPath;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.exceptions.NegativeCycleException;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import graph.algorithms.TraversalResult.TraversalResultBuilder;
 
 class BellmanFord extends ShortestPathAlgorithm<BellmanFordNodeStats> {
     // pre-condition: no negative cycles
-    BellmanFord(TraversalInput input, GraphTraversalView graph) {
+    BellmanFord(TraversalInput input, GraphView graph) {
         super(input.getFromNodeId(), input.getToNodeId(), graph);
         for (Node node : graph.getNodes()) {
             String currentNodeId = node.getId();

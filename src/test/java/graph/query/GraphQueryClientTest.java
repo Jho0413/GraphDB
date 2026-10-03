@@ -1,6 +1,6 @@
 package graph.query;
 
-import graph.model.Graph;
+import graph.Graph;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Rule;
 import org.junit.Test;

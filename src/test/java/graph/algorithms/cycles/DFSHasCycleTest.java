@@ -1,6 +1,6 @@
 package graph.algorithms.cycles;
 
-import graph.model.Graph;
+import graph.Graph;
 import graph.model.Node;
 import graph.algorithms.Algorithm;
 import graph.algorithms.TraversalResult;

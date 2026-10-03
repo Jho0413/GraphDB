@@ -1,7 +1,8 @@
-package graph.transaction;
+package graph;
 
+import graph.transaction.CRUDOperations;
 import graph.model.Edge;
-import graph.model.Transaction;
+import graph.transaction.Transaction;
 import graph.exceptions.NodeNotFoundException;
 
 import java.util.List;

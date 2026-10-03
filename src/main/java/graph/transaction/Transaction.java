@@ -1,39 +1,25 @@
-package graph.events;
+package graph.transaction;
 
 import graph.model.Edge;
 import graph.model.Node;
-import graph.model.Transaction;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
-import static graph.events.GraphEvent.*;
+public class Transaction implements TransactionOperations {
 
-public class DefaultObservableGraph implements ObservableGraphOperations {
+    private final TransactionOperations service;
 
-    private final InternalGraphOperations service;
-    private final List<GraphListener> listeners;
-
-    public DefaultObservableGraph(InternalGraphOperations service) {
+    public Transaction(TransactionOperations service) {
         this.service = service;
-        this.listeners = new ArrayList<GraphListener>();
-    }
-
-    @Override
-    public void addListener(GraphListener listener) {
-        listeners.add(listener);
     }
 
     @Override
     public Node addNode(Map<String, Object> attributes) throws IllegalArgumentException {
-        Node node = service.addNode(attributes);
-        notifyListeners(ADD_NODE);
-        return node;
+        return service.addNode(attributes);
     }
 
     @Override
@@ -68,20 +54,16 @@ public class DefaultObservableGraph implements ObservableGraphOperations {
 
     @Override
     public Node deleteNode(String id) throws NodeNotFoundException {
-        Node node = service.deleteNode(id);
-        notifyListeners(DELETE_NODE);
-        return node;
+        return service.deleteNode(id);
     }
 
     @Override
     public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws IllegalArgumentException, NodeNotFoundException, EdgeExistsException {
-        Edge edge = service.addEdge(source, target, properties, weight);
-        notifyListeners(ADD_EDGE);
-        return edge;
+        return service.addEdge(source, target, properties, weight);
     }
 
     @Override
-    public Edge getEdgeById(String id) {
+    public Edge getEdgeById(String id) throws EdgeNotFoundException {
         return service.getEdgeById(id);
     }
 
@@ -108,7 +90,6 @@ public class DefaultObservableGraph implements ObservableGraphOperations {
     @Override
     public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
         service.updateEdge(edgeId, weight);
-        notifyListeners(UPDATE_EDGE_WEIGHT);
     }
 
     @Override
@@ -128,45 +109,11 @@ public class DefaultObservableGraph implements ObservableGraphOperations {
 
     @Override
     public Edge deleteEdge(String edgeId) throws EdgeNotFoundException {
-        Edge edge = service.deleteEdge(edgeId);
-        notifyListeners(DELETE_EDGE);
-        return edge;
+        return service.deleteEdge(edgeId);
     }
 
     @Override
-    public List<Edge> getEdgesByWeightRange(double min, double max) {
-        return service.getEdgesByWeightRange(min, max);
-    }
-
-    @Override
-    public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
-        return service.getEdgesWithWeightGreaterThan(weight);
-    }
-
-    @Override
-    public List<Edge> getEdgesWithWeightLessThan(double weight) {
-        return service.getEdgesWithWeightLessThan(weight);
-    }
-
-    @Override
-    public List<Edge> getEdgesFromNode(String nodeId) {
-        return service.getEdgesFromNode(nodeId);
-    }
-
-    @Override
-    public List<String> getNodesIdWithEdgeToNode(String nodeId) {
-        return service.getNodesIdWithEdgeToNode(nodeId);
-    }
-
-    @Override
-    public Transaction createTransaction() {
-        Consumer<List<GraphEvent>> callback = graphEvents -> graphEvents.forEach(this::notifyListeners);
-        return service.createTransactionWithCallback(callback);
-    }
-
-    private void notifyListeners(GraphEvent event) {
-        for (GraphListener listener : listeners) {
-            listener.onGraphChange(event);
-        }
+    public void commit() {
+        service.commit();
     }
 }

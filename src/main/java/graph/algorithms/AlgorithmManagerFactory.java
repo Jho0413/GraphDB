@@ -1,5 +1,6 @@
 package graph.algorithms;
 
+import graph.model.GraphView;
 import graph.events.GraphEvent;
 import graph.events.ObservableGraphView;
 
@@ -10,7 +11,7 @@ import java.util.function.Predicate;
 public class AlgorithmManagerFactory {
 
     public static AlgorithmManager createWithCache(
-            Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms,
+            Map<AlgorithmType, BiFunction<TraversalInput, GraphView, Algorithm>> supportedAlgorithms,
             ObservableGraphView graph,
             Predicate<GraphEvent> eventPredicate
     ) {
@@ -18,8 +19,8 @@ public class AlgorithmManagerFactory {
     }
 
     public static AlgorithmManager create(
-            Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms,
-            GraphTraversalView graph
+            Map<AlgorithmType, BiFunction<TraversalInput, GraphView, Algorithm>> supportedAlgorithms,
+            GraphView graph
     ) {
         return new BaseAlgorithmManager<>(supportedAlgorithms, graph);
     }

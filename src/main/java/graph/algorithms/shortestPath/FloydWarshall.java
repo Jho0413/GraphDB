@@ -5,7 +5,7 @@ import graph.model.Node;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NegativeCycleException;
 import graph.algorithms.Algorithm;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import graph.algorithms.TraversalResult.TraversalResultBuilder;
@@ -14,11 +14,11 @@ import java.util.List;
 
 class FloydWarshall implements Algorithm {
     // pre-condition: no negative cycles
-    private final GraphTraversalView graph;
+    private final GraphView graph;
     private final List<Node> nodes;
     private final double[][] store;
 
-    FloydWarshall(TraversalInput input, GraphTraversalView graph) {
+    FloydWarshall(TraversalInput input, GraphView graph) {
         this.graph = graph;
         this.nodes = graph.getNodes();
         this.store = new double[nodes.size()][nodes.size()];

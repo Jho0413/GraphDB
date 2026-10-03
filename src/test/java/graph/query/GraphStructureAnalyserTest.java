@@ -4,7 +4,7 @@ import graph.model.Edge;
 import graph.exceptions.CycleFoundException;
 import graph.exceptions.NegativeCycleException;
 import graph.algorithms.AlgorithmManager;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalResult;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
@@ -23,7 +23,7 @@ public class GraphStructureAnalyserTest {
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
     AlgorithmManager manager = context.mock(AlgorithmManager.class);
-    GraphTraversalView graph = context.mock(GraphTraversalView.class);
+    GraphView graph = context.mock(GraphView.class);
     GraphStructureAnalyser analyser = new GraphStructureAnalyser(manager, graph);
     String NODE_ID = "n1";
 

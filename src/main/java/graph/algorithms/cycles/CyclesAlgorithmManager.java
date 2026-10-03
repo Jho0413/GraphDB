@@ -1,5 +1,6 @@
 package graph.algorithms.cycles;
 
+import graph.model.GraphView;
 import graph.events.ObservableGraphView;
 import graph.algorithms.*;
 
@@ -20,7 +21,7 @@ public class CyclesAlgorithmManager implements AlgorithmManager {
     }
 
     public static CyclesAlgorithmManager create(ObservableGraphView graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(BELLMAN_FORD_CYCLE, BellmanFordCycle::new);
         supportedAlgorithms.put(DFS_HAS_CYCLE, DFSHasCycle::new);
         supportedAlgorithms.put(JOHNSONS, Johnsons::new);

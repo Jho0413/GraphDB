@@ -1,7 +1,7 @@
-package graph.events;
+package graph;
 
-import graph.model.Transaction;
-import graph.transaction.GraphOperations;
+import graph.events.GraphEvent;
+import graph.transaction.Transaction;
 
 import java.util.List;
 import java.util.function.Consumer;

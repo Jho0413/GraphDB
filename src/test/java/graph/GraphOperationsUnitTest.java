@@ -1,5 +1,6 @@
-package graph.transaction;
+package graph;
 
+import graph.transaction.Transaction;
 import graph.model.Edge;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;

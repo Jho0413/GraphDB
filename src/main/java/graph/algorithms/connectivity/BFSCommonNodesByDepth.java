@@ -3,7 +3,7 @@ package graph.algorithms.connectivity;
 import graph.model.Edge;
 import graph.util.Pair;
 import graph.algorithms.Algorithm;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import graph.algorithms.TraversalResult.TraversalResultBuilder;
@@ -15,13 +15,13 @@ import java.util.Set;
 
 class BFSCommonNodesByDepth implements Algorithm {
 
-    private final GraphTraversalView graph;
+    private final GraphView graph;
     private final int maxDepth;
     private final String fromNodeId;
     private final String toNodeId;
     private final boolean condition;  // if true, we only add nodes with exactly maxDepth nodes, otherwise we add <= maxDepth nodes
 
-    BFSCommonNodesByDepth(TraversalInput input, GraphTraversalView graph) {
+    BFSCommonNodesByDepth(TraversalInput input, GraphView graph) {
         this.graph = graph;
         this.fromNodeId = input.getFromNodeId();
         this.toNodeId = input.getToNodeId();

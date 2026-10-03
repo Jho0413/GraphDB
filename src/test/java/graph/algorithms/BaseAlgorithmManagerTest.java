@@ -1,5 +1,6 @@
 package graph.algorithms;
 
+import graph.model.GraphView;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Rule;
@@ -16,16 +17,16 @@ public class BaseAlgorithmManagerTest {
 
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
-    GraphTraversalView graph = context.mock(GraphTraversalView.class);
+    GraphView graph = context.mock(GraphView.class);
     Algorithm algorithm1 = context.mock(Algorithm.class, "algorithm1");
     Algorithm algorithm2 = context.mock(Algorithm.class, "algorithm2");
-    BiFunction<TraversalInput, GraphTraversalView, Algorithm> function1 = (input, graph) -> algorithm1;
-    BiFunction<TraversalInput, GraphTraversalView, Algorithm> function2 = (input, graph) -> algorithm2;
-    Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> algorithmMap = Map.of(
+    BiFunction<TraversalInput, GraphView, Algorithm> function1 = (input, graph) -> algorithm1;
+    BiFunction<TraversalInput, GraphView, Algorithm> function2 = (input, graph) -> algorithm2;
+    Map<AlgorithmType, BiFunction<TraversalInput, GraphView, Algorithm>> algorithmMap = Map.of(
             DIJKSTRA, function1,
             BELLMAN_FORD, function2
     );
-    BaseAlgorithmManager<GraphTraversalView> manager = new BaseAlgorithmManager<>(algorithmMap, graph);
+    BaseAlgorithmManager<GraphView> manager = new BaseAlgorithmManager<>(algorithmMap, graph);
 
     @Test
     public void theCorrectAlgorithmIsUsedWhenRunAlgorithmIsCalled() {

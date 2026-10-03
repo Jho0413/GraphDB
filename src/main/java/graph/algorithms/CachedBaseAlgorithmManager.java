@@ -3,8 +3,8 @@ package graph.algorithms;
 import graph.events.GraphEvent;
 import graph.events.ObservableGraph;
 import graph.events.GraphListener;
-import graph.storage.Cache;
-import graph.storage.LRUCache;
+import graph.util.Cache;
+import graph.util.LRUCache;
 
 import java.util.Set;
 import java.util.function.Predicate;

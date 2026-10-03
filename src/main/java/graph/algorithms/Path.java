@@ -1,4 +1,4 @@
-package graph.query;
+package graph.algorithms;
 
 import java.util.List;
 

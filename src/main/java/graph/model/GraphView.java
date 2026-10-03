@@ -1,11 +1,9 @@
-package graph.algorithms;
+package graph.model;
 
-import graph.model.Edge;
-import graph.model.Node;
 
 import java.util.List;
 
-public interface GraphTraversalView {
+public interface GraphView {
 
     List<Node> getNodes();
     List<Edge> getEdges();

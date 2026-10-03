@@ -1,7 +1,5 @@
-package graph.storage;
+package graph.util;
 
-import graph.util.DoublyLinkedList;
-import graph.util.Node;
 
 import java.util.HashMap;
 import java.util.Map;

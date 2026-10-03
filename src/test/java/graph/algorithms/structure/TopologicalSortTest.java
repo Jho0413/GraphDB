@@ -1,6 +1,6 @@
 package graph.algorithms.structure;
 
-import graph.model.Graph;
+import graph.Graph;
 import graph.model.Node;
 import graph.exceptions.CycleFoundException;
 import graph.algorithms.TraversalResult;

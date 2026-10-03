@@ -1,9 +1,9 @@
 package graph.algorithms.stronglyConnected;
 
-import graph.model.Graph;
+import graph.Graph;
 import graph.model.Node;
 import graph.algorithms.Algorithm;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import org.junit.Before;
@@ -23,13 +23,13 @@ public class StronglyConnectedTest {
     private Node nodeA, nodeB, nodeC, nodeD, nodeE, nodeF;
 
     @Parameterized.Parameter(value = 0)
-    public BiFunction<TraversalInput, GraphTraversalView, Algorithm> serviceCreator;
+    public BiFunction<TraversalInput, GraphView, Algorithm> serviceCreator;
 
     @Parameterized.Parameters(name="{0}")
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
-                (BiFunction<TraversalInput, GraphTraversalView, Algorithm>) Kosaraju::new,
-                (BiFunction<TraversalInput, GraphTraversalView, Algorithm>) Tarjan::new
+                (BiFunction<TraversalInput, GraphView, Algorithm>) Kosaraju::new,
+                (BiFunction<TraversalInput, GraphView, Algorithm>) Tarjan::new
         });
     }
 

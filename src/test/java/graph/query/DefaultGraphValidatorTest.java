@@ -1,6 +1,6 @@
 package graph.query;
 
-import graph.model.Graph;
+import graph.Graph;
 import graph.model.Node;
 import graph.exceptions.NodeNotFoundException;
 import org.junit.Test;

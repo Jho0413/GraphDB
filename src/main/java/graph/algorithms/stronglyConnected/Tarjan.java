@@ -3,7 +3,7 @@ package graph.algorithms.stronglyConnected;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.algorithms.Algorithm;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import graph.algorithms.TraversalResult.TraversalResultBuilder;
@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 class Tarjan implements Algorithm {
 
-    private final GraphTraversalView graph;
+    private final GraphView graph;
     // keeps track of currently visited nodes that have not been classified into an SCC
     private final Stack<String> stack = new Stack<>();
     // set to track which ids are on the stack
@@ -29,7 +29,7 @@ class Tarjan implements Algorithm {
     private int nodeIdCounter = 1;
     private final Set<String> notVisited;
 
-    Tarjan(TraversalInput input, GraphTraversalView graph) {
+    Tarjan(TraversalInput input, GraphView graph) {
         this.graph = graph;
         this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
     }

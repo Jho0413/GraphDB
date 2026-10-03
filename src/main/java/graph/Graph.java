@@ -1,19 +1,54 @@
-package graph.model;
+package graph;
 
+import graph.model.Edge;
+import graph.model.Node;
+import graph.transaction.Transaction;
+import graph.transaction.CommitLog;
+import graph.events.GraphListener;
+import graph.events.ObservableGraphView;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
-import graph.transaction.TransactionOperations;
+import graph.storage.GraphStorage;
+import graph.storage.InMemoryGraphStorage;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
-public class Transaction implements TransactionOperations {
+public class Graph implements GraphOperations, ObservableGraphView {
 
-    private final TransactionOperations service;
+    private final ObservableGraphOperations service;
+    private final String id;
 
-    public Transaction(TransactionOperations service) {
+    private Graph(ObservableGraphOperations service, String id) {
         this.service = service;
+        this.id = id;
+    }
+
+    /** Creates a standalone in-memory graph. Its transactions are not logged, so it does not survive a restart. */
+    public static Graph createGraph() {
+        return create(InMemoryGraphStorage.create(), UUID.randomUUID().toString(), CommitLog.NONE);
+    }
+
+    /** Creates an empty graph whose committed transactions are made durable through {@code commitLog}. */
+    public static Graph createGraph(String graphId, CommitLog commitLog) {
+        return create(InMemoryGraphStorage.create(), graphId, commitLog);
+    }
+
+    static Graph create(GraphStorage storage, String graphId, CommitLog commitLog) {
+        InternalGraphOperations service = new GraphService(storage, graphId, commitLog);
+        return new Graph(new DefaultObservableGraph(service), graphId);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public void addListener(GraphListener listener) {
+        service.addListener(listener);
     }
 
     @Override
@@ -22,7 +57,7 @@ public class Transaction implements TransactionOperations {
     }
 
     @Override
-    public Node getNodeById(String id) {
+    public Node getNodeById(String id) throws NodeNotFoundException {
         return service.getNodeById(id);
     }
 
@@ -67,11 +102,6 @@ public class Transaction implements TransactionOperations {
     }
 
     @Override
-    public Edge getEdgeByNodeIds(String source, String target) {
-        return service.getEdgeByNodeIds(source, target);
-    }
-
-    @Override
     public List<Edge> getEdges() {
         return service.getEdges();
     }
@@ -84,6 +114,21 @@ public class Transaction implements TransactionOperations {
     @Override
     public List<Edge> getEdgesByWeight(double weight) {
         return service.getEdgesByWeight(weight);
+    }
+
+    @Override
+    public List<Edge> getEdgesByWeightRange(double min, double max) {
+        return service.getEdgesByWeightRange(min, max);
+    }
+
+    @Override
+    public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
+        return service.getEdgesWithWeightGreaterThan(weight);
+    }
+
+    @Override
+    public List<Edge> getEdgesWithWeightLessThan(double weight) {
+        return service.getEdgesWithWeightLessThan(weight);
     }
 
     @Override
@@ -112,7 +157,30 @@ public class Transaction implements TransactionOperations {
     }
 
     @Override
-    public void commit() {
-        service.commit();
+    public List<Edge> getEdgesFromNode(String nodeId) throws NodeNotFoundException {
+        return service.getEdgesFromNode(nodeId);
+    }
+
+    @Override
+    public List<String> getNodesIdWithEdgeToNode(String nodeId) throws NodeNotFoundException {
+        return service.getNodesIdWithEdgeToNode(nodeId);
+    }
+
+    @Override
+    public Edge getEdgeByNodeIds(String source, String target) {
+        return service.getEdgeByNodeIds(source, target);
+    }
+
+    @Override
+    public Transaction createTransaction() {
+        return service.createTransaction();
+    }
+
+    @Override
+    public String toString() {
+        return
+                "Graph [id=" + id + "]\n" +
+                "Nodes: " + getNodes().stream().map(Node::toString).collect(Collectors.joining(", ")) + "\n" +
+                "Edges: " + getEdges().stream().map(Edge::toString).collect(Collectors.joining(", "));
     }
 }

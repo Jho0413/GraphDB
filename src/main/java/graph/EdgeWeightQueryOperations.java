@@ -1,4 +1,4 @@
-package graph.transaction;
+package graph;
 
 import graph.model.Edge;
 

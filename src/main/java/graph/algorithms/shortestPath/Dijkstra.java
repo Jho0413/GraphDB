@@ -3,7 +3,7 @@ package graph.algorithms.shortestPath;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.exceptions.NegativeWeightException;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import graph.algorithms.TraversalResult.TraversalResultBuilder;
@@ -14,7 +14,7 @@ class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
     // pre-condition: all positive edges
     private final Queue<DijkstraEntry> queue;
 
-    Dijkstra(TraversalInput input, GraphTraversalView graph) {
+    Dijkstra(TraversalInput input, GraphView graph) {
         super(input.getFromNodeId(), input.getToNodeId(), graph);
         List<Node> nodes = graph.getNodes();
         int length = nodes.size();

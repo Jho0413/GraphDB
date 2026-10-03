@@ -1,6 +1,5 @@
-package graph.storage;
+package graph.transaction;
 
-import graph.transaction.*;
 
 import org.junit.Before;
 import org.junit.Test;

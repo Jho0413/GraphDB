@@ -2,7 +2,7 @@ package graph.algorithms.cycles;
 
 import graph.model.Edge;
 import graph.model.Node;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Rule;
@@ -18,7 +18,7 @@ public class FilteredGraphTest {
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
 
-    private final GraphTraversalView graph = context.mock(GraphTraversalView.class);
+    private final GraphView graph = context.mock(GraphView.class);
     private final FilteredGraph filteredGraph = new FilteredGraph(graph);
 
     private final Node nodeA = new Node("A", Map.of());

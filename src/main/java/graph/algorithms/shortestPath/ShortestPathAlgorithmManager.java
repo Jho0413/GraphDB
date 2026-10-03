@@ -1,5 +1,6 @@
 package graph.algorithms.shortestPath;
 
+import graph.model.GraphView;
 import graph.events.ObservableGraphView;
 import graph.algorithms.*;
 
@@ -20,7 +21,7 @@ public class ShortestPathAlgorithmManager implements AlgorithmManager {
     }
 
     public static ShortestPathAlgorithmManager create(ObservableGraphView graph) {
-        Map<AlgorithmType, BiFunction<TraversalInput, GraphTraversalView, Algorithm>> supportedAlgorithms = new HashMap<>();
+        Map<AlgorithmType, BiFunction<TraversalInput, GraphView, Algorithm>> supportedAlgorithms = new HashMap<>();
         supportedAlgorithms.put(DIJKSTRA, Dijkstra::new);
         supportedAlgorithms.put(BELLMAN_FORD, BellmanFord::new);
         supportedAlgorithms.put(FLOYD_WARSHALL, FloydWarshall::new);

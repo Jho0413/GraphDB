@@ -1,13 +1,13 @@
 package graph.query;
 
 import graph.exceptions.NodeNotFoundException;
-import graph.algorithms.GraphTraversalView;
+import graph.model.GraphView;
 
 public class DefaultGraphValidator implements GraphQueryValidator {
 
-    private final GraphTraversalView graph;
+    private final GraphView graph;
 
-    public DefaultGraphValidator(GraphTraversalView graph) {
+    public DefaultGraphValidator(GraphView graph) {
         this.graph = graph;
     }
 

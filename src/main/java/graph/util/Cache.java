@@ -1,4 +1,4 @@
-package graph.storage;
+package graph.util;
 
 public interface Cache<K, V> {
     void put(K key, V value);

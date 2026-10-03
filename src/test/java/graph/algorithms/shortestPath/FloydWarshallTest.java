@@ -1,6 +1,6 @@
 package graph.algorithms.shortestPath;
 
-import graph.model.Graph;
+import graph.Graph;
 import graph.model.Node;
 import graph.exceptions.NegativeCycleException;
 import graph.algorithms.TraversalResult;

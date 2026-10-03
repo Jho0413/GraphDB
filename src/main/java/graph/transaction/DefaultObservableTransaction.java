@@ -1,11 +1,11 @@
-package graph.events;
+package graph.transaction;
 
+import graph.events.GraphEvent;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
-import graph.transaction.TransactionOperations;
 
 import java.util.ArrayList;
 import java.util.List;
