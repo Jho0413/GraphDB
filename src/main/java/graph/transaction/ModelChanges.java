@@ -6,13 +6,7 @@ import graph.model.Node;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Builds the changed version of a node or edge for a transaction to stage. {@link Node} and {@link Edge} are
- * immutable and expose no way to modify them, so this is the only place modified copies are made; it is
- * package-private so that changing the graph stays possible only through a {@link Transaction}.
- *
- * <p>Every method returns a new object and leaves its argument unchanged.
- */
+/** The only place nodes and edges are modified: each method returns a changed copy for a {@link Transaction}. */
 final class ModelChanges {
 
     private ModelChanges() {}
