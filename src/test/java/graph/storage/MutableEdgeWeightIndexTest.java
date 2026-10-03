@@ -79,19 +79,6 @@ public class MutableEdgeWeightIndexTest {
     }
 
     @Test
-    public void updatingEdgeWeightWillChangeResultWhenQueryingSpecificWeights() {
-        index.updateEdgeWeight(10.0, 25.0, e1);
-        List<Edge> oldWeightEdges = index.getEdgesByWeight(10.0);
-        List<Edge> newWeightEdges = index.getEdgesByWeight(25.0);
-
-        assertEquals(1, oldWeightEdges.size());
-        assertFalse(oldWeightEdges.contains(e1));
-
-        assertEquals(1, newWeightEdges.size());
-        assertTrue(newWeightEdges.contains(e1));
-    }
-
-    @Test
     public void ableToRemoveEdgeFromIndex() {
         index.removeEdge(e2);
         List<Edge> edges = index.getEdgesByWeight(15.0);

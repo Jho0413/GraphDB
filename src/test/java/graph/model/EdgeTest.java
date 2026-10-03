@@ -12,14 +12,10 @@ import static org.junit.Assert.*;
 public class EdgeTest {
 
     @Test
-    public void ableToGetAndSetProperty() {
-        Edge edge = new Edge("edge1", "node1", "node2", 3.0, new HashMap<>());
-        edge.setProperty("size", "large");
+    public void ableToGetPropertyAndWeight() {
+        Edge edge = new Edge("edge1", "node1", "node2", 3.0, Map.of("size", "large"));
         assertThat(edge.getWeight(), is(3.0));
         assertThat(edge.getProperty("size"), is("large"));
-
-        edge.setWeight(4.0);
-        assertThat(edge.getWeight(), is(4.0));
     }
 
     @Test
@@ -55,30 +51,6 @@ public class EdgeTest {
     }
 
     @Test
-    public void ableToSetMultipleProperties() {
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("size", "large");
-        properties.put("color", "blue");
-
-        Edge edge = new Edge("edge1", "node1", "node2", 0.0, properties);
-        edge.setProperties(properties);
-
-        assertThat(edge.getProperty("size"), is("large"));
-        assertThat(edge.getProperty("color"), is("blue"));
-    }
-
-    @Test
-    public void ableToDeleteProperty() {
-        Map<String, Object> properties = new HashMap<>();
-        Edge edge = new Edge("edge1", "node1", "node2", 0.0, properties);
-        edge.setProperty("size", "large");
-        assertTrue(edge.hasProperty("size"));
-        assertThat(edge.deleteProperty("size"), is("large"));
-        assertNull(edge.deleteProperty("size"));
-        assertFalse(edge.hasProperty("size"));
-    }
-
-    @Test
     public void ableToGetEdgeId() {
         Edge edge = new Edge("edge1", "node1", "node2", 0.0, new HashMap<>());
         assertThat(edge.getId(), is("edge1"));
@@ -96,5 +68,21 @@ public class EdgeTest {
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), containsString("Property size not found"));
         }
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void propertiesCannotBeModifiedThroughTheReturnedMap() {
+        Edge edge = new Edge("edge1", "node1", "node2", 0.0, Map.of("size", "large"));
+        edge.getProperties().put("size", "small");
+    }
+
+    @Test
+    public void propertiesMayHaveNullValues() {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("size", null);
+        Edge edge = new Edge("edge1", "node1", "node2", 0.0, properties);
+
+        assertTrue(edge.hasProperty("size"));
+        assertNull(edge.getProperties().get("size"));
     }
 }

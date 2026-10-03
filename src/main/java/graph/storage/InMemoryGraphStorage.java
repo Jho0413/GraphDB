@@ -148,9 +148,4 @@ public class InMemoryGraphStorage implements GraphStorage {
     public List<Edge> getEdgesWithWeightLessThan(double weight) {
         return edgeWeightIndex.getEdgesWithWeightLessThan(weight);
     }
-
-    @Override
-    public void updateEdgeWeight(double previousWeight, double currentWeight, Edge edge) {
-        edgeWeightIndex.updateEdgeWeight(previousWeight, currentWeight, edge);
-    }
 }

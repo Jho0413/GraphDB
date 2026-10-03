@@ -77,26 +77,20 @@ public class Transaction implements GraphReader, GraphWriter {
     public void updateNode(String id, Map<String, Object> attributes) throws NodeNotFoundException, IllegalArgumentException {
         resolver.checkAttributes(attributes);
         Node currentNode = resolver.getNodeIfExists(id);
-        Node modifiedNode = new Node(id, currentNode.getAttributes());
-        modifiedNode.setAttributes(attributes);
-        this.transactionStorage.putNode(modifiedNode);
+        this.transactionStorage.putNode(ModelChanges.withAttributes(currentNode, attributes));
     }
 
     @Override
     public void updateNode(String id, String attribute, Object value) throws NodeNotFoundException {
         Node currentNode = resolver.getNodeIfExists(id);
-        Node modifiedNode = new Node(id, currentNode.getAttributes());
-        modifiedNode.setAttribute(attribute, value);
-        this.transactionStorage.putNode(modifiedNode);
+        this.transactionStorage.putNode(ModelChanges.withAttribute(currentNode, attribute, value));
     }
 
     @Override
     public Object removeNodeAttribute(String id, String attribute) throws NodeNotFoundException {
         Node currentNode = resolver.getNodeIfExists(id);
-        Node modifiedNode = new Node(id, currentNode.getAttributes());
-        Object value = modifiedNode.deleteAttribute(attribute);
-        this.transactionStorage.putNode(modifiedNode);
-        return value;
+        this.transactionStorage.putNode(ModelChanges.withoutAttribute(currentNode, attribute));
+        return currentNode.getAttributes().get(attribute);
     }
 
     @Override
@@ -194,34 +188,27 @@ public class Transaction implements GraphReader, GraphWriter {
     @Override
     public void updateEdge(String edgeId, double weight) throws EdgeNotFoundException {
         Edge currentEdge = resolver.getEdgeIfExists(edgeId);
-        Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), weight, currentEdge.getProperties());
-        this.transactionStorage.putEdge(modifiedEdge);
+        this.transactionStorage.putEdge(ModelChanges.withWeight(currentEdge, weight));
     }
 
     @Override
     public void updateEdge(String edgeId, String key, Object value) throws EdgeNotFoundException {
         Edge currentEdge = resolver.getEdgeIfExists(edgeId);
-        Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
-        modifiedEdge.setProperty(key, value);
-        this.transactionStorage.putEdge(modifiedEdge);
+        this.transactionStorage.putEdge(ModelChanges.withProperty(currentEdge, key, value));
     }
 
     @Override
     public void updateEdge(String edgeId, Map<String, Object> properties) throws EdgeNotFoundException, IllegalArgumentException {
         resolver.checkAttributes(properties);
         Edge currentEdge = resolver.getEdgeIfExists(edgeId);
-        Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
-        modifiedEdge.setProperties(properties);
-        this.transactionStorage.putEdge(modifiedEdge);
+        this.transactionStorage.putEdge(ModelChanges.withProperties(currentEdge, properties));
     }
 
     @Override
     public Object removeEdgeProperty(String edgeId, String property) throws EdgeNotFoundException {
         Edge currentEdge = resolver.getEdgeIfExists(edgeId);
-        Edge modifiedEdge = new Edge(currentEdge.getId(), currentEdge.getSource(), currentEdge.getDestination(), currentEdge.getWeight(), currentEdge.getProperties());
-        Object value = modifiedEdge.deleteProperty(property);
-        this.transactionStorage.putEdge(modifiedEdge);
-        return value;
+        this.transactionStorage.putEdge(ModelChanges.withoutProperty(currentEdge, property));
+        return currentEdge.getProperties().get(property);
     }
 
     @Override

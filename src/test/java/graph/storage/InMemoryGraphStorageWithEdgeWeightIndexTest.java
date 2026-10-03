@@ -71,15 +71,6 @@ public class InMemoryGraphStorageWithEdgeWeightIndexTest {
     }
 
     @Test
-    public void delegatesUpdateEdgeWeightToIndex() {
-        context.checking(new Expectations() {{
-            oneOf(index).updateEdgeWeight(10.0, 20.0, edge);
-        }});
-
-        storage.updateEdgeWeight(10.0, 20.0, edge);
-    }
-
-    @Test
     public void removingNodeRemovesItsEdgesFromIndexQueries() {
         InMemoryGraphStorage storage = new InMemoryGraphStorage(new DefaultEdgeWeightIndex());
         storage.putNode(new Node(edge.getSource(), Map.of()));

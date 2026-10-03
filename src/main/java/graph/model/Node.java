@@ -4,32 +4,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Node {
+/**
+ * An immutable node. Reads return the stored object itself, which is safe because it cannot be changed; to change
+ * a node, use a {@code Transaction}.
+ */
+public final class Node {
 
     private final String id;
     private final Map<String, Object> attributes;
 
     public Node(String id, Map<String, Object> attributes) {
         this.id = id;
-        this.attributes = new HashMap<>(attributes);
+        // A copy of a HashMap rather than Map.copyOf: attribute values may be null.
+        this.attributes = Collections.unmodifiableMap(new HashMap<>(attributes));
     }
 
     public String getId() {
         return id;
-    }
-
-    public void setAttribute(String key, Object value) {
-        attributes.put(key, value);
-    }
-
-    public void setAttributes(Map<String, Object> attributes) {
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-            setAttribute(entry.getKey(), entry.getValue());
-        }
-    }
-
-    public Object deleteAttribute(String key) {
-        return attributes.remove(key);
     }
 
     public Object getAttribute(String key) {
@@ -45,7 +36,7 @@ public class Node {
     }
 
     public Map<String, Object> getAttributes() {
-        return Collections.unmodifiableMap(attributes);
+        return attributes;
     }
 
     @Override

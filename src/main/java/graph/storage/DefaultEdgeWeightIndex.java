@@ -49,10 +49,4 @@ public class DefaultEdgeWeightIndex implements MutableEdgeWeightIndex {
         return edgeWeightIndex.headMap(weight, false).values()
                 .stream().flatMap(Collection::stream).collect(Collectors.toList());
     }
-
-    @Override
-    public void updateEdgeWeight(double previousWeight, double currentWeight, Edge edge) {
-        edgeWeightIndex.get(previousWeight).remove(edge);
-        edgeWeightIndex.computeIfAbsent(currentWeight, w -> new HashSet<>()).add(edge);
-    }
 }
