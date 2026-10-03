@@ -2,6 +2,7 @@ package graph;
 
 import graph.model.Edge;
 import graph.model.Node;
+import graph.transaction.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -113,5 +114,19 @@ public class GraphIntegrationTest {
         Object removedProp = graph.removeEdgeProperty(edgeAB.getId(), "since");
         assertEquals(2020, removedProp);
         assertFalse(graph.getEdgeById(edgeAB.getId()).hasProperty("since"));
+    }
+
+    @Test
+    public void transactionUpdatesKeepEdgesAndWeightIndexConsistent() {
+        Edge edgeAB = graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+
+        Transaction transaction = graph.createTransaction();
+        transaction.updateNode(nodeA.getId(), "name", "A2");
+        transaction.updateEdge(edgeAB.getId(), 5.0);
+        transaction.commit();
+
+        assertEquals(1, graph.getEdgesFromNode(nodeA.getId()).size());
+        assertTrue(graph.getEdgesByWeight(1.0).isEmpty());
+        assertEquals(1, graph.getEdgesByWeight(5.0).size());
     }
 }

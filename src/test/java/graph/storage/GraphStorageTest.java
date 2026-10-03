@@ -282,4 +282,31 @@ public class GraphStorageTest {
         assertThat(result.size(), is(2));
         assertThat(result, hasItems(EDGE_1, EDGE_3));
     }
+
+    // ============ REPLACING EXISTING ENTRIES ============
+
+    @Test
+    public void replacingANodeKeepsItsEdges() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+
+        storage.putNode(new Node("node1", Map.of("name", "updated")));
+
+        assertThat(storage.getEdgesFromNode("node1"), hasItems(EDGE_1));
+        assertTrue(storage.edgeExists("node1", "node2"));
+        assertThat(storage.nodesIdsWithEdgesToNode("node2"), hasItems("node1"));
+    }
+
+    @Test
+    public void replacingAnEdgeWithANewWeightMovesItInTheWeightIndex() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+        Edge reweighted = new Edge("edge1", "node1", "node2", 7.0, Map.of());
+
+        storage.putEdge(reweighted);
+
+        assertTrue(storage.getEdgesByWeight(5.0).isEmpty());
+        assertThat(storage.getEdgesByWeight(7.0), is(List.of(reweighted)));
+        assertThat(storage.getEdgesByWeightRange(0.0, 100.0), is(List.of(reweighted)));
+    }
 }

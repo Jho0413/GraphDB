@@ -32,7 +32,8 @@ public class InMemoryGraphStorage implements GraphStorage {
     @Override
     public void putNode(Node node) {
         this.nodes.put(node.getId(), node);
-        this.adjacencyList.put(node.getId(), new HashMap<>());
+        // Replacing an existing node must keep its edges.
+        this.adjacencyList.putIfAbsent(node.getId(), new HashMap<>());
     }
 
     @Override
@@ -69,7 +70,12 @@ public class InMemoryGraphStorage implements GraphStorage {
 
     @Override
     public void putEdge(Edge edge) {
-        this.edges.put(edge.getId(), edge);
+        Edge previous = this.edges.put(edge.getId(), edge);
+        if (previous != null) {
+            // Replacing an existing edge: drop the old version from the adjacency list and weight index.
+            adjacencyList.get(previous.getSource()).remove(previous.getDestination());
+            edgeWeightIndex.removeEdge(previous);
+        }
         adjacencyList.get(edge.getSource()).put(edge.getDestination(), edge.getId());
         edgeWeightIndex.putEdge(edge);
     }
