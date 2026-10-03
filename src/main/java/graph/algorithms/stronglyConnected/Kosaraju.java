@@ -1,0 +1,70 @@
+package graph.algorithms.stronglyConnected;
+
+import graph.model.Edge;
+import graph.model.Node;
+import graph.algorithms.Algorithm;
+import graph.model.GraphView;
+import graph.algorithms.TraversalInput;
+import graph.algorithms.TraversalResult;
+import graph.algorithms.TraversalResult.TraversalResultBuilder;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+class Kosaraju implements Algorithm {
+
+    private final GraphView graph;
+    private final Set<String> notVisited;
+    private final Map<Integer, Set<String>> components = new HashMap<>();
+    private int counter = 1;
+    private final Stack<String> stack = new Stack<>();
+
+    Kosaraju(TraversalInput input, GraphView graph) {
+        this.graph = graph;
+        this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
+    }
+
+    @Override
+    public TraversalResult performAlgorithm() {
+        while (!notVisited.isEmpty()) {
+            populateStackOrder(notVisited.iterator().next());
+        }
+        populateComponents(new HashSet<>());
+        return new TraversalResultBuilder().setComponents(components).build();
+    }
+
+    private void populateStackOrder(String fromNodeId) {
+        notVisited.remove(fromNodeId);
+
+        for (Edge edge : graph.getEdgesFromNode(fromNodeId)) {
+            String destination = edge.getDestination();
+            if (notVisited.contains(destination)) {
+                populateStackOrder(destination);
+            }
+        }
+        stack.push(fromNodeId);
+    }
+
+    private void populateComponents(Set<String> visited) {
+        while (!stack.isEmpty()) {
+            String nextNode = stack.pop();
+            if (!visited.contains(nextNode)) {
+                // new strongly component created
+                Set<String> componentSet = new HashSet<>();
+                components.put(counter, componentSet);
+                secondDfsHelper(nextNode, visited);
+                counter++;
+            }
+        }
+    }
+
+    private void secondDfsHelper(String fromNodeId, Set<String> visited) {
+        visited.add(fromNodeId);
+        components.get(counter).add(fromNodeId);
+        for (String nodeId : graph.getNodesIdWithEdgeToNode(fromNodeId)) {
+            if (!visited.contains(nodeId)) {
+                secondDfsHelper(nodeId, visited);
+            }
+        }
+    }
+}

@@ -1,5 +1,5 @@
 package graph.events;
 
-import graph.traversalAlgorithms.GraphTraversalView;
+import graph.model.GraphView;
 
-public interface ObservableGraphView extends ObservableGraph, GraphTraversalView {}
+public interface ObservableGraphView extends ObservableGraph, GraphView {}

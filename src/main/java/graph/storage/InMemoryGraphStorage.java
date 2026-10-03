@@ -1,7 +1,7 @@
 package graph.storage;
 
-import graph.dataModel.Edge;
-import graph.dataModel.Node;
+import graph.model.Edge;
+import graph.model.Node;
 
 import java.util.*;
 

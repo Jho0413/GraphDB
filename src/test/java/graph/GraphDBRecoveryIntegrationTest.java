@@ -1,9 +1,8 @@
 package graph;
 
-import graph.dataModel.Edge;
-import graph.dataModel.Graph;
-import graph.dataModel.Node;
-import graph.dataModel.Transaction;
+import graph.model.Edge;
+import graph.model.Node;
+import graph.transaction.Transaction;
 import graph.exceptions.WalException;
 import org.junit.After;
 import org.junit.Before;

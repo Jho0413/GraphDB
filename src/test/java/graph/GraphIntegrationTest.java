@@ -1,8 +1,7 @@
 package graph;
 
-import graph.dataModel.Edge;
-import graph.dataModel.Graph;
-import graph.dataModel.Node;
+import graph.model.Edge;
+import graph.model.Node;
 import org.junit.Before;
 import org.junit.Test;
 
