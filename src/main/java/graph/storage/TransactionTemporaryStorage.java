@@ -1,8 +1,8 @@
 package graph.storage;
 
-import graph.dataModel.Edge;
-import graph.dataModel.Node;
-import graph.operations.*;
+import graph.model.Edge;
+import graph.model.Node;
+import graph.transaction.*;
 
 import java.util.*;
 

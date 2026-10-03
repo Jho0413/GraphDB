@@ -1,12 +1,12 @@
 package graph;
 
-import graph.WAL.WalReader;
-import graph.WAL.WriteAheadLog;
-import graph.dataModel.Graph;
-import graph.dataModel.RecoveryManager;
+import graph.wal.WalReader;
+import graph.wal.WriteAheadLog;
+import graph.model.Graph;
+import graph.model.RecoveryManager;
 import graph.exceptions.GraphNotFoundException;
 import graph.exceptions.WalException;
-import graph.queryModel.GraphQueryClient;
+import graph.query.GraphQueryClient;
 
 import java.io.IOException;
 import java.nio.file.Files;

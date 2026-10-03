@@ -1,7 +1,7 @@
 package graph.events;
 
-import graph.dataModel.Edge;
-import graph.dataModel.Node;
+import graph.model.Edge;
+import graph.model.Node;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import org.jmock.Expectations;

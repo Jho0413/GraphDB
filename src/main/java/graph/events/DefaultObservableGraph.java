@@ -1,8 +1,8 @@
 package graph.events;
 
-import graph.dataModel.Edge;
-import graph.dataModel.Node;
-import graph.dataModel.Transaction;
+import graph.model.Edge;
+import graph.model.Node;
+import graph.model.Transaction;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;

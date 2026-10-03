@@ -1,6 +1,6 @@
 package graph.storage;
 
-import graph.dataModel.Edge;
+import graph.model.Edge;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

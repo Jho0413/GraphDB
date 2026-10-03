@@ -1,6 +1,6 @@
 package graph.storage;
 
-import graph.operations.*;
+import graph.transaction.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -8,8 +8,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import graph.dataModel.Node;
-import graph.dataModel.Edge;
+import graph.model.Node;
+import graph.model.Edge;
 
 import java.util.*;
 

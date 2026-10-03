@@ -1,10 +1,10 @@
 package graph;
 
-import graph.dataModel.Edge;
-import graph.dataModel.Graph;
-import graph.dataModel.Node;
-import graph.dataModel.Transaction;
-import graph.queryModel.GraphQueryClient;
+import graph.model.Edge;
+import graph.model.Graph;
+import graph.model.Node;
+import graph.model.Transaction;
+import graph.query.GraphQueryClient;
 import org.junit.Before;
 import org.junit.Test;
 
