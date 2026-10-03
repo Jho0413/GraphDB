@@ -8,7 +8,7 @@ public class LRUCache<K, V> implements Cache<K, V> {
 
     private final int maxSize;
     private final DoublyLinkedList<K, V> orderedList = new DoublyLinkedList<>();
-    private final Map<K, Node<K, V>> store = new HashMap<>();
+    private final Map<K, ListNode<K, V>> store = new HashMap<>();
 
     public LRUCache(int maxSize) {
         if (maxSize <= 0) {
@@ -19,22 +19,22 @@ public class LRUCache<K, V> implements Cache<K, V> {
 
     public void put(K key, V value) {
         if (!store.containsKey(key) && store.size() == maxSize) {
-            Node<K, V> nodeRemoved = orderedList.removeLeft();
+            ListNode<K, V> nodeRemoved = orderedList.removeLeft();
             store.remove(nodeRemoved.getKey());
         }
-        Node<K, V> node = store.get(key);
+        ListNode<K, V> node = store.get(key);
         if (node != null) {
             orderedList.remove(node);
             node.setValue(value);
             orderedList.insert(node);
         } else {
-            Node<K, V> newNode = orderedList.insert(key, value);
+            ListNode<K, V> newNode = orderedList.insert(key, value);
             store.put(key, newNode);
         }
     }
 
     public V get(K key) {
-        Node<K, V> node = store.get(key);
+        ListNode<K, V> node = store.get(key);
         if (node != null) {
             orderedList.remove(node);
             orderedList.insert(node);

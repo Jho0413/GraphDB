@@ -8,7 +8,7 @@ import graph.algorithms.TraversalInput;
 import graph.algorithms.TraversalResult;
 import graph.algorithms.TraversalResult.TraversalResultBuilder;
 
-class BellmanFord extends ShortestPathAlgorithm<BellmanFordNodeStats> {
+class BellmanFord extends AbstractShortestPathAlgorithm<BellmanFordNodeStats> {
     // pre-condition: no negative cycles
     BellmanFord(TraversalInput input, GraphView graph) {
         super(input.getFromNodeId(), input.getToNodeId(), graph);

@@ -1,4 +1,4 @@
-package graph.util;
+package graph.testsupport;
 
 import graph.model.Node;
 import org.hamcrest.BaseMatcher;

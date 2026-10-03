@@ -1,4 +1,4 @@
-package graph.util;
+package graph.testsupport;
 
 import graph.algorithms.TraversalInput;
 import org.hamcrest.BaseMatcher;

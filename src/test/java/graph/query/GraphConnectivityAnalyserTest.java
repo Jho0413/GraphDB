@@ -1,7 +1,7 @@
 package graph.query;
 
-import graph.util.AlgorithmTypeBaseMatcher;
-import graph.util.TraversalInputBaseMatcher;
+import graph.testsupport.AlgorithmTypeBaseMatcher;
+import graph.testsupport.TraversalInputBaseMatcher;
 import graph.algorithms.AlgorithmManager;
 import graph.algorithms.AlgorithmType;
 import graph.algorithms.TraversalInput;

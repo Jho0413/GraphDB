@@ -1,4 +1,4 @@
-package graph.util;
+package graph.testsupport;
 
 import java.util.Objects;
 import java.util.function.Function;

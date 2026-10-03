@@ -10,7 +10,7 @@ import graph.algorithms.TraversalResult.TraversalResultBuilder;
 
 import java.util.*;
 
-class Dijkstra extends ShortestPathAlgorithm<DijkstraNodeStats> {
+class Dijkstra extends AbstractShortestPathAlgorithm<DijkstraNodeStats> {
     // pre-condition: all positive edges
     private final Queue<DijkstraEntry> queue;
 

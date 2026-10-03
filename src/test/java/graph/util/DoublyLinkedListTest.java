@@ -22,9 +22,9 @@ public class DoublyLinkedListTest {
         list.insert("two", "2");
         list.insert("three", "3");
 
-        Node<String, String> first = list.removeLeft();
-        Node<String, String> second = list.removeLeft();
-        Node<String, String> third = list.removeLeft();
+        ListNode<String, String> first = list.removeLeft();
+        ListNode<String, String> second = list.removeLeft();
+        ListNode<String, String> third = list.removeLeft();
 
         assertThat(first.getKey(), is("one"));
         assertThat(second.getKey(), is("two"));
@@ -38,9 +38,9 @@ public class DoublyLinkedListTest {
         list.insert("two", "2");
         list.insert("three", "3");
 
-        Node<String, String> last = list.removeRight();
-        Node<String, String> middle = list.removeRight();
-        Node<String, String> first = list.removeRight();
+        ListNode<String, String> last = list.removeRight();
+        ListNode<String, String> middle = list.removeRight();
+        ListNode<String, String> first = list.removeRight();
 
         assertThat(last.getKey(), is("three"));
         assertThat(middle.getKey(), is("two"));
@@ -50,11 +50,11 @@ public class DoublyLinkedListTest {
 
     @Test
     public void removesSpecificNodeFromMiddle() {
-        Node<String, String> first = list.insert("one", "1");
-        Node<String, String> middle = list.insert("two", "2");
-        Node<String, String> last = list.insert("three", "3");
+        ListNode<String, String> first = list.insert("one", "1");
+        ListNode<String, String> middle = list.insert("two", "2");
+        ListNode<String, String> last = list.insert("three", "3");
 
-        Node<String, String> removed = list.remove(middle);
+        ListNode<String, String> removed = list.remove(middle);
         assertThat(removed.getKey(), is("two"));
 
         assertThat(list.removeLeft().getKey(), is("one"));

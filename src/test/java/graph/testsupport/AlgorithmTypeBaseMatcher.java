@@ -1,4 +1,4 @@
-package graph.util;
+package graph.testsupport;
 
 import graph.algorithms.AlgorithmType;
 import org.hamcrest.BaseMatcher;

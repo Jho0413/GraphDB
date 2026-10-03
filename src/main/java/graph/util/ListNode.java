@@ -1,20 +1,20 @@
 package graph.util;
 
-public class Node<K, V> {
+public class ListNode<K, V> {
 
     private final K key;
     private V value;
-    Node<K, V> next;
-    Node<K, V> prev;
+    ListNode<K, V> next;
+    ListNode<K, V> prev;
 
-    public Node(K key, V value, Node<K, V> next, Node<K, V> prev) {
+    public ListNode(K key, V value, ListNode<K, V> next, ListNode<K, V> prev) {
         this.key = key;
         this.value = value;
         this.next = next;
         this.prev = prev;
     }
 
-    public Node(K key, V value) {
+    public ListNode(K key, V value) {
         this.key = key;
         this.value = value;
         this.next = null;

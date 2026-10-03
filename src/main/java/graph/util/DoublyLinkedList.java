@@ -2,17 +2,17 @@ package graph.util;
 
 public class DoublyLinkedList<K, V> {
 
-    private Node<K, V> head;
-    private Node<K, V> tail;
+    private ListNode<K, V> head;
+    private ListNode<K, V> tail;
 
     public DoublyLinkedList() {
         this.head = null;
         this.tail = null;
     }
 
-    public Node<K, V> removeLeft() {
+    public ListNode<K, V> removeLeft() {
         if (this.head == null) return null;
-        Node<K, V> temp = head;
+        ListNode<K, V> temp = head;
         head = head.next;
         if (head == null) {
             tail = null;
@@ -23,9 +23,9 @@ public class DoublyLinkedList<K, V> {
         return temp;
     }
 
-    public Node<K, V> removeRight() {
+    public ListNode<K, V> removeRight() {
         if (this.tail == null) return null;
-        Node<K, V> temp = tail;
+        ListNode<K, V> temp = tail;
         tail = tail.prev;
         if (tail == null) {
             head = null;
@@ -36,7 +36,7 @@ public class DoublyLinkedList<K, V> {
         return temp;
     }
 
-    public Node<K, V> remove(Node<K, V> node) {
+    public ListNode<K, V> remove(ListNode<K, V> node) {
         if (node.prev == null) {
             return removeLeft();
         } else if (node.next == null) {
@@ -50,7 +50,7 @@ public class DoublyLinkedList<K, V> {
         }
     }
 
-    public Node<K, V> insert(Node<K, V> node) {
+    public ListNode<K, V> insert(ListNode<K, V> node) {
         if (this.head == null) {
             this.head = node;
             this.tail = node;
@@ -66,8 +66,8 @@ public class DoublyLinkedList<K, V> {
         return node;
     }
 
-    public Node<K, V> insert(K key, V value) {
-        Node<K, V> node = new Node<>(key, value);
+    public ListNode<K, V> insert(K key, V value) {
+        ListNode<K, V> node = new ListNode<>(key, value);
         return this.insert(node);
     }
 

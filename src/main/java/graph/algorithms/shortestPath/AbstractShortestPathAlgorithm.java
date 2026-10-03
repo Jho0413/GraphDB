@@ -10,14 +10,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-abstract class ShortestPathAlgorithm<N extends NodeStats> implements Algorithm {
+abstract class AbstractShortestPathAlgorithm<N extends NodeStats> implements Algorithm {
 
     protected final Map<String, N> store = new HashMap<>();
     protected final String fromNodeId;
     protected final String toNodeId;
     protected final GraphView graph;
 
-    ShortestPathAlgorithm(String fromNodeId, String toNodeId, GraphView graph) {
+    AbstractShortestPathAlgorithm(String fromNodeId, String toNodeId, GraphView graph) {
         this.fromNodeId = fromNodeId;
         this.toNodeId = toNodeId;
         this.graph = graph;
