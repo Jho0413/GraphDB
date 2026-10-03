@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.util.*;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 public class FloydWarshallTest {
@@ -22,10 +23,10 @@ public class FloydWarshallTest {
     @Before
     public void setup() {
         graph = Graph.createGraph();
-        nodeA = graph.addNode(Map.of("name", "A"));
-        nodeB = graph.addNode(Map.of("name", "B"));
-        nodeC = graph.addNode(Map.of("name", "C"));
-        nodeD = graph.addNode(Map.of("name", "D"));
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
         nodeList = graph.getNodes();
         a = idx(nodeA);
         b = idx(nodeB);
@@ -60,8 +61,8 @@ public class FloydWarshallTest {
     @Test
     public void returnsAllShortestPathsPairForSimpleGraph() {
         // A -> B (2), B -> C (3)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 3.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 3.0);
 
         TraversalResult result = runFloydWarshall();
         double[][] actual = result.getAllShortestDistances();
@@ -86,10 +87,10 @@ public class FloydWarshallTest {
     @Test
     public void returnsAllShortestPathsPairForGraphWithFullCycle() {
         // A -> B (1), B -> C (1), C -> D (1), D -> A (1)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 1.0);
 
         TraversalResult result = runFloydWarshall();
         double[][] actual = result.getAllShortestDistances();
@@ -103,10 +104,10 @@ public class FloydWarshallTest {
     @Test
     public void returnsAllShortestPathsPairForGraphWithNegativeEdges() {
         // A -> B (2), B -> C (-1), B -> D (-1), C -> D (3)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), -1.0);
-        graph.addEdge(nodeB.getId(), nodeD.getId(), Map.of(), -1.0);
-        graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 3.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), -1.0);
+        write(graph).addEdge(nodeB.getId(), nodeD.getId(), Map.of(), -1.0);
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 3.0);
 
         TraversalResult result = runFloydWarshall();
         double[][] actual = result.getAllShortestDistances();
@@ -120,9 +121,9 @@ public class FloydWarshallTest {
     @Test
     public void returnsNegativeCycleExceptionWhenNegativeCycleDetected() {
         // A -> B (1), B -> C (-4), C -> A (1)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), -4.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), -4.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
         TraversalResult result = runFloydWarshall();
         assertNotNull(result.getException());
@@ -133,11 +134,11 @@ public class FloydWarshallTest {
     @Test
     public void returnsAllShortestPathsPairForComplexGraphWithNegativeEdgesAndMultiplePaths() {
         // A -> B (4), A -> C (1), C -> B (-2), B -> D (2), C -> D (5)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 4.0);
-        graph.addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeB.getId(), Map.of(), -2.0);
-        graph.addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 2.0);
-        graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 5.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 4.0);
+        write(graph).addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeB.getId(), Map.of(), -2.0);
+        write(graph).addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 2.0);
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 5.0);
 
         TraversalResult result = runFloydWarshall();
         double[][] actual = result.getAllShortestDistances();
@@ -151,7 +152,7 @@ public class FloydWarshallTest {
     @Test
     public void returnsOnePairWhichIs0ForSingleNodeGraph() {
         Graph graph = Graph.createGraph();
-        graph.addNode(Map.of("name", "Solo"));
+        write(graph).addNode(Map.of("name", "Solo"));
         TraversalResult result = new FloydWarshall(null, graph).performAlgorithm();
 
         double[][] expected = new double[][] { { 0.0 } };

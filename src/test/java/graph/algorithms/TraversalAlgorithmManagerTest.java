@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.util.*;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static graph.algorithms.AlgorithmType.*;
 import static org.junit.Assert.*;
 
@@ -24,16 +25,16 @@ public class TraversalAlgorithmManagerTest {
     public void setUp() {
         graph = Graph.createGraph();
         manager = TraversalAlgorithmManager.createManager(graph);
-        nodeA = graph.addNode(Map.of("name", "A"));
-        nodeB = graph.addNode(Map.of("name", "B"));
-        nodeC = graph.addNode(Map.of("name", "C"));
-        nodeD = graph.addNode(Map.of("name", "D"));
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
 
-        edgeAB = graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
-        edgeAC = graph.addEdge(nodeA.getId(), nodeC.getId(), Map.of(), -2.0);
-        edgeBC = graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 3.0);
-        edgeCD = graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 4.0);
-        edgeDA = graph.addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 5.0);
+        edgeAB = write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
+        edgeAC = write(graph).addEdge(nodeA.getId(), nodeC.getId(), Map.of(), -2.0);
+        edgeBC = write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 3.0);
+        edgeCD = write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 4.0);
+        edgeDA = write(graph).addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 5.0);
     }
 
     // ============ SHORTEST PATH ALGORITHMS ============
@@ -201,7 +202,7 @@ public class TraversalAlgorithmManagerTest {
     @Test
     public void cacheIsInvalidatedWhenGraphEventThatSatisfiesPredicateOccurs() {
         TraversalResult first = manager.runAlgorithm(KOSARAJU, null);
-        graph.addNode(Map.of());
+        write(graph).addNode(Map.of());
         TraversalResult second = manager.runAlgorithm(KOSARAJU, null);
 
         assertNotEquals(first.getComponents(), second.getComponents());
@@ -210,7 +211,7 @@ public class TraversalAlgorithmManagerTest {
     @Test
     public void cacheIsNotClearedWhenGraphEventThatDoesNotSatisfyPredicateOccurs() {
         TraversalResult first = manager.runAlgorithm(KOSARAJU, null);
-        graph.updateEdge(edgeAB.getId(), 3.0);
+        write(graph).updateEdge(edgeAB.getId(), 3.0);
         TraversalResult second = manager.runAlgorithm(KOSARAJU, null);
 
         assertSame("weight changes should not invalidate strongly connected components", first, second);

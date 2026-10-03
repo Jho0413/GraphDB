@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.util.*;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 public class DFSNodesConnectedToTest {
@@ -20,12 +21,12 @@ public class DFSNodesConnectedToTest {
     public void setup() {
         graph = Graph.createGraph();
 
-        nodeA = graph.addNode(Collections.singletonMap("name", "A"));
-        nodeB = graph.addNode(Collections.singletonMap("name", "B"));
-        nodeC = graph.addNode(Collections.singletonMap("name", "C"));
-        nodeD = graph.addNode(Collections.singletonMap("name", "D"));
-        nodeE = graph.addNode(Collections.singletonMap("name", "E"));
-        nodeF = graph.addNode(Collections.singletonMap("name", "F"));
+        nodeA = write(graph).addNode(Collections.singletonMap("name", "A"));
+        nodeB = write(graph).addNode(Collections.singletonMap("name", "B"));
+        nodeC = write(graph).addNode(Collections.singletonMap("name", "C"));
+        nodeD = write(graph).addNode(Collections.singletonMap("name", "D"));
+        nodeE = write(graph).addNode(Collections.singletonMap("name", "E"));
+        nodeF = write(graph).addNode(Collections.singletonMap("name", "F"));
     }
 
     private Set<String> getNodeNames(Set<String> ids) {
@@ -47,10 +48,10 @@ public class DFSNodesConnectedToTest {
     public void returnsAllReachableNodesFromGivenNode() {
         // A -> B -> C
         // A -> D -> E
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeA.getId(), nodeD.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeE.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeD.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeE.getId(), Collections.emptyMap(), 1.0);
 
         Set<String> expected = new HashSet<>(Arrays.asList("A", "B", "C", "D", "E"));
         assertEquals(expected, getConnectedNodeNamesFrom(nodeA));
@@ -65,7 +66,7 @@ public class DFSNodesConnectedToTest {
     @Test
     public void returnsOnlyReachableSubsetOfNodes() {
         // B -> C
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
 
         Set<String> expected = new HashSet<>(Arrays.asList("B", "C"));
         assertEquals(expected, getConnectedNodeNamesFrom(nodeB));
@@ -74,9 +75,9 @@ public class DFSNodesConnectedToTest {
     @Test
     public void returnsAllNodesInCycle() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Collections.emptyMap(), 1.0);
 
         Set<String> expected = new HashSet<>(Arrays.asList("A", "B", "C"));
         assertEquals(expected, getConnectedNodeNamesFrom(nodeA));
@@ -85,7 +86,7 @@ public class DFSNodesConnectedToTest {
     @Test
     public void returnsSingleNodeInSingleNodeGraph() {
         Graph singleNodeGraph = Graph.createGraph();
-        Node solo = singleNodeGraph.addNode(Collections.singletonMap("name", "Solo"));
+        Node solo = write(singleNodeGraph).addNode(Collections.singletonMap("name", "Solo"));
 
         TraversalInput input = new TraversalInput.TraversalInputBuilder().setFromNodeId(solo.getId()).build();
         DFSNodesConnectedTo dfs = new DFSNodesConnectedTo(input, singleNodeGraph);

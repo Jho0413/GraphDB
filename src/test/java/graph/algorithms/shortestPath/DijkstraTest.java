@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 public class DijkstraTest {
@@ -21,10 +22,10 @@ public class DijkstraTest {
     @Before
     public void setup() {
         graph = Graph.createGraph();
-        nodeA = graph.addNode(Map.of("name", "A"));
-        nodeB = graph.addNode(Map.of("name", "B"));
-        nodeC = graph.addNode(Map.of("name", "C"));
-        nodeD = graph.addNode(Map.of("name", "D"));
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
     }
 
     private TraversalResult runDijkstra(String fromNodeId, String toNodeId) {
@@ -34,8 +35,8 @@ public class DijkstraTest {
     @Test
     public void returnsCorrectPathWithPositiveWeightsForSimpleGraph() {
         // A -> B (1), B -> C (2)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 2.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 2.0);
 
         List<String> expected = List.of(nodeA.getId(), nodeB.getId(), nodeC.getId());
         TraversalResult result = runDijkstra(nodeA.getId(), nodeC.getId());
@@ -45,9 +46,9 @@ public class DijkstraTest {
     @Test
     public void returnsShortestAmongstMultiplePaths() {
         // A -> B (1), A -> C (5), B -> C (1)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 5.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 5.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
 
         List<String> expected = List.of(nodeA.getId(), nodeB.getId(), nodeC.getId());
         assertEquals(expected, runDijkstra(nodeA.getId(), nodeC.getId()).getPath().getNodeIds());
@@ -56,10 +57,10 @@ public class DijkstraTest {
     @Test
     public void returnsShortestPathInMoreComplexGraphWithMultiplePaths() {
         // A -> B (2), A -> D (10), B -> C (12), D -> C (1)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
-        graph.addEdge(nodeA.getId(), nodeD.getId(), Map.of(), 10.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 12.0);
-        graph.addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
+        write(graph).addEdge(nodeA.getId(), nodeD.getId(), Map.of(), 10.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 12.0);
+        write(graph).addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 1.0);
 
         List<String> expected = List.of(nodeA.getId(), nodeD.getId(), nodeC.getId());
         TraversalResult result = runDijkstra(nodeA.getId(), nodeC.getId());
@@ -70,17 +71,17 @@ public class DijkstraTest {
     @Test
     public void returnsEmptyPathWhenThereIsNoPathBetweenTheTwoNodes() {
         // A -> B (1), B -> A (2)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeA.getId(), Map.of(), 2.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), 2.0);
         assertTrue(runDijkstra(nodeA.getId(), nodeD.getId()).getPath().getNodeIds().isEmpty());
     }
 
     @Test
     public void throwsNegativeWeightExceptionWhenAnEdgeWithNegativeWeightIsEncountered() {
         // A -> B (-1), B -> C (5), D -> A (4)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), -1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 5.0);
-        graph.addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 4.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), -1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 5.0);
+        write(graph).addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 4.0);
 
         TraversalResult result = runDijkstra(nodeA.getId(), nodeB.getId());
         assertNotNull(result.getException());
@@ -91,9 +92,9 @@ public class DijkstraTest {
     @Test
     public void doesNotThrowNegativeWeightExceptionWhenAnEdgeWithNegativeWeightIsPresentButNotEncountered() {
         // A -> B (1), B -> C (5), D -> A (-4)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 5.0);
-        graph.addEdge(nodeD.getId(), nodeA.getId(), Map.of(), -4.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 5.0);
+        write(graph).addEdge(nodeD.getId(), nodeA.getId(), Map.of(), -4.0);
 
         assertEquals(List.of(nodeA.getId(), nodeB.getId(), nodeC.getId()), runDijkstra(nodeA.getId(), nodeC.getId()).getPath().getNodeIds());
     }
@@ -101,10 +102,10 @@ public class DijkstraTest {
     @Test
     public void returnsEitherShortestPathWhenMultipleHaveEqualCost() {
         // A -> B (2), A -> D (1), B -> C (1), D -> C (2)
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
-        graph.addEdge(nodeA.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 2.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
+        write(graph).addEdge(nodeA.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 2.0);
 
         List<String> path1 = List.of(nodeA.getId(), nodeB.getId(), nodeC.getId());
         List<String> path2 = List.of(nodeA.getId(), nodeD.getId(), nodeC.getId());
@@ -118,7 +119,7 @@ public class DijkstraTest {
     @Test
     public void returnEmptyListWhenNodesGivenAreTheSame() {
         // A -> A (1)
-        graph.addEdge(nodeA.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeA.getId(), Map.of(), 1.0);
         assertEquals(List.of(nodeA.getId()), runDijkstra(nodeA.getId(), nodeA.getId()).getPath().getNodeIds());
     }
 }

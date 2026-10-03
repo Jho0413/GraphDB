@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.util.*;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 public class TopologicalSortTest {
@@ -19,12 +20,12 @@ public class TopologicalSortTest {
     @Before
     public void setup() {
         graph = Graph.createGraph();
-        nodeA = graph.addNode(Map.of("name", "A"));
-        nodeB = graph.addNode(Map.of("name", "B"));
-        nodeC = graph.addNode(Map.of("name", "C"));
-        nodeD = graph.addNode(Map.of("name", "D"));
-        nodeE = graph.addNode(Map.of("name", "E"));
-        nodeF = graph.addNode(Map.of("name", "F"));
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
+        nodeE = write(graph).addNode(Map.of("name", "E"));
+        nodeF = write(graph).addNode(Map.of("name", "F"));
     }
 
     private List<String> runTopologicalSort() {
@@ -53,8 +54,8 @@ public class TopologicalSortTest {
     @Test
     public void handlesDAGWithSimpleLinearBranches() {
         // A -> B -> C
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
 
         List<String> result = runTopologicalSort();
         assertEquals(6, result.size());
@@ -66,10 +67,10 @@ public class TopologicalSortTest {
     public void handlesDAGsWithMultipleBranches() {
         // A -> B -> D
         // A -> C -> D
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
 
         List<String> result = runTopologicalSort();
         Map<String, List<String>> adjacency = Map.of(
@@ -84,8 +85,8 @@ public class TopologicalSortTest {
     public void handlesDAGsWithMultipleSubGraphs() {
         // A -> B
         // C -> D
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
 
         List<String> result = runTopologicalSort();
         assertEquals(6, result.size());
@@ -102,11 +103,11 @@ public class TopologicalSortTest {
         // A -> C -> F
         // B -> D -> F
         // E -> D
-        graph.addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeF.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeF.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeE.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeF.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeF.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeE.getId(), nodeD.getId(), Map.of(), 1.0);
 
         List<String> result = runTopologicalSort();
 
@@ -124,9 +125,9 @@ public class TopologicalSortTest {
     @Test
     public void detectsCyclesAndThrowsCycleFoundException() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
         TopologicalSort topologicalSort = new TopologicalSort(null, graph);
         TraversalResult result = topologicalSort.performAlgorithm();
@@ -137,7 +138,7 @@ public class TopologicalSortTest {
     @Test
     public void returnsSingletonForSingleNodeGraph() {
         Graph graph = Graph.createGraph();
-        Node singleNode = graph.addNode(Map.of("name", "A"));
+        Node singleNode = write(graph).addNode(Map.of("name", "A"));
 
         TopologicalSort topologicalSort = new TopologicalSort(null, graph);
         List<String> result = topologicalSort.performAlgorithm().getOrderedNodeIds();

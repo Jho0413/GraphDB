@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,16 +28,16 @@ public class GraphIntegrationTest {
     public void setUp() {
         graph = Graph.createGraph();
         // Adding nodes
-        nodeA = graph.addNode(Map.of("name", "A"));
-        nodeB = graph.addNode(Map.of("name", "B"));
-        nodeC = graph.addNode(Map.of("name", "C"));
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
     }
 
     @Test
     public void graphSupportsCrudAndWeightQueriesEndToEnd() {
         // Adding edges
-        Edge edgeAB = graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of("rel", "ab"), 5.0);
-        Edge edgeBC = graph.addEdge(nodeB.getId(), nodeC.getId(), Map.of("rel", "bc"), 10.0);
+        Edge edgeAB = write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of("rel", "ab"), 5.0);
+        Edge edgeBC = write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of("rel", "bc"), 10.0);
 
         // Retrieving edges by ID and by node IDs
         assertEquals(edgeAB, graph.getEdgeById(edgeAB.getId()));
@@ -55,21 +56,22 @@ public class GraphIntegrationTest {
         assertTrue(graph.getNodesIdWithEdgeToNode(nodeB.getId()).contains(nodeA.getId()));
 
         // Update weight queries
-        graph.updateEdge(edgeAB.getId(), 20.0);
+        // (an update stores a new Edge object, so compare by id from here on)
+        write(graph).updateEdge(edgeAB.getId(), 20.0);
         assertTrue(graph.getEdgesByWeight(5.0).isEmpty());
-        assertThat(graph.getEdgesByWeight(20.0), hasItems(edgeAB));
-        assertThat(graph.getEdgesWithWeightGreaterThan(10.0), hasItems(edgeAB));
+        assertThat(ids(graph.getEdgesByWeight(20.0)), is(List.of(edgeAB.getId())));
+        assertThat(ids(graph.getEdgesWithWeightGreaterThan(10.0)), is(List.of(edgeAB.getId())));
 
         // Delete edges
-        graph.deleteEdge(edgeBC.getId());
-        assertTrue(graph.getEdges().contains(edgeAB));
+        write(graph).deleteEdge(edgeBC.getId());
+        assertThat(ids(graph.getEdges()), is(List.of(edgeAB.getId())));
         assertTrue(graph.getEdgesByWeight(10.0).isEmpty());
     }
 
     @Test
     public void nodeCrudOperationsReflectInGraphQueries() {
         // Update nodes
-        graph.updateNode(nodeA.getId(), Map.of("name", "Alicia", "role", "lead"));
+        write(graph).updateNode(nodeA.getId(), Map.of("name", "Alicia", "role", "lead"));
         Node updatedA = graph.getNodeById(nodeA.getId());
         assertEquals("Alicia", updatedA.getAttribute("name"));
         assertEquals("lead", updatedA.getAttribute("role"));
@@ -80,13 +82,13 @@ public class GraphIntegrationTest {
         assertThat(leads.getFirst().getId(), is(nodeA.getId()));
 
         // Remove node attributes
-        Object removed = graph.removeNodeAttribute(nodeA.getId(), "role");
+        Object removed = write(graph).removeNodeAttribute(nodeA.getId(), "role");
         assertEquals("lead", removed);
         assertFalse(graph.getNodeById(nodeA.getId()).hasAttribute("role"));
 
         // Delete nodes
-        Edge edgeAB = graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
-        graph.deleteNode(nodeA.getId());
+        Edge edgeAB = write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).deleteNode(nodeA.getId());
         assertEquals(0, graph.getEdges().size());
         assertEquals(2, graph.getNodes().size());
         assertFalse(graph.getNodes().stream().anyMatch(n -> n.getId().equals(nodeA.getId())));
@@ -97,11 +99,11 @@ public class GraphIntegrationTest {
     @Test
     public void edgePropertyUpdatesAndFiltersWorkThroughGraph() {
         // Adding edges
-        Edge edgeAB = graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of("rel", "ab"), 2.0);
+        Edge edgeAB = write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of("rel", "ab"), 2.0);
 
         // Updating edges by properties
-        graph.updateEdge(edgeAB.getId(), "rel", "friend");
-        graph.updateEdge(edgeAB.getId(), Map.of("rel", "ally", "since", 2020));
+        write(graph).updateEdge(edgeAB.getId(), "rel", "friend");
+        write(graph).updateEdge(edgeAB.getId(), Map.of("rel", "ally", "since", 2020));
 
         Edge updated = graph.getEdgeById(edgeAB.getId());
         assertEquals("ally", updated.getProperty("rel"));
@@ -111,14 +113,18 @@ public class GraphIntegrationTest {
         assertThat(allies.size(), is(1));
         assertThat(allies.getFirst().getId(), is(edgeAB.getId()));
 
-        Object removedProp = graph.removeEdgeProperty(edgeAB.getId(), "since");
+        Object removedProp = write(graph).removeEdgeProperty(edgeAB.getId(), "since");
         assertEquals(2020, removedProp);
         assertFalse(graph.getEdgeById(edgeAB.getId()).hasProperty("since"));
     }
 
+    private static List<String> ids(List<Edge> edges) {
+        return edges.stream().map(Edge::getId).toList();
+    }
+
     @Test
     public void transactionUpdatesKeepEdgesAndWeightIndexConsistent() {
-        Edge edgeAB = graph.addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        Edge edgeAB = write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
 
         Transaction transaction = graph.createTransaction();
         transaction.updateNode(nodeA.getId(), "name", "A2");

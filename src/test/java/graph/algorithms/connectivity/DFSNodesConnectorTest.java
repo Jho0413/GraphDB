@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 public class DFSNodesConnectorTest {
@@ -20,11 +21,11 @@ public class DFSNodesConnectorTest {
     public void setup() {
         graph = Graph.createGraph();
 
-        nodeA = graph.addNode(Collections.singletonMap("name", "A"));
-        nodeB = graph.addNode(Collections.singletonMap("name", "B"));
-        nodeC = graph.addNode(Collections.singletonMap("name", "C"));
-        nodeD = graph.addNode(Collections.singletonMap("name", "D"));
-        nodeE = graph.addNode(Collections.singletonMap("name", "E"));
+        nodeA = write(graph).addNode(Collections.singletonMap("name", "A"));
+        nodeB = write(graph).addNode(Collections.singletonMap("name", "B"));
+        nodeC = write(graph).addNode(Collections.singletonMap("name", "C"));
+        nodeD = write(graph).addNode(Collections.singletonMap("name", "D"));
+        nodeE = write(graph).addNode(Collections.singletonMap("name", "E"));
     }
 
     private boolean runDFS(Node fromNodeId, Node toNodeId) {
@@ -40,23 +41,23 @@ public class DFSNodesConnectorTest {
     @Test
     public void returnsTrueIfNodesAreDirectlyConnected() {
         // A -> B
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
         assertTrue(runDFS(nodeA, nodeB));
     }
 
     @Test
     public void returnsTrueIfNodesAreIndirectlyConnected() {
         // A -> B -> C
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
         assertTrue(runDFS(nodeA, nodeC));
     }
 
     @Test
     public void returnsFalseIfNoConnectionExistsBetweenTheNodes() {
         // A -> B, D -> C
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeD.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeD.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
         assertFalse(runDFS(nodeA, nodeD));
     }
 
@@ -74,9 +75,9 @@ public class DFSNodesConnectorTest {
     @Test
     public void returnsTheCorrectResultWhenGraphHasACycle() {
         // A -> B -> C -> A
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
-        graph.addEdge(nodeC.getId(), nodeA.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Collections.emptyMap(), 1.0);
 
         assertTrue(runDFS(nodeA, nodeC));
         assertTrue(runDFS(nodeB, nodeA));
@@ -86,7 +87,7 @@ public class DFSNodesConnectorTest {
     @Test
     public void returnsFalseIfBackwardsOnlyInDirectedGraph() {
         // A -> B
-        graph.addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
         assertFalse(runDFS(nodeB, nodeA));
     }
 }
