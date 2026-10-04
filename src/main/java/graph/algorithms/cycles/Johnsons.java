@@ -3,26 +3,22 @@ package graph.algorithms.cycles;
 import graph.model.GraphView;
 import graph.model.Edge;
 import graph.model.Node;
-import graph.algorithms.*;
-import graph.algorithms.stronglyConnected.StronglyConnectedAlgorithmManager;
+import graph.algorithms.stronglyConnected.Tarjan;
 
 import java.util.*;
 
-import static graph.algorithms.AlgorithmType.TARJAN;
-
-class Johnsons implements Algorithm {
+public class Johnsons {
 
     private final FilteredGraph filteredGraph;
     private final List<List<String>> cycles = new ArrayList<>();
     private final Map<String, Set<String>> blockedMap = new HashMap<>();
     private final Set<String> blockedSet = new HashSet<>();
 
-    Johnsons(TraversalInput input, GraphView graph) {
+    public Johnsons(GraphView graph) {
         this.filteredGraph = new FilteredGraph(graph);
     }
 
-    @Override
-    public TraversalResult performAlgorithm() {
+    public List<List<String>> run() {
         Set<String> allNodes = new HashSet<>(filteredGraph.getNodes().stream().map(Node::getId).toList());
         while (!allNodes.isEmpty()) {
             List<Set<String>> SCCs = findSCCs();
@@ -37,7 +33,7 @@ class Johnsons implements Algorithm {
             filteredGraph.addFilterNodeId(nodeId);
             allNodes.remove(nodeId);
         }
-        return new TraversalResult.TraversalResultBuilder().setCycles(cycles).build();
+        return List.copyOf(cycles);
     }
 
     private boolean hasSelfLoop(String nodeId) {
@@ -65,7 +61,7 @@ class Johnsons implements Algorithm {
             if (nextNode.equals(startNode)) {
                 List<String> cycle = new ArrayList<>(stack);
                 cycle.add(startNode);
-                cycles.add(cycle);
+                cycles.add(List.copyOf(cycle));
                 foundCycle = true;
             } else if (!blockedSet.contains(nextNode)) {
                 foundCycle |= exploreNode(startNode, nextNode, SCC, stack);
@@ -102,7 +98,6 @@ class Johnsons implements Algorithm {
     }
 
     private List<Set<String>> findSCCs() {
-        AlgorithmManager manager = StronglyConnectedAlgorithmManager.create(filteredGraph);
-        return manager.runAlgorithm(TARJAN, null).getComponents().values().stream().toList();
+        return new Tarjan(filteredGraph).run();
     }
 }

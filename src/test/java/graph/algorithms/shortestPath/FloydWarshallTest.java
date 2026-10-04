@@ -3,7 +3,7 @@ package graph.algorithms.shortestPath;
 import graph.Graph;
 import graph.model.Node;
 import graph.exceptions.NegativeCycleException;
-import graph.algorithms.TraversalResult;
+import graph.algorithms.DistanceMatrix;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,8 +34,16 @@ public class FloydWarshallTest {
         d = idx(nodeD);
     }
 
-    private TraversalResult runFloydWarshall() {
-        return new FloydWarshall(null, graph).performAlgorithm();
+    /** The distances as a matrix indexed in {@code graph.getNodes()} order. */
+    private double[][] runFloydWarshall() {
+        DistanceMatrix matrix = new FloydWarshall(graph).run();
+        double[][] distances = new double[nodeList.size()][nodeList.size()];
+        for (int i = 0; i < nodeList.size(); i++) {
+            for (int j = 0; j < nodeList.size(); j++) {
+                distances[i][j] = matrix.distance(nodeList.get(i).getId(), nodeList.get(j).getId());
+            }
+        }
+        return distances;
     }
 
     private int idx(Node node) {
@@ -64,8 +72,7 @@ public class FloydWarshallTest {
         write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 2.0);
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 3.0);
 
-        TraversalResult result = runFloydWarshall();
-        double[][] actual = result.getAllShortestDistances();
+        double[][] actual = runFloydWarshall();
 
         assertRowEquals(actual[a], distancesFor(a, 0.0, b, 2.0, c, 5.0, d, INF));
         assertRowEquals(actual[b], distancesFor(a, INF, b, 0.0, c, 3.0, d, INF));
@@ -75,8 +82,7 @@ public class FloydWarshallTest {
 
     @Test
     public void allDistancesAreInfExceptItselfForDisconnectedGraph() {
-        TraversalResult result = runFloydWarshall();
-        double[][] actual = result.getAllShortestDistances();
+        double[][] actual = runFloydWarshall();
 
         assertRowEquals(actual[a], distancesFor(a, 0.0, b, INF, c, INF, d, INF));
         assertRowEquals(actual[b], distancesFor(a, INF, b, 0.0, c, INF, d, INF));
@@ -92,8 +98,7 @@ public class FloydWarshallTest {
         write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
         write(graph).addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 1.0);
 
-        TraversalResult result = runFloydWarshall();
-        double[][] actual = result.getAllShortestDistances();
+        double[][] actual = runFloydWarshall();
 
         assertRowEquals(actual[a], distancesFor(a, 0.0, b, 1.0, c, 2.0, d, 3.0));
         assertRowEquals(actual[b], distancesFor(a, 3.0, b, 0.0, c, 1.0, d, 2.0));
@@ -109,8 +114,7 @@ public class FloydWarshallTest {
         write(graph).addEdge(nodeB.getId(), nodeD.getId(), Map.of(), -1.0);
         write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 3.0);
 
-        TraversalResult result = runFloydWarshall();
-        double[][] actual = result.getAllShortestDistances();
+        double[][] actual = runFloydWarshall();
 
         assertRowEquals(actual[a], distancesFor(a, 0.0, b, 2.0, c, 1.0, d, 1.0));
         assertRowEquals(actual[b], distancesFor(a, INF, b, 0.0, c, -1.0, d, -1.0));
@@ -118,17 +122,14 @@ public class FloydWarshallTest {
         assertRowEquals(actual[d], distancesFor(a, INF, b, INF, c, INF, d, 0.0));
     }
 
-    @Test
+    @Test(expected = NegativeCycleException.class)
     public void returnsNegativeCycleExceptionWhenNegativeCycleDetected() {
         // A -> B (1), B -> C (-4), C -> A (1)
         write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), -4.0);
         write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
-        TraversalResult result = runFloydWarshall();
-        assertNotNull(result.getException());
-        assertNull(result.getAllShortestDistances());
-        assertTrue(result.getException() instanceof NegativeCycleException);
+        runFloydWarshall();
     }
 
     @Test
@@ -140,8 +141,7 @@ public class FloydWarshallTest {
         write(graph).addEdge(nodeB.getId(), nodeD.getId(), Map.of(), 2.0);
         write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 5.0);
 
-        TraversalResult result = runFloydWarshall();
-        double[][] actual = result.getAllShortestDistances();
+        double[][] actual = runFloydWarshall();
 
         assertRowEquals(actual[a], distancesFor(a, 0.0, b, -1.0, c, 1.0, d, 1.0));
         assertRowEquals(actual[b], distancesFor(a, INF, b, 0.0, c, INF, d, 2.0));
@@ -152,10 +152,10 @@ public class FloydWarshallTest {
     @Test
     public void returnsOnePairWhichIs0ForSingleNodeGraph() {
         Graph graph = Graph.createGraph();
-        write(graph).addNode(Map.of("name", "Solo"));
-        TraversalResult result = new FloydWarshall(null, graph).performAlgorithm();
+        Node solo = write(graph).addNode(Map.of("name", "Solo"));
+        DistanceMatrix result = new FloydWarshall(graph).run();
 
-        double[][] expected = new double[][] { { 0.0 } };
-        assertEquals(expected, result.getAllShortestDistances());
+        assertEquals(List.of(solo.getId()), result.nodeIds());
+        assertEquals(0.0, result.distance(solo.getId(), solo.getId()), 0.001);
     }
 }

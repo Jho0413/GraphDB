@@ -1,16 +1,14 @@
 package graph.algorithms.shortestPath;
 
 import graph.algorithms.Path;
-import graph.algorithms.Algorithm;
 import graph.model.GraphView;
-import graph.algorithms.TraversalResult;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-abstract class AbstractShortestPathAlgorithm<N extends NodeStats> implements Algorithm {
+abstract class AbstractShortestPathAlgorithm<N extends NodeStats> {
 
     protected final Map<String, N> store = new HashMap<>();
     protected final String fromNodeId;
@@ -23,7 +21,7 @@ abstract class AbstractShortestPathAlgorithm<N extends NodeStats> implements Alg
         this.graph = graph;
     }
 
-    abstract public TraversalResult performAlgorithm();
+    public abstract Path run();
 
     protected Path constructPath() {
         String currentNode = toNodeId;

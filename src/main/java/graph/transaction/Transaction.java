@@ -21,20 +21,20 @@ public class Transaction implements GraphReader, GraphWriter {
     private final GraphStorage storage;
     private final TransactionStorage transactionStorage;
     private final OperationsResolver resolver;
-    private final GraphCommitter committer;
+    private final TransactionManager manager;
 
     Transaction(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver,
-                GraphCommitter committer) {
+                TransactionManager manager) {
         this.storage = storage;
         this.transactionStorage = transactionStorage;
         this.resolver = resolver;
-        this.committer = committer;
+        this.manager = manager;
     }
 
-    static Transaction create(GraphStorage storage, GraphCommitter committer) {
+    static Transaction create(GraphStorage storage, TransactionManager manager) {
         TransactionStorage transactionStorage = new TransactionTemporaryStorage();
         OperationsResolver resolver = new TransactionOperationsResolver(storage, transactionStorage);
-        return new Transaction(storage, transactionStorage, resolver, committer);
+        return new Transaction(storage, transactionStorage, resolver, manager);
     }
 
     @Override
@@ -220,6 +220,6 @@ public class Transaction implements GraphReader, GraphWriter {
 
     /** Logs and applies every staged change. Nothing reaches the graph if the log write fails. */
     public void commit() {
-        committer.commit(this.transactionStorage.getOperations());
+        manager.commit(this.transactionStorage.getOperations());
     }
 }

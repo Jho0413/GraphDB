@@ -1,22 +1,22 @@
 package graph.query;
 
+import graph.algorithms.GraphAlgorithms;
 import graph.exceptions.NodeNotFoundException;
-import graph.algorithms.AlgorithmManager;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
+import graph.model.GraphView;
 
 import java.util.Set;
 
-import static graph.algorithms.AlgorithmType.BFS_COMMON_NODES_BY_DEPTH;
+import static graph.query.QueryChecks.requireNode;
+import static graph.query.QueryChecks.requireNonNegative;
 
 public class GraphCommonalityFinder {
 
-    private final AlgorithmManager algorithmManager;
-    private final GraphQueryValidator validator;
+    private final GraphView graph;
+    private final GraphAlgorithms algorithms;
 
-    public GraphCommonalityFinder(AlgorithmManager algorithmManager, GraphQueryValidator validator) {
-        this.algorithmManager = algorithmManager;
-        this.validator = validator;
+    public GraphCommonalityFinder(GraphView graph, GraphAlgorithms algorithms) {
+        this.graph = graph;
+        this.algorithms = algorithms;
     }
 
     // returns all common nodes that have an edge from the two nodes
@@ -26,26 +26,19 @@ public class GraphCommonalityFinder {
 
     // returns all common nodes that can be reached by <= k edges by both nodes
     public Set<String> findCommonNodesByMaximumDepth(String fromNodeId, String toNodeId, int depth) throws IllegalArgumentException, NodeNotFoundException {
-        validator.testNonNegative(depth);
-        validateNodes(fromNodeId, toNodeId);
-        TraversalInput input =
-                new TraversalInput.TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).setMaxLength(depth).build();
-        TraversalResult result = algorithmManager.runAlgorithm(BFS_COMMON_NODES_BY_DEPTH, input);
-        return result.getNodeIds();
+        validate(fromNodeId, toNodeId, depth);
+        return algorithms.commonNodes(fromNodeId, toNodeId, depth, false);
     }
 
     // returns all common nodes that can be reached at exactly k edges by both nodes
     public Set<String> findCommonNodesByExactDepth(String fromNodeId, String toNodeId, int depth) throws IllegalArgumentException, NodeNotFoundException {
-        validator.testNonNegative(depth);
-        validateNodes(fromNodeId, toNodeId);
-        TraversalInput input =
-                new TraversalInput.TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).setMaxLength(depth).setCondition().build();
-        TraversalResult result = algorithmManager.runAlgorithm(BFS_COMMON_NODES_BY_DEPTH, input);
-        return result.getNodeIds();
+        validate(fromNodeId, toNodeId, depth);
+        return algorithms.commonNodes(fromNodeId, toNodeId, depth, true);
     }
 
-    private void validateNodes(String fromNodeId, String toNodeId) throws NodeNotFoundException {
-        this.validator.checkNodeExists(fromNodeId);
-        this.validator.checkNodeExists(toNodeId);
+    private void validate(String fromNodeId, String toNodeId, int depth) throws IllegalArgumentException, NodeNotFoundException {
+        requireNonNegative(depth);
+        requireNode(graph, fromNodeId);
+        requireNode(graph, toNodeId);
     }
 }

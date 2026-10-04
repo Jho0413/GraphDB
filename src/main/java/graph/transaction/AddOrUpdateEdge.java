@@ -1,12 +1,12 @@
 package graph.transaction;
 
 import graph.model.Edge;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 
 public record AddOrUpdateEdge(Edge edge) implements GraphOperation {
 
     @Override
-    public void apply(GraphStorage storage) {
+    public void apply(MutableGraphStorage storage) {
         storage.putEdge(edge);
     }
 }

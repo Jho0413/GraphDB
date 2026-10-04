@@ -1,72 +1,55 @@
 package graph.query;
 
-import graph.testsupport.AlgorithmTypeBaseMatcher;
-import graph.testsupport.TraversalInputBaseMatcher;
-import graph.algorithms.AlgorithmManager;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
-import org.hamcrest.BaseMatcher;
-import org.jmock.Expectations;
-import org.jmock.integration.junit4.JUnitRuleMockery;
-import org.junit.Rule;
+import graph.Graph;
+import graph.algorithms.GraphAlgorithms;
+import graph.model.Node;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Map;
 import java.util.Set;
 
-import static graph.algorithms.AlgorithmType.BFS_COMMON_NODES_BY_DEPTH;
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.assertEquals;
 
 public class GraphCommonalityFinderTest {
 
-    @Rule
-    public JUnitRuleMockery context = new JUnitRuleMockery();
-    AlgorithmManager algorithmManager = context.mock(AlgorithmManager.class);
-    GraphQueryValidator validator = context.mock(GraphQueryValidator.class);
-    GraphCommonalityFinder finder = new GraphCommonalityFinder(algorithmManager, validator);
-    String FROM_NODE_ID = "n1";
-    String TO_NODE_ID = "n2";
-    Integer MAX_DEPTH = 4;
+    private final Graph graph = Graph.createGraph();
+    private final GraphCommonalityFinder finder = new GraphCommonalityFinder(graph, new GraphAlgorithms(graph));
+    private Node nodeA, nodeB, nodeC, nodeD;
+
+    @Before
+    public void setUp() {
+        // A -> C, B -> C, C -> D, A -> E
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
+        Node nodeE = write(graph).addNode(Map.of("name", "E"));
+        write(graph).addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeA.getId(), nodeE.getId(), Map.of(), 1.0);
+    }
 
     @Test
     public void ableToFindCommonNeighbours() {
-        BaseMatcher<TraversalInput> baseMatcher = new TraversalInputBaseMatcher.TraversalInputBaseMatcherBuilder()
-                .setFromNodeId(FROM_NODE_ID).setToNodeId(TO_NODE_ID).setMaxLength(1).build();
-        Set<String> nodeIds = setUpAlgorithm(baseMatcher, 1);
-
-        assertEquals(nodeIds, finder.findCommonNeighbours(FROM_NODE_ID, TO_NODE_ID));
+        assertEquals(Set.of(nodeC.getId()), finder.findCommonNeighbours(nodeA.getId(), nodeB.getId()));
     }
 
     @Test
     public void ableToFindCommonNodesByMaximumDepth() {
-        BaseMatcher<TraversalInput> baseMatcher = new TraversalInputBaseMatcher.TraversalInputBaseMatcherBuilder()
-                .setFromNodeId(FROM_NODE_ID).setToNodeId(TO_NODE_ID).setMaxLength(MAX_DEPTH).build();
-        Set<String> nodeIds = setUpAlgorithm(baseMatcher, MAX_DEPTH);
-
-        assertEquals(nodeIds, finder.findCommonNodesByMaximumDepth(FROM_NODE_ID, TO_NODE_ID, MAX_DEPTH));
+        assertEquals(Set.of(nodeC.getId(), nodeD.getId()),
+                finder.findCommonNodesByMaximumDepth(nodeA.getId(), nodeB.getId(), 2));
     }
 
     @Test
     public void ableToFindCommonNodesByExactDepth() {
-        BaseMatcher<TraversalInput> baseMatcher = new TraversalInputBaseMatcher.TraversalInputBaseMatcherBuilder()
-                .setFromNodeId(FROM_NODE_ID).setToNodeId(TO_NODE_ID).setMaxLength(MAX_DEPTH).setCondition(true).build();
-        Set<String> nodeIds = setUpAlgorithm(baseMatcher, MAX_DEPTH);
-
-        assertEquals(nodeIds, finder.findCommonNodesByExactDepth(FROM_NODE_ID, TO_NODE_ID, MAX_DEPTH));
+        assertEquals(Set.of(nodeD.getId()), finder.findCommonNodesByExactDepth(nodeA.getId(), nodeB.getId(), 2));
     }
 
-    private Set<String> setUpAlgorithm(BaseMatcher<TraversalInput> baseMatcher, Integer maxDepth) {
-        Set<String> nodeIds = Set.of("1", "2", "3");
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setNodeIds(nodeIds).build();
-        context.checking(new Expectations() {{
-            exactly(1).of(validator).testNonNegative(maxDepth);
-            exactly(1).of(validator).checkNodeExists(FROM_NODE_ID);
-            exactly(1).of(validator).checkNodeExists(TO_NODE_ID);
-            exactly(1).of(algorithmManager).runAlgorithm(
-                    with(new AlgorithmTypeBaseMatcher(BFS_COMMON_NODES_BY_DEPTH)),
-                    with(baseMatcher)
-            );
-            will(returnValue(result));
-        }});
-        return nodeIds;
+    @Test(expected = IllegalArgumentException.class)
+    public void negativeDepthIsRejected() {
+        finder.findCommonNodesByMaximumDepth(nodeA.getId(), nodeB.getId(), -1);
     }
 }

@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 public class GraphStorageTest {
 
-    private GraphStorage storage;
+    private MutableGraphStorage storage;
     private final Edge EDGE_1 = new Edge("edge1", "node1", "node2", 5.0, Map.of());
     private final Edge EDGE_2 = new Edge("edge2", "node2", "node3", 10.0, Map.of());
     private final Edge EDGE_3 = new Edge("edge3", "node3", "node4", 20.0, Map.of());
@@ -31,12 +31,12 @@ public class GraphStorageTest {
     @Parameters(name = "{0}")
     public static Collection<Object> storages() {
         return Arrays.asList(new Object[] {
-                (Supplier<GraphStorage>) InMemoryGraphStorage::create,
+                (Supplier<MutableGraphStorage>) InMemoryGraphStorage::create,
         });
     }
 
     @Parameterized.Parameter(value = 0)
-    public Supplier<GraphStorage> storageCreator;
+    public Supplier<MutableGraphStorage> storageCreator;
 
     @Before
     public void setUp() {

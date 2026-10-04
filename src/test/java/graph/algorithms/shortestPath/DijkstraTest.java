@@ -3,8 +3,7 @@ package graph.algorithms.shortestPath;
 import graph.Graph;
 import graph.model.Node;
 import graph.exceptions.NegativeWeightException;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
+import graph.algorithms.Path;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,8 +27,8 @@ public class DijkstraTest {
         nodeD = write(graph).addNode(Map.of("name", "D"));
     }
 
-    private TraversalResult runDijkstra(String fromNodeId, String toNodeId) {
-        return new Dijkstra(new TraversalInput.TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).build(), graph).performAlgorithm();
+    private Path runDijkstra(String fromNodeId, String toNodeId) {
+        return new Dijkstra(graph, fromNodeId, toNodeId).run();
     }
 
     @Test
@@ -39,8 +38,8 @@ public class DijkstraTest {
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 2.0);
 
         List<String> expected = List.of(nodeA.getId(), nodeB.getId(), nodeC.getId());
-        TraversalResult result = runDijkstra(nodeA.getId(), nodeC.getId());
-        assertEquals(expected, result.getPath().getNodeIds());
+        Path result = runDijkstra(nodeA.getId(), nodeC.getId());
+        assertEquals(expected, result.getNodeIds());
     }
 
     @Test
@@ -51,7 +50,7 @@ public class DijkstraTest {
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
 
         List<String> expected = List.of(nodeA.getId(), nodeB.getId(), nodeC.getId());
-        assertEquals(expected, runDijkstra(nodeA.getId(), nodeC.getId()).getPath().getNodeIds());
+        assertEquals(expected, runDijkstra(nodeA.getId(), nodeC.getId()).getNodeIds());
     }
 
     @Test
@@ -63,8 +62,8 @@ public class DijkstraTest {
         write(graph).addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 1.0);
 
         List<String> expected = List.of(nodeA.getId(), nodeD.getId(), nodeC.getId());
-        TraversalResult result = runDijkstra(nodeA.getId(), nodeC.getId());
-        assertEquals(expected, result.getPath().getNodeIds());
+        Path result = runDijkstra(nodeA.getId(), nodeC.getId());
+        assertEquals(expected, result.getNodeIds());
     }
 
 
@@ -73,20 +72,17 @@ public class DijkstraTest {
         // A -> B (1), B -> A (2)
         write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
         write(graph).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), 2.0);
-        assertTrue(runDijkstra(nodeA.getId(), nodeD.getId()).getPath().getNodeIds().isEmpty());
+        assertTrue(runDijkstra(nodeA.getId(), nodeD.getId()).getNodeIds().isEmpty());
     }
 
-    @Test
+    @Test(expected = NegativeWeightException.class)
     public void throwsNegativeWeightExceptionWhenAnEdgeWithNegativeWeightIsEncountered() {
         // A -> B (-1), B -> C (5), D -> A (4)
         write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), -1.0);
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 5.0);
         write(graph).addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 4.0);
 
-        TraversalResult result = runDijkstra(nodeA.getId(), nodeB.getId());
-        assertNotNull(result.getException());
-        assertNull(result.getPath());
-        assertTrue(result.getException() instanceof NegativeWeightException);
+        runDijkstra(nodeA.getId(), nodeB.getId());
     }
 
     @Test
@@ -96,7 +92,7 @@ public class DijkstraTest {
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 5.0);
         write(graph).addEdge(nodeD.getId(), nodeA.getId(), Map.of(), -4.0);
 
-        assertEquals(List.of(nodeA.getId(), nodeB.getId(), nodeC.getId()), runDijkstra(nodeA.getId(), nodeC.getId()).getPath().getNodeIds());
+        assertEquals(List.of(nodeA.getId(), nodeB.getId(), nodeC.getId()), runDijkstra(nodeA.getId(), nodeC.getId()).getNodeIds());
     }
 
     @Test
@@ -110,8 +106,8 @@ public class DijkstraTest {
         List<String> path1 = List.of(nodeA.getId(), nodeB.getId(), nodeC.getId());
         List<String> path2 = List.of(nodeA.getId(), nodeD.getId(), nodeC.getId());
 
-        TraversalResult result = runDijkstra(nodeA.getId(), nodeC.getId());
-        List<String> actual = result.getPath().getNodeIds();
+        Path result = runDijkstra(nodeA.getId(), nodeC.getId());
+        List<String> actual = result.getNodeIds();
 
         assertTrue(actual.equals(path1) || actual.equals(path2));
     }
@@ -120,6 +116,6 @@ public class DijkstraTest {
     public void returnEmptyListWhenNodesGivenAreTheSame() {
         // A -> A (1)
         write(graph).addEdge(nodeA.getId(), nodeA.getId(), Map.of(), 1.0);
-        assertEquals(List.of(nodeA.getId()), runDijkstra(nodeA.getId(), nodeA.getId()).getPath().getNodeIds());
+        assertEquals(List.of(nodeA.getId()), runDijkstra(nodeA.getId(), nodeA.getId()).getNodeIds());
     }
 }

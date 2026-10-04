@@ -3,7 +3,7 @@ package graph.transaction;
 import graph.exceptions.NodeNotFoundException;
 import graph.model.Edge;
 import graph.model.Node;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 import graph.storage.InMemoryGraphStorage;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,14 +17,14 @@ import static org.junit.Assert.*;
 /** A transaction reads the committed graph with its own staged changes applied on top. */
 public class TransactionReadsTest {
 
-    private final GraphStorage storage = InMemoryGraphStorage.create();
-    private final GraphCommitter committer = new GraphCommitter(storage, "g1", CommitLog.NONE);
+    private final MutableGraphStorage storage = InMemoryGraphStorage.create();
+    private final TransactionManager manager = new TransactionManager(storage, "g1", CommitLog.NONE);
     private Node a, b, c;
     private Edge ab;
 
     @Before
     public void setUp() {
-        Transaction setup = committer.createTransaction();
+        Transaction setup = manager.begin();
         a = setup.addNode(Map.of("name", "A"));
         b = setup.addNode(Map.of("name", "B"));
         c = setup.addNode(Map.of("name", "C"));
@@ -34,7 +34,7 @@ public class TransactionReadsTest {
 
     @Test
     public void edgesFromANodeIncludeCommittedAndStagedEdges() {
-        Transaction transaction = committer.createTransaction();
+        Transaction transaction = manager.begin();
         Edge ac = transaction.addEdge(a.getId(), c.getId(), Map.of(), 2.0);
 
         assertEquals(Set.of(ab.getId(), ac.getId()), ids(transaction.getEdgesFromNode(a.getId())));
@@ -43,7 +43,7 @@ public class TransactionReadsTest {
 
     @Test
     public void edgesFromANodeExcludeEdgesDeletedInTheTransaction() {
-        Transaction transaction = committer.createTransaction();
+        Transaction transaction = manager.begin();
         transaction.deleteEdge(ab.getId());
 
         assertTrue(transaction.getEdgesFromNode(a.getId()).isEmpty());
@@ -51,7 +51,7 @@ public class TransactionReadsTest {
 
     @Test
     public void edgesFromANodeAddedInTheTransactionAreVisible() {
-        Transaction transaction = committer.createTransaction();
+        Transaction transaction = manager.begin();
         Node d = transaction.addNode(Map.of());
         Edge da = transaction.addEdge(d.getId(), a.getId(), Map.of(), 1.0);
 
@@ -61,14 +61,14 @@ public class TransactionReadsTest {
 
     @Test(expected = NodeNotFoundException.class)
     public void edgesFromANodeDeletedInTheTransactionThrow() {
-        Transaction transaction = committer.createTransaction();
+        Transaction transaction = manager.begin();
         transaction.deleteNode(a.getId());
         transaction.getEdgesFromNode(a.getId());
     }
 
     @Test
     public void nodesWithAnEdgeToANodeReflectStagedChanges() {
-        Transaction transaction = committer.createTransaction();
+        Transaction transaction = manager.begin();
         transaction.addEdge(c.getId(), b.getId(), Map.of(), 1.0);
         transaction.deleteEdge(ab.getId());
 
@@ -77,7 +77,7 @@ public class TransactionReadsTest {
 
     @Test
     public void weightQueriesSeeStagedWeights() {
-        Transaction transaction = committer.createTransaction();
+        Transaction transaction = manager.begin();
         transaction.updateEdge(ab.getId(), 5.0);
         Edge bc = transaction.addEdge(b.getId(), c.getId(), Map.of(), 10.0);
 
@@ -90,7 +90,7 @@ public class TransactionReadsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void weightRangeRejectsMinAboveMax() {
-        committer.createTransaction().getEdgesByWeightRange(2.0, 1.0);
+        manager.begin().getEdgesByWeightRange(2.0, 1.0);
     }
 
     private static Set<String> ids(List<Edge> edges) {

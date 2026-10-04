@@ -1,31 +1,26 @@
 package graph.algorithms.connectivity;
 
 import graph.model.Edge;
-import graph.algorithms.Algorithm;
 import graph.model.GraphView;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
-import graph.algorithms.TraversalResult.TraversalResultBuilder;
 
 import java.util.HashSet;
 import java.util.Set;
 
 // Returns a set of nodeIds that the node is connected to
-public class DFSNodesConnectedTo implements Algorithm {
+public class DFSNodesConnectedTo {
 
     private final GraphView graph;
     private final String fromNodeId;
     private final Set<String> nodeIds = new HashSet<>();
 
-    DFSNodesConnectedTo(TraversalInput input, GraphView graph) {
+    public DFSNodesConnectedTo(GraphView graph, String fromNodeId) {
         this.graph = graph;
-        this.fromNodeId = input.getFromNodeId();
+        this.fromNodeId = fromNodeId;
     }
 
-    @Override
-    public TraversalResult performAlgorithm() {
+    public Set<String> run() {
         findConnected(fromNodeId);
-        return new TraversalResultBuilder().setNodeIds(nodeIds).build();
+        return Set.copyOf(nodeIds);
     }
 
     private void findConnected(String fromNodeId) {

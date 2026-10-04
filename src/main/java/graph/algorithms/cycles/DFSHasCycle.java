@@ -2,35 +2,28 @@ package graph.algorithms.cycles;
 
 import graph.model.Edge;
 import graph.model.Node;
-import graph.algorithms.Algorithm;
 import graph.model.GraphView;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
-import graph.algorithms.TraversalResult.TraversalResultBuilder;
 
 import java.util.HashSet;
 import java.util.Set;
 
-class DFSHasCycle implements Algorithm {
+public class DFSHasCycle {
 
     private final GraphView graph;
     private final Set<String> visited = new HashSet<>();
     private final Set<String> inStack = new HashSet<>();
 
-    DFSHasCycle(TraversalInput input, GraphView graph) {
+    public DFSHasCycle(GraphView graph) {
         this.graph = graph;
     }
 
-    @Override
-    public TraversalResult performAlgorithm() {
-        boolean condition = false;
+    public boolean run() {
         for (Node node : graph.getNodes()) {
             if (!visited.contains(node.getId()) && dfsHelper(node.getId())) {
-                condition = true;
-                break;
+                return true;
             }
         }
-        return new TraversalResultBuilder().setConditionResult(condition).build();
+        return false;
     }
 
     private boolean dfsHelper(String currentNode) {

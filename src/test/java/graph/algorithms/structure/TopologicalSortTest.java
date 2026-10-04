@@ -3,7 +3,6 @@ package graph.algorithms.structure;
 import graph.Graph;
 import graph.model.Node;
 import graph.exceptions.CycleFoundException;
-import graph.algorithms.TraversalResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,11 +28,7 @@ public class TopologicalSortTest {
     }
 
     private List<String> runTopologicalSort() {
-        TopologicalSort topologicalSort = new TopologicalSort(null, graph);
-        TraversalResult result = topologicalSort.performAlgorithm();
-
-        assertNull(result.getException());
-        return result.getOrderedNodeIds();
+        return new TopologicalSort(graph).run();
     }
 
     private boolean isValidTopologicalOrder(List<String> actualOrder, Map<String, List<String>> adjacencyList) {
@@ -122,17 +117,14 @@ public class TopologicalSortTest {
         assertTrue(isValidTopologicalOrder(result, adjacency));
     }
 
-    @Test
+    @Test(expected = CycleFoundException.class)
     public void detectsCyclesAndThrowsCycleFoundException() {
         // A -> B -> C -> A
         write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
         write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
-        TopologicalSort topologicalSort = new TopologicalSort(null, graph);
-        TraversalResult result = topologicalSort.performAlgorithm();
-        assertNotNull(result.getException());
-        assertTrue(result.getException() instanceof CycleFoundException);
+        new TopologicalSort(graph).run();
     }
 
     @Test
@@ -140,8 +132,7 @@ public class TopologicalSortTest {
         Graph graph = Graph.createGraph();
         Node singleNode = write(graph).addNode(Map.of("name", "A"));
 
-        TopologicalSort topologicalSort = new TopologicalSort(null, graph);
-        List<String> result = topologicalSort.performAlgorithm().getOrderedNodeIds();
+        List<String> result = new TopologicalSort(graph).run();
         assertTrue(result.contains(singleNode.getId()));
         assertEquals(1, result.size());
     }

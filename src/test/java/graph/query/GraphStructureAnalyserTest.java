@@ -1,138 +1,92 @@
 package graph.query;
 
-import graph.model.Edge;
+import graph.Graph;
+import graph.algorithms.GraphAlgorithms;
 import graph.exceptions.CycleFoundException;
 import graph.exceptions.NegativeCycleException;
-import graph.algorithms.AlgorithmManager;
-import graph.model.GraphView;
-import graph.algorithms.TraversalResult;
-import org.jmock.Expectations;
-import org.jmock.integration.junit4.JUnitRuleMockery;
-import org.junit.Rule;
+import graph.model.Node;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
 
-import static graph.algorithms.AlgorithmType.FLOYD_WARSHALL;
-import static graph.algorithms.AlgorithmType.TOPOLOGICAL_SORT;
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.assertEquals;
 
 public class GraphStructureAnalyserTest {
 
-    @Rule
-    public JUnitRuleMockery context = new JUnitRuleMockery();
-    AlgorithmManager manager = context.mock(AlgorithmManager.class);
-    GraphView graph = context.mock(GraphView.class);
-    GraphStructureAnalyser analyser = new GraphStructureAnalyser(manager, graph);
-    String NODE_ID = "n1";
+    private final Graph graph = Graph.createGraph();
+    private final GraphStructureAnalyser analyser = new GraphStructureAnalyser(graph, new GraphAlgorithms(graph));
+    private Node nodeA, nodeB, nodeC;
+
+    @Before
+    public void setUp() {
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+    }
 
     @Test
     public void ableToGetInDegreeOfAGivenNode() {
-        context.checking(new Expectations() {{
-            exactly(1).of(graph).getNodesIdWithEdgeToNode(NODE_ID);
-            will(returnValue(List.of("1", "2", "3")));
-        }});
-
-        assertEquals(3, analyser.getInDegree(NODE_ID));
+        write(graph).addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        assertEquals(2, analyser.getInDegree(nodeC.getId()));
     }
 
     @Test
     public void ableToGetOutDegreeOfAGivenNode() {
-        context.checking(new Expectations() {{
-            exactly(1).of(graph).getEdgesFromNode(NODE_ID);
-            will(returnValue(List.of(new Edge("e1", NODE_ID, "n2", 1.0, Map.of()))));
-        }});
-
-        assertEquals(1, analyser.getOutDegree(NODE_ID));
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        assertEquals(1, analyser.getOutDegree(nodeA.getId()));
     }
 
     @Test
-    public void graphWithOneNodeHasDiameterZero() throws Exception {
-        context.checking(new Expectations() {{
-            exactly(1).of(manager).runAlgorithm(FLOYD_WARSHALL, null);
-            will(returnValue(new TraversalResult.TraversalResultBuilder()
-                    .setAllShortestDistances(new double[][]{{0.0}})
-                    .build()));
-        }});
-
-        assertEquals(0.0, analyser.getGraphDiameter(), 0.0001);
+    public void graphWithOneNodeHasDiameterZero() {
+        Graph single = Graph.createGraph();
+        write(single).addNode(Map.of("name", "A"));
+        assertEquals(0.0, new GraphStructureAnalyser(single, new GraphAlgorithms(single)).getGraphDiameter(), 0.0001);
     }
 
     @Test
-    public void ableToFindTheDiameterOfAGraph() throws Exception {
-        double[][] distances = {
-                {0.0, 1.0, 4.0},
-                {1.0, 0.0, 2.0},
-                {4.0, 2.0, 0.0}
-        };
-        setUpFindingDiameter(distances);
+    public void ableToFindTheDiameterOfAGraph() {
+        // A -> B (1), B -> C (3), C -> A (2)
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 3.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 2.0);
+        assertEquals(5.0, analyser.getGraphDiameter(), 0.0001);
+    }
 
+    @Test
+    public void findingTheDiameterOfAGraphIgnoresInfiniteDistances() {
+        // A -> B (1), B -> C (3); nothing reaches A
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 3.0);
         assertEquals(4.0, analyser.getGraphDiameter(), 0.0001);
     }
 
-    @Test
-    public void findingTheDiameterOfAGraphIgnoresInfiniteDistances() throws Exception {
-        double[][] distances = {
-                {0.0, 3.0, Double.POSITIVE_INFINITY},
-                {3.0, 0.0, 2.0},
-                {Double.POSITIVE_INFINITY, 2.0, 0.0}
-        };
-        setUpFindingDiameter(distances);
-
-        assertEquals(3.0, analyser.getGraphDiameter(), 0.0001);
-    }
-
     @Test(expected = IllegalStateException.class)
-    public void findingTheDiameterOfAFullyDisconnectedGraphWillThrowAnIllegalStateException() throws Exception {
-        double[][] distances = {
-                {0.0, Double.POSITIVE_INFINITY},
-                {Double.POSITIVE_INFINITY, 0.0}
-        };
-        setUpFindingDiameter(distances);
-
+    public void findingTheDiameterOfAFullyDisconnectedGraphWillThrowAnIllegalStateException() {
         analyser.getGraphDiameter();
     }
 
     @Test(expected = NegativeCycleException.class)
-    public void findingTheDiameterOfAGraphWithANegativeCycleWillThrowANegativeCycleException() throws Exception {
-        context.checking(new Expectations() {{
-            exactly(1).of(manager).runAlgorithm(FLOYD_WARSHALL, null);
-            will(returnValue(new TraversalResult.TraversalResultBuilder()
-                    .setException(new NegativeCycleException())
-                    .build()));
-        }});
-
+    public void findingTheDiameterOfAGraphWithANegativeCycleWillThrowANegativeCycleException() {
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), -2.0);
         analyser.getGraphDiameter();
     }
 
     @Test
-    public void ableToPerformTopologicalSortOnGraph() throws Exception {
-        List<String> orderedNodeIds = List.of("n1", "n2", "n3");
-        context.checking(new Expectations() {{
-            exactly(1).of(manager).runAlgorithm(TOPOLOGICAL_SORT, null);
-            will(returnValue(new TraversalResult.TraversalResultBuilder().setOrderedNodeIds(orderedNodeIds).build()));
-        }});
-
-        assertEquals(orderedNodeIds, analyser.topologicalSort());
+    public void ableToPerformTopologicalSortOnGraph() {
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        assertEquals(List.of(nodeA.getId(), nodeB.getId(), nodeC.getId()), analyser.topologicalSort());
     }
 
     @Test(expected = CycleFoundException.class)
-    public void exceptionThrownWhenPerformingTopologicalSortOnGraphWithCycle() throws Exception {
-        context.checking(new Expectations() {{
-            exactly(1).of(manager).runAlgorithm(TOPOLOGICAL_SORT, null);
-            will(returnValue(new TraversalResult.TraversalResultBuilder().setException(new CycleFoundException("")).build()));
-        }});
-
+    public void exceptionThrownWhenPerformingTopologicalSortOnGraphWithCycle() {
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), 1.0);
         analyser.topologicalSort();
-    }
-
-    private void setUpFindingDiameter(double[][] distances) {
-        context.checking(new Expectations() {{
-            exactly(1).of(manager).runAlgorithm(FLOYD_WARSHALL, null);
-            will(returnValue(new TraversalResult.TraversalResultBuilder()
-                    .setAllShortestDistances(distances)
-                    .build()));
-        }});
     }
 }

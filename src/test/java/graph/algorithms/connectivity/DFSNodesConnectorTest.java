@@ -2,8 +2,6 @@ package graph.algorithms.connectivity;
 
 import graph.Graph;
 import graph.model.Node;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,13 +27,7 @@ public class DFSNodesConnectorTest {
     }
 
     private boolean runDFS(Node fromNodeId, Node toNodeId) {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(fromNodeId.getId())
-                .setToNodeId(toNodeId.getId())
-                .build();
-        DFSNodesConnector dfs = new DFSNodesConnector(input, graph);
-        TraversalResult result = dfs.performAlgorithm();
-        return result.getConditionResult();
+        return new DFSNodesConnector(graph, fromNodeId.getId(), toNodeId.getId()).run();
     }
 
     @Test

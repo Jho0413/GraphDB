@@ -1,11 +1,11 @@
 package graph.transaction;
 
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 
 public record DeleteEdge(String edgeId) implements GraphOperation {
 
     @Override
-    public void apply(GraphStorage storage) {
+    public void apply(MutableGraphStorage storage) {
         storage.removeEdge(edgeId);
     }
 }

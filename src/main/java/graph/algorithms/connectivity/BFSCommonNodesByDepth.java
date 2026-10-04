@@ -2,39 +2,34 @@ package graph.algorithms.connectivity;
 
 import graph.model.Edge;
 import graph.util.Pair;
-import graph.algorithms.Algorithm;
 import graph.model.GraphView;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
-import graph.algorithms.TraversalResult.TraversalResultBuilder;
 
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-class BFSCommonNodesByDepth implements Algorithm {
+public class BFSCommonNodesByDepth {
 
     private final GraphView graph;
     private final int maxDepth;
     private final String fromNodeId;
     private final String toNodeId;
-    private final boolean condition;  // if true, we only add nodes with exactly maxDepth nodes, otherwise we add <= maxDepth nodes
+    private final boolean exactDepth;  // if true, we only add nodes at exactly maxDepth, otherwise we add nodes at <= maxDepth
 
-    BFSCommonNodesByDepth(TraversalInput input, GraphView graph) {
+    public BFSCommonNodesByDepth(GraphView graph, String fromNodeId, String toNodeId, int maxDepth, boolean exactDepth) {
         this.graph = graph;
-        this.fromNodeId = input.getFromNodeId();
-        this.toNodeId = input.getToNodeId();
-        this.maxDepth = input.getMaxLength();
-        this.condition = input.getCondition();
+        this.fromNodeId = fromNodeId;
+        this.toNodeId = toNodeId;
+        this.maxDepth = maxDepth;
+        this.exactDepth = exactDepth;
     }
 
-    @Override
-    public TraversalResult performAlgorithm() {
+    public Set<String> run() {
         Set<String> connectedNodesFromNodeId = getNodesWithinDepth(fromNodeId);
         Set<String> connectedNodesToNodeId = getNodesWithinDepth(toNodeId);
         connectedNodesFromNodeId.retainAll(connectedNodesToNodeId);
-        return new TraversalResultBuilder().setNodeIds(connectedNodesFromNodeId).build();
+        return Set.copyOf(connectedNodesFromNodeId);
     }
 
     private Set<String> getNodesWithinDepth(String nodeId) {
@@ -45,7 +40,7 @@ class BFSCommonNodesByDepth implements Algorithm {
             Pair<String, Integer> nextPair = queue.poll();
             String nextNode = nextPair.getFirst();
             Integer nodeDepth = nextPair.getSecond();
-            if (!condition || nodeDepth == maxDepth) {
+            if (!exactDepth || nodeDepth == maxDepth) {
                 nodesWithinDepth.add(nextNode);
             }
             if (nodeDepth < maxDepth) {

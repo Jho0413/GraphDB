@@ -1,5 +1,6 @@
 package graph;
 
+import graph.algorithms.GraphAlgorithms;
 import graph.wal.WalReader;
 import graph.wal.WriteAheadLog;
 import graph.wal.RecoveryManager;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ public class GraphDB implements AutoCloseable {
     private static GraphDB instance;
 
     private final Map<String, Graph> graphs;
+    private final Map<String, GraphQueryClient> queryClients = new HashMap<>();
     private final WriteAheadLog wal;
     private final DataDirectoryLock lock;
 
@@ -90,15 +93,24 @@ public class GraphDB implements AutoCloseable {
             return null;
         }
         wal.logGraphDropped(id);
+        queryClients.remove(id);
         return graphs.remove(id);
     }
 
+    /** The graph's query client. Every call returns the same client, so queries share one cache. */
     public GraphQueryClient createQueryClient(String graphId) throws GraphNotFoundException {
         Graph graph = graphs.get(graphId);
         if (graph == null) {
             throw new GraphNotFoundException(graphId);
         }
-        return GraphQueryClient.createClient(graph);
+        return queryClients.computeIfAbsent(graphId, id -> newQueryClient(graph));
+    }
+
+    /** A query client whose cache is cleared by the graph's commits. */
+    static GraphQueryClient newQueryClient(Graph graph) {
+        GraphAlgorithms algorithms = new GraphAlgorithms(graph);
+        graph.addListener(algorithms);
+        return GraphQueryClient.create(graph, algorithms);
     }
 
     /** Closes the write-ahead log. Graphs from this database can no longer commit transactions afterwards. */

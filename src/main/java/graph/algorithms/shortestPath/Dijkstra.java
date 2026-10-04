@@ -4,18 +4,16 @@ import graph.model.Edge;
 import graph.model.Node;
 import graph.exceptions.NegativeWeightException;
 import graph.model.GraphView;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
-import graph.algorithms.TraversalResult.TraversalResultBuilder;
+import graph.algorithms.Path;
 
 import java.util.*;
 
-class Dijkstra extends AbstractShortestPathAlgorithm<DijkstraNodeStats> {
+public class Dijkstra extends AbstractShortestPathAlgorithm<DijkstraNodeStats> {
     // pre-condition: all positive edges
     private final Queue<DijkstraEntry> queue;
 
-    Dijkstra(TraversalInput input, GraphView graph) {
-        super(input.getFromNodeId(), input.getToNodeId(), graph);
+    public Dijkstra(GraphView graph, String fromNodeId, String toNodeId) {
+        super(fromNodeId, toNodeId, graph);
         List<Node> nodes = graph.getNodes();
         int length = nodes.size();
 
@@ -30,7 +28,7 @@ class Dijkstra extends AbstractShortestPathAlgorithm<DijkstraNodeStats> {
     }
 
     @Override
-    public TraversalResult performAlgorithm() {
+    public Path run() {
         // performs dijkstra's algorithm
         while (!store.get(toNodeId).getInTree() && !queue.isEmpty()) {
 
@@ -53,7 +51,7 @@ class Dijkstra extends AbstractShortestPathAlgorithm<DijkstraNodeStats> {
                     double weight = edge.getWeight();
                     // checking for negative weights
                     if (weight < 0) {
-                        return new TraversalResultBuilder().setException(new NegativeWeightException()).build();
+                        throw new NegativeWeightException();
                     }
                     double alternativePath = store.get(source).getDistance() + weight;
                     // change priority and parent if there is a shorter path to the destination
@@ -65,7 +63,7 @@ class Dijkstra extends AbstractShortestPathAlgorithm<DijkstraNodeStats> {
                 }
             }
         }
-        return new TraversalResultBuilder().setPath(constructPath()).build();
+        return constructPath();
     }
 
     private record DijkstraEntry(String nodeId, double distance) implements Comparable<DijkstraEntry> {

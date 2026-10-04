@@ -1,110 +1,92 @@
 package graph.query;
 
-import graph.testsupport.AlgorithmTypeBaseMatcher;
-import graph.testsupport.TraversalInputBaseMatcher;
-import graph.algorithms.AlgorithmManager;
-import graph.algorithms.AlgorithmType;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
-import org.hamcrest.BaseMatcher;
-import org.jmock.Expectations;
-import org.jmock.integration.junit4.JUnitRuleMockery;
-import org.junit.Rule;
+import graph.Graph;
+import graph.algorithms.GraphAlgorithms;
+import graph.exceptions.NodeNotFoundException;
+import graph.model.Node;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static graph.algorithms.AlgorithmType.*;
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 public class GraphConnectivityAnalyserTest {
 
-    @Rule
-    public JUnitRuleMockery context = new JUnitRuleMockery();
-    AlgorithmManager algorithmManager = context.mock(AlgorithmManager.class);
-    GraphQueryValidator validator = context.mock(GraphQueryValidator.class);
-    GraphConnectivityAnalyser analyser = new GraphConnectivityAnalyser(algorithmManager, validator);
-    String FROM_NODE_ID = "n1";
-    String TO_NODE_ID = "n2";
-    Map<Integer, Set<String>> COMPONENTS = Map.of(1, Set.of("1", "2", "3"), 2, Set.of("4", "5"));
+    private final Graph graph = Graph.createGraph();
+    private final GraphConnectivityAnalyser analyser = new GraphConnectivityAnalyser(graph, new GraphAlgorithms(graph));
+    private Node nodeA, nodeB, nodeC, nodeD;
+
+    @Before
+    public void setUp() {
+        // A -> B -> C -> A, and D on its own
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        nodeD = write(graph).addNode(Map.of("name", "D"));
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
+    }
 
     @Test
-    public void ableToDetermineIfAllNodesAreReachableFromNodeId() {
-        BaseMatcher<TraversalInput> baseMatcher = new TraversalInputBaseMatcher.TraversalInputBaseMatcherBuilder().setFromNodeId(FROM_NODE_ID).build();
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setConditionResult(true).build();
-        context.checking(new Expectations() {{
-            exactly(1).of(validator).checkNodeExists(FROM_NODE_ID);
-            exactly(1).of(algorithmManager).runAlgorithm(
-                    with(new AlgorithmTypeBaseMatcher(DFS_REACHABLE_NODES)),
-                    with(baseMatcher));
-            will(returnValue(result));
-        }});
+    public void ableToDetermineWhenNotAllNodesAreReachableFromNodeId() {
+        assertFalse(analyser.allNodesAreReachableFromNodeId(nodeA.getId()));
+    }
 
-        assertEquals(result.getConditionResult(), analyser.allNodesAreReachableFromNodeId(FROM_NODE_ID));
+    @Test
+    public void ableToDetermineWhenAllNodesAreReachableFromNodeId() {
+        write(graph).addEdge(nodeC.getId(), nodeD.getId(), Map.of(), 1.0);
+        assertTrue(analyser.allNodesAreReachableFromNodeId(nodeA.getId()));
     }
 
     @Test
     public void ableToDetermineIfNodesAreConnected() {
-        BaseMatcher<TraversalInput> baseMatcher = new TraversalInputBaseMatcher.TraversalInputBaseMatcherBuilder().setFromNodeId(FROM_NODE_ID).setToNodeId(TO_NODE_ID).build();
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setConditionResult(true).build();
-        context.checking(new Expectations() {{
-            exactly(1).of(validator).checkNodeExists(FROM_NODE_ID);
-            exactly(1).of(validator).checkNodeExists(TO_NODE_ID);
-            exactly(1).of(algorithmManager).runAlgorithm(
-                    with(new AlgorithmTypeBaseMatcher(DFS_NODES_CONNECTED)),
-                    with(baseMatcher));
-            will(returnValue(result));
-        }});
-
-        assertEquals(result.getConditionResult(), analyser.nodesAreConnected(FROM_NODE_ID, TO_NODE_ID));
+        assertTrue(analyser.nodesAreConnected(nodeA.getId(), nodeC.getId()));
+        assertFalse(analyser.nodesAreConnected(nodeA.getId(), nodeD.getId()));
     }
 
     @Test
     public void ableToGetTheNodesTheGivenNodeIsConnectedTo() {
-        Set<String> nodeIds = Set.of("1", "2", "3");
-        BaseMatcher<TraversalInput> baseMatcher = new TraversalInputBaseMatcher.TraversalInputBaseMatcherBuilder().setFromNodeId(FROM_NODE_ID).build();
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setNodeIds(nodeIds).build();
-        context.checking(new Expectations() {{
-            exactly(1).of(validator).checkNodeExists(FROM_NODE_ID);
-            exactly(1).of(algorithmManager).runAlgorithm(
-                    with(new AlgorithmTypeBaseMatcher(DFS_NODES_CONNECTED_TO)),
-                    with(baseMatcher));
-            will(returnValue(result));
-        }});
+        assertEquals(Set.of(nodeA.getId(), nodeB.getId(), nodeC.getId()), analyser.getConnectedNodes(nodeB.getId()));
+    }
 
-        assertEquals(result.getNodeIds(), analyser.getConnectedNodes(FROM_NODE_ID));
+    @Test(expected = NodeNotFoundException.class)
+    public void unknownNodeIsRejected() {
+        analyser.getConnectedNodes("missing");
     }
 
     @Test
     public void ableToGetStronglyConnectedComponentsFromGraph() {
-        setUpStronglyConnected(COMPONENTS, TARJAN);
-        assertEquals(COMPONENTS, analyser.getStronglyConnectedComponents());
+        assertEquals(expectedComponents(), new HashSet<>(analyser.getStronglyConnectedComponents()));
     }
 
     @Test
     public void ableToSpecifyWhichStronglyConnectedAlgorithmToUse() {
-        setUpStronglyConnected(COMPONENTS, KOSARAJU);
-        assertEquals(COMPONENTS, analyser.getStronglyConnectedComponents(StronglyConnectedAlgorithm.KOSARAJU));
+        assertEquals(expectedComponents(),
+                new HashSet<>(analyser.getStronglyConnectedComponents(StronglyConnectedAlgorithm.KOSARAJU)));
     }
 
     @Test
     public void ableToDetermineWhenGraphIsNotStronglyConnected() {
-        setUpStronglyConnected(COMPONENTS, TARJAN);
         assertFalse(analyser.isStronglyConnected());
     }
 
     @Test
     public void ableToDetermineWhenGraphIsStronglyConnected() {
-        setUpStronglyConnected(Map.of(1, Set.of("1", "2", "3")), TARJAN);
-        assertTrue(analyser.isStronglyConnected());
+        Graph cycle = Graph.createGraph();
+        Node a = write(cycle).addNode(Map.of("name", "A"));
+        Node b = write(cycle).addNode(Map.of("name", "B"));
+        write(cycle).addEdge(a.getId(), b.getId(), Map.of(), 1.0);
+        write(cycle).addEdge(b.getId(), a.getId(), Map.of(), 1.0);
+
+        assertTrue(new GraphConnectivityAnalyser(cycle, new GraphAlgorithms(cycle)).isStronglyConnected());
     }
 
-    private void setUpStronglyConnected(Map<Integer, Set<String>> components, AlgorithmType algorithmType) {
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setComponents(components).build();
-        context.checking(new Expectations() {{
-            exactly(1).of(algorithmManager).runAlgorithm(algorithmType, null);
-            will(returnValue(result));
-        }});
+    private Set<Set<String>> expectedComponents() {
+        return Set.of(Set.of(nodeA.getId(), nodeB.getId(), nodeC.getId()), Set.of(nodeD.getId()));
     }
 }

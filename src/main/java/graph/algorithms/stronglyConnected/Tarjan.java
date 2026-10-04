@@ -2,16 +2,12 @@ package graph.algorithms.stronglyConnected;
 
 import graph.model.Edge;
 import graph.model.Node;
-import graph.algorithms.Algorithm;
 import graph.model.GraphView;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
-import graph.algorithms.TraversalResult.TraversalResultBuilder;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-class Tarjan implements Algorithm {
+public class Tarjan {
 
     private final GraphView graph;
     // keeps track of currently visited nodes that have not been classified into an SCC
@@ -22,24 +18,21 @@ class Tarjan implements Algorithm {
     private final Map<String, Integer> idMap = new HashMap<>();
     // mapping that stores the low link value corresponding to the new assigned integer id
     private final Map<Integer, Integer> lowLinkStore = new HashMap<>();
-    private final Map<Integer, Set<String>> components = new HashMap<>();
-    // counter for component id
-    private int counter = 1;
+    private final List<Set<String>> components = new ArrayList<>();
     // counter for node id
     private int nodeIdCounter = 1;
     private final Set<String> notVisited;
 
-    Tarjan(TraversalInput input, GraphView graph) {
+    public Tarjan(GraphView graph) {
         this.graph = graph;
         this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
     }
 
-    @Override
-    public TraversalResult performAlgorithm() {
+    public List<Set<String>> run() {
         while (!notVisited.isEmpty()) {
             dfsHelper(notVisited.iterator().next());
         }
-        return new TraversalResultBuilder().setComponents(components).build();
+        return List.copyOf(components);
     }
 
     private void dfsHelper(String fromNodeId) {
@@ -81,7 +74,7 @@ class Tarjan implements Algorithm {
                 componentNodeIdSet.add(nextId);
                 if (nextId.equals(fromNodeId)) break;
             }
-            components.put(counter++, componentNodeIdSet);
+            components.add(Set.copyOf(componentNodeIdSet));
         }
     }
 }

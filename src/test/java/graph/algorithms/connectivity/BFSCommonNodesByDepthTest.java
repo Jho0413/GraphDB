@@ -2,8 +2,6 @@ package graph.algorithms.connectivity;
 
 import graph.Graph;
 import graph.model.Node;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,74 +40,46 @@ public class BFSCommonNodesByDepthTest {
 
     @Test
     public void findsCommonNodesWithAtMostDepth2ForTheGivenNodes() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(nodeA.getId()).setToNodeId(nodeD.getId()).setMaxLength(2).build();
-        BFSCommonNodesByDepth algorithm = new BFSCommonNodesByDepth(input, graph);
-
-        TraversalResult result = algorithm.performAlgorithm();
+        Set<String> result = new BFSCommonNodesByDepth(graph, nodeA.getId(), nodeD.getId(), 2, false).run();
         Set<String> expected = Set.of(nodeD.getId(), nodeE.getId());
-        assertEquals(expected, result.getNodeIds());
+        assertEquals(expected, result);
     }
 
     @Test
     public void returnsEmptySetIfNoCommonNeighboursForTheGivenNodes() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(nodeA.getId()).setToNodeId(nodeD.getId()).setMaxLength(1).setCondition().build();
-        BFSCommonNodesByDepth algorithm = new BFSCommonNodesByDepth(input, graph);
-
-        TraversalResult result = algorithm.performAlgorithm();
-        assertTrue(result.getNodeIds().isEmpty());
+        Set<String> result = new BFSCommonNodesByDepth(graph, nodeA.getId(), nodeD.getId(), 1, true).run();
+        assertTrue(result.isEmpty());
     }
 
     @Test
     public void returnsSetOfNodesIfGivenNodesHaveCommonNeighbours() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(nodeC.getId()).setToNodeId(nodeD.getId()).setMaxLength(1).setCondition().build();
-        BFSCommonNodesByDepth algorithm = new BFSCommonNodesByDepth(input, graph);
-
-        TraversalResult result = algorithm.performAlgorithm();
-        assertEquals(Set.of(nodeE.getId()), result.getNodeIds());
+        Set<String> result = new BFSCommonNodesByDepth(graph, nodeC.getId(), nodeD.getId(), 1, true).run();
+        assertEquals(Set.of(nodeE.getId()), result);
     }
 
     @Test
     public void returnsSelfNodeIfGivenNodesAreTheSameWithExactlyDepth0() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(nodeA.getId()).setToNodeId(nodeA.getId()).setMaxLength(0).setCondition().build();
-        BFSCommonNodesByDepth algorithm = new BFSCommonNodesByDepth(input, graph);
-
-        TraversalResult result = algorithm.performAlgorithm();
+        Set<String> result = new BFSCommonNodesByDepth(graph, nodeA.getId(), nodeA.getId(), 0, true).run();
         Set<String> expected = Set.of(nodeA.getId());
-        assertEquals(expected, result.getNodeIds());
+        assertEquals(expected, result);
     }
 
     @Test
     public void returnsEmptySetForDisconnectedNodes() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(nodeA.getId()).setToNodeId(nodeF.getId()).setMaxLength(3).build();
-        BFSCommonNodesByDepth algorithm = new BFSCommonNodesByDepth(input, graph);
-
-        TraversalResult result = algorithm.performAlgorithm();
-        assertTrue(result.getNodeIds().isEmpty());
+        Set<String> result = new BFSCommonNodesByDepth(graph, nodeA.getId(), nodeF.getId(), 3, false).run();
+        assertTrue(result.isEmpty());
     }
 
     @Test
     public void returnsEmptySetWhenDepth0IsGivenAndNodesAreNotTheSame() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(nodeB.getId()).setToNodeId(nodeC.getId()).setMaxLength(0).build();
-        BFSCommonNodesByDepth algorithm = new BFSCommonNodesByDepth(input, graph);
-
-        TraversalResult result = algorithm.performAlgorithm();
-        assertTrue(result.getNodeIds().isEmpty());
+        Set<String> result = new BFSCommonNodesByDepth(graph, nodeB.getId(), nodeC.getId(), 0, false).run();
+        assertTrue(result.isEmpty());
     }
 
     @Test
     public void returnsCorrectSetWhenDepthLargerThanGraphDepthGiven() {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(nodeA.getId()).setToNodeId(nodeB.getId()).setMaxLength(10).build();
-        BFSCommonNodesByDepth algorithm = new BFSCommonNodesByDepth(input, graph);
-
-        TraversalResult result = algorithm.performAlgorithm();
+        Set<String> result = new BFSCommonNodesByDepth(graph, nodeA.getId(), nodeB.getId(), 10, false).run();
         Set<String> expected = Set.of(nodeB.getId(), nodeC.getId(), nodeE.getId());
-        assertEquals(expected, result.getNodeIds());
+        assertEquals(expected, result);
     }
 }

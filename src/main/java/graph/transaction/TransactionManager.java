@@ -2,9 +2,8 @@ package graph.transaction;
 
 import graph.events.GraphEvent;
 import graph.events.GraphListener;
-import graph.events.ObservableGraph;
 import graph.model.Edge;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,25 +19,25 @@ import static graph.events.GraphEvent.*;
  * <p>Logging and applying happen under one lock, so the order transactions appear in the log is the order they
  * were applied, and recovery replays exactly what the live graph did.
  */
-public final class GraphCommitter implements ObservableGraph {
+public final class TransactionManager {
 
-    private final GraphStorage storage;
+    private final MutableGraphStorage storage;
     private final String graphId;
     private final CommitLog commitLog;
     private final List<GraphListener> listeners = new CopyOnWriteArrayList<>();
     private final Object lock = new Object();
 
-    public GraphCommitter(GraphStorage storage, String graphId, CommitLog commitLog) {
+    public TransactionManager(MutableGraphStorage storage, String graphId, CommitLog commitLog) {
         this.storage = storage;
         this.graphId = graphId;
         this.commitLog = commitLog;
     }
 
-    public Transaction createTransaction() {
+    public Transaction begin() {
         return Transaction.create(storage, this);
     }
 
-    @Override
+    /** Listeners are told of each commit's changes, inside the commit lock, after it is applied. */
     public void addListener(GraphListener listener) {
         listeners.add(listener);
     }

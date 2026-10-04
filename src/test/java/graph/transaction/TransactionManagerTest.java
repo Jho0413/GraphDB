@@ -4,7 +4,7 @@ import graph.events.GraphEvent;
 import graph.exceptions.WalException;
 import graph.model.Edge;
 import graph.model.Node;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 import graph.storage.InMemoryGraphStorage;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,12 +16,12 @@ import java.util.Map;
 import static graph.events.GraphEvent.*;
 import static org.junit.Assert.*;
 
-public class GraphCommitterTest {
+public class TransactionManagerTest {
 
-    private final GraphStorage storage = InMemoryGraphStorage.create();
+    private final MutableGraphStorage storage = InMemoryGraphStorage.create();
     private final List<List<GraphOperation>> logged = new ArrayList<>();
     private final List<GraphEvent> events = new ArrayList<>();
-    private GraphCommitter committer;
+    private TransactionManager manager;
 
     private final Node nodeA = new Node("a", Map.of());
     private final Node nodeB = new Node("b", Map.of());
@@ -29,8 +29,8 @@ public class GraphCommitterTest {
 
     @Before
     public void setUp() {
-        committer = new GraphCommitter(storage, "g1", (graphId, operations) -> logged.add(operations));
-        committer.addListener(events::add);
+        manager = new TransactionManager(storage, "g1", (graphId, operations) -> logged.add(operations));
+        manager.addListener(events::add);
     }
 
     // ============ Events ============
@@ -104,10 +104,10 @@ public class GraphCommitterTest {
     @Test
     public void logsTheTransactionBeforeApplyingIt() {
         List<Boolean> appliedWhenLogged = new ArrayList<>();
-        GraphCommitter committer = new GraphCommitter(storage, "g1",
+        TransactionManager manager = new TransactionManager(storage, "g1",
                 (graphId, operations) -> appliedWhenLogged.add(storage.containsNode("a")));
 
-        committer.commit(List.of(new AddOrUpdateNode(nodeA)));
+        manager.commit(List.of(new AddOrUpdateNode(nodeA)));
 
         assertEquals(List.of(false), appliedWhenLogged);
         assertTrue(storage.containsNode("a"));
@@ -115,12 +115,12 @@ public class GraphCommitterTest {
 
     @Test
     public void nothingIsAppliedOrNotifiedWhenLoggingFails() {
-        GraphCommitter committer = new GraphCommitter(storage, "g1", (graphId, operations) -> {
+        TransactionManager manager = new TransactionManager(storage, "g1", (graphId, operations) -> {
             throw new WalException("disk full");
         });
-        committer.addListener(events::add);
+        manager.addListener(events::add);
 
-        assertThrows(WalException.class, () -> committer.commit(List.of(new AddOrUpdateNode(nodeA))));
+        assertThrows(WalException.class, () -> manager.commit(List.of(new AddOrUpdateNode(nodeA))));
         assertFalse(storage.containsNode("a"));
         assertTrue(events.isEmpty());
     }
@@ -128,14 +128,14 @@ public class GraphCommitterTest {
     @Test
     public void logsUnderTheGraphId() {
         List<String> graphIds = new ArrayList<>();
-        new GraphCommitter(storage, "g42", (graphId, operations) -> graphIds.add(graphId))
+        new TransactionManager(storage, "g42", (graphId, operations) -> graphIds.add(graphId))
                 .commit(List.of(new AddOrUpdateNode(nodeA)));
         assertEquals(List.of("g42"), graphIds);
     }
 
     @Test
-    public void transactionsCommitThroughTheirCommitter() {
-        Transaction transaction = committer.createTransaction();
+    public void transactionsCommitThroughTheirManager() {
+        Transaction transaction = manager.begin();
         transaction.addNode(Map.of("name", "A"));
         transaction.commit();
 
@@ -145,6 +145,6 @@ public class GraphCommitterTest {
     }
 
     private void commit(GraphOperation... operations) {
-        committer.commit(List.of(operations));
+        manager.commit(List.of(operations));
     }
 }

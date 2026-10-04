@@ -2,8 +2,6 @@ package graph.algorithms.cycles;
 
 import graph.Graph;
 import graph.model.Node;
-import graph.algorithms.Algorithm;
-import graph.algorithms.TraversalResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,9 +27,7 @@ public class DFSHasCycleTest {
     }
 
     private boolean runAndCheckCycle() {
-        Algorithm algorithm = new DFSHasCycle(null, graph);
-        TraversalResult result = algorithm.performAlgorithm();
-        return result.getConditionResult();
+        return new DFSHasCycle(graph).run();
     }
 
     @Test
@@ -93,8 +89,6 @@ public class DFSHasCycleTest {
     @Test
     public void returnsFalseForEmptyGraphs() {
         Graph graph = Graph.createGraph();
-        Algorithm algorithm = new DFSHasCycle(null, graph);
-        TraversalResult result = algorithm.performAlgorithm();
-        assertFalse(result.getConditionResult());
+        assertFalse(new DFSHasCycle(graph).run());
     }
 }

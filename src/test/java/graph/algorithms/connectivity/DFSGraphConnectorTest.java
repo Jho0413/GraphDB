@@ -2,8 +2,6 @@ package graph.algorithms.connectivity;
 
 import graph.Graph;
 import graph.model.Node;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,7 +14,6 @@ public class DFSGraphConnectorTest {
 
     private Graph graph;
     private Node nodeA, nodeB, nodeC, nodeD, nodeE;
-    private TraversalInput input;
 
     @Before
     public void setup() {
@@ -27,8 +24,6 @@ public class DFSGraphConnectorTest {
         nodeC = write(graph).addNode(Collections.singletonMap("name", "C"));
         nodeD = write(graph).addNode(Collections.singletonMap("name", "D"));
         nodeE = write(graph).addNode(Collections.singletonMap("name", "E"));
-
-        input = new TraversalInput.TraversalInputBuilder().setFromNodeId(nodeA.getId()).build();
     }
 
     @Test
@@ -40,10 +35,9 @@ public class DFSGraphConnectorTest {
         write(graph).addEdge(nodeC.getId(), nodeD.getId(), Collections.emptyMap(), 1.0);
         write(graph).addEdge(nodeA.getId(), nodeE.getId(), Collections.emptyMap(), 1.0);
 
-        DFSGraphConnector dfs = new DFSGraphConnector(input, graph);
-        TraversalResult result = dfs.performAlgorithm();
+        boolean result = new DFSGraphConnector(graph, nodeA.getId()).run();
 
-        assertTrue(result.getConditionResult());
+        assertTrue(result);
     }
 
     @Test
@@ -52,10 +46,9 @@ public class DFSGraphConnectorTest {
         write(graph).addEdge(nodeA.getId(), nodeB.getId(), Collections.emptyMap(), 1.0);
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
 
-        DFSGraphConnector dfs = new DFSGraphConnector(input, graph);
-        TraversalResult result = dfs.performAlgorithm();
+        boolean result = new DFSGraphConnector(graph, nodeA.getId()).run();
 
-        assertFalse(result.getConditionResult());
+        assertFalse(result);
     }
 
     @Test
@@ -68,10 +61,9 @@ public class DFSGraphConnectorTest {
         write(graph).addEdge(nodeC.getId(), nodeD.getId(), Collections.emptyMap(), 1.0);
         write(graph).addEdge(nodeD.getId(), nodeE.getId(), Collections.emptyMap(), 1.0);
 
-        DFSGraphConnector dfs = new DFSGraphConnector(input, graph);
-        TraversalResult result = dfs.performAlgorithm();
+        boolean result = new DFSGraphConnector(graph, nodeA.getId()).run();
 
-        assertTrue(result.getConditionResult());
+        assertTrue(result);
     }
 
     @Test
@@ -80,10 +72,9 @@ public class DFSGraphConnectorTest {
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Collections.emptyMap(), 1.0);
         write(graph).addEdge(nodeC.getId(), nodeD.getId(), Collections.emptyMap(), 1.0);
 
-        DFSGraphConnector dfs = new DFSGraphConnector(input, graph);
-        TraversalResult result = dfs.performAlgorithm();
+        boolean result = new DFSGraphConnector(graph, nodeA.getId()).run();
 
-        assertFalse(result.getConditionResult());
+        assertFalse(result);
     }
 
     @Test
@@ -91,9 +82,8 @@ public class DFSGraphConnectorTest {
         Graph graph = Graph.createGraph();
         write(graph).addNode(Collections.singletonMap("name", "A"));
 
-        DFSGraphConnector dfs = new DFSGraphConnector(input, graph);
-        TraversalResult result = dfs.performAlgorithm();
+        boolean result = new DFSGraphConnector(graph, nodeA.getId()).run();
 
-        assertTrue(result.getConditionResult());
+        assertTrue(result);
     }
 }
