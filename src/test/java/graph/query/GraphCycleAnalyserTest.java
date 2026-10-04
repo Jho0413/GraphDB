@@ -1,67 +1,56 @@
 package graph.query;
 
-import graph.algorithms.AlgorithmManager;
-import graph.algorithms.TraversalResult;
-import org.jmock.Expectations;
-import org.jmock.integration.junit4.JUnitRuleMockery;
-import org.junit.Rule;
+import graph.Graph;
+import graph.algorithms.GraphAlgorithms;
+import graph.model.Node;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static graph.algorithms.AlgorithmType.*;
+import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
 public class GraphCycleAnalyserTest {
 
-    @Rule
-    public JUnitRuleMockery context = new JUnitRuleMockery();
-    AlgorithmManager algorithmManager = context.mock(AlgorithmManager.class);
-    GraphCycleAnalyser analyser = new GraphCycleAnalyser(algorithmManager);
-    TraversalResult result = new TraversalResult.TraversalResultBuilder().setConditionResult(true).build();
+    private final Graph graph = Graph.createGraph();
+    private final GraphCycleAnalyser analyser = new GraphCycleAnalyser(new GraphAlgorithms(graph));
+    private Node nodeA, nodeB;
 
-    @Test
-    public void ableToDetermineIfGraphHasACycle() {
-        context.checking(new Expectations() {{
-            exactly(1).of(algorithmManager).runAlgorithm(DFS_HAS_CYCLE, null);
-            will(returnValue(result));
-        }});
-
-        assertTrue(analyser.hasCycle());
+    @Before
+    public void setUp() {
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
     }
 
     @Test
-    public void ableToDetermineIfGraphHasANegativeCycle() {
-        context.checking(new Expectations() {{
-            exactly(1).of(algorithmManager).runAlgorithm(BELLMAN_FORD_CYCLE, null);
-            will(returnValue(result));
-        }});
-
-        assertTrue(analyser.hasNegativeCycle());
+    public void ableToDetermineIfGraphHasACycle() {
+        assertFalse(analyser.hasCycle());
     }
 
     @Test
     public void ableToDetermineIfGraphIsADAG() {
-        context.checking(new Expectations() {{
-            exactly(1).of(algorithmManager).runAlgorithm(DFS_HAS_CYCLE, null);
-            will(returnValue(result));
-        }});
+        assertTrue(analyser.isDAG());
+    }
 
-        assertFalse(analyser.isDAG());
+    @Test
+    public void ableToDetermineIfGraphHasANegativeCycle() {
+        write(graph).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), -2.0);
+        assertTrue(analyser.hasCycle());
+        assertTrue(analyser.hasNegativeCycle());
     }
 
     @Test
     public void ableToGetAllElementaryCyclesInAGraph() {
-        List<List<String>> cycles = List.of(
-                List.of("1", "2", "3", "1"),
-                List.of("4", "3", "4")
-        );
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setCycles(cycles).build();
-        context.checking(new Expectations() {{
-            exactly(1).of(algorithmManager).runAlgorithm(JOHNSONS, null);
-            will(returnValue(result));
-        }});
+        write(graph).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), 1.0);
 
-        assertEquals(cycles, analyser.getAllCycles());
+        List<List<String>> cycles = analyser.getAllCycles();
+        assertEquals(1, cycles.size());
+        List<String> cycle = cycles.getFirst();
+        assertEquals(cycle.getFirst(), cycle.getLast());
+        assertEquals(Set.of(nodeA.getId(), nodeB.getId()), Set.copyOf(cycle));
     }
 }

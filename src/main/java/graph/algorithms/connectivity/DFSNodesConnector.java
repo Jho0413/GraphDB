@@ -1,34 +1,27 @@
 package graph.algorithms.connectivity;
 
 import graph.model.Edge;
-import graph.algorithms.Algorithm;
 import graph.model.GraphView;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
-import graph.algorithms.TraversalResult.TraversalResultBuilder;
 
 import java.util.HashSet;
 import java.util.Set;
 
 // Determines if the node with fromNodeId is connected to the node with toNodeId
-class DFSNodesConnector implements Algorithm {
+public class DFSNodesConnector {
 
     private final String fromNodeId;
     private final String toNodeId;
     private final GraphView graph;
     private final Set<String> visited = new HashSet<>();
 
-    DFSNodesConnector(TraversalInput input, GraphView graph) {
-        this.fromNodeId = input.getFromNodeId();
-        this.toNodeId = input.getToNodeId();
+    public DFSNodesConnector(GraphView graph, String fromNodeId, String toNodeId) {
+        this.fromNodeId = fromNodeId;
+        this.toNodeId = toNodeId;
         this.graph = graph;
     }
 
-    @Override
-    public TraversalResult performAlgorithm() {
-        return new TraversalResultBuilder()
-                .setConditionResult(fromNodeId.equals(toNodeId) || isConnected(fromNodeId))
-                .build();
+    public boolean run() {
+        return fromNodeId.equals(toNodeId) || isConnected(fromNodeId);
     }
 
     private boolean isConnected(String currentNodeId) {

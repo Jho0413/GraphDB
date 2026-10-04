@@ -3,8 +3,7 @@ package graph.algorithms.shortestPath;
 import graph.Graph;
 import graph.model.Node;
 import graph.exceptions.NegativeCycleException;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
+import graph.algorithms.Path;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,8 +28,8 @@ public class BellmanFordTest {
         nodeD = write(graph).addNode(Map.of("name", "D"));
     }
 
-    private TraversalResult runBellman(String fromNodeId, String toNodeId) {
-        return new BellmanFord(new TraversalInput.TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).build(), graph).performAlgorithm();
+    private Path runBellman(String fromNodeId, String toNodeId) {
+        return new BellmanFord(graph, fromNodeId, toNodeId).run();
     }
 
     @Test
@@ -40,8 +39,8 @@ public class BellmanFordTest {
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 2.0);
 
         List<String> expected = List.of(nodeA.getId(), nodeB.getId(), nodeC.getId());
-        TraversalResult result = runBellman(nodeA.getId(), nodeC.getId());
-        assertEquals(expected, result.getPath().getNodeIds());
+        Path result = runBellman(nodeA.getId(), nodeC.getId());
+        assertEquals(expected, result.getNodeIds());
     }
 
     @Test
@@ -52,7 +51,7 @@ public class BellmanFordTest {
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
 
         List<String> expected = List.of(nodeA.getId(), nodeB.getId(), nodeC.getId());
-        assertEquals(expected, runBellman(nodeA.getId(), nodeC.getId()).getPath().getNodeIds());
+        assertEquals(expected, runBellman(nodeA.getId(), nodeC.getId()).getNodeIds());
     }
 
     @Test
@@ -64,8 +63,8 @@ public class BellmanFordTest {
         write(graph).addEdge(nodeD.getId(), nodeC.getId(), Map.of(), 1.0);
 
         List<String> expected = List.of(nodeA.getId(), nodeD.getId(), nodeC.getId());
-        TraversalResult result = runBellman(nodeA.getId(), nodeC.getId());
-        assertEquals(expected, result.getPath().getNodeIds());
+        Path result = runBellman(nodeA.getId(), nodeC.getId());
+        assertEquals(expected, result.getNodeIds());
     }
 
 
@@ -74,7 +73,7 @@ public class BellmanFordTest {
         // A -> B (1), B -> A (2)
         write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
         write(graph).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), 2.0);
-        assertTrue(runBellman(nodeA.getId(), nodeD.getId()).getPath().getNodeIds().isEmpty());
+        assertTrue(runBellman(nodeA.getId(), nodeD.getId()).getNodeIds().isEmpty());
     }
 
     @Test
@@ -88,12 +87,12 @@ public class BellmanFordTest {
         write(graph).addEdge(nodeA.getId(), nodeD.getId(), Map.of(), -5.0);
 
         List<String> expectedPath = List.of(nodeA.getId(), nodeD.getId());
-        TraversalResult result = runBellman(nodeA.getId(), nodeD.getId());
-        assertEquals(expectedPath, result.getPath().getNodeIds());
+        Path result = runBellman(nodeA.getId(), nodeD.getId());
+        assertEquals(expectedPath, result.getNodeIds());
     }
 
 
-    @Test
+    @Test(expected = NegativeCycleException.class)
     public void throwsNegativeCycleExceptionWhenANegativeCycleIsEncountered() {
         // A -> B (1), B -> C (5), C -> D (3), C -> B (-6), D -> A (3)
         write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
@@ -102,10 +101,7 @@ public class BellmanFordTest {
         write(graph).addEdge(nodeC.getId(), nodeB.getId(), Map.of(), -6.0);
         write(graph).addEdge(nodeD.getId(), nodeA.getId(), Map.of(), 3.0);
 
-        TraversalResult result = runBellman(nodeA.getId(), nodeC.getId());
-        assertNotNull(result.getException());
-        assertNull(result.getPath());
-        assertTrue(result.getException() instanceof NegativeCycleException);
+        runBellman(nodeA.getId(), nodeC.getId());
     }
 
     @Test
@@ -119,8 +115,8 @@ public class BellmanFordTest {
         List<String> path1 = List.of(nodeA.getId(), nodeB.getId(), nodeC.getId());
         List<String> path2 = List.of(nodeA.getId(), nodeD.getId(), nodeC.getId());
 
-        TraversalResult result = runBellman(nodeA.getId(), nodeC.getId());
-        List<String> actual = result.getPath().getNodeIds();
+        Path result = runBellman(nodeA.getId(), nodeC.getId());
+        List<String> actual = result.getNodeIds();
 
         assertTrue(actual.equals(path1) || actual.equals(path2));
     }
@@ -129,6 +125,6 @@ public class BellmanFordTest {
     public void returnEmptyListWhenNodesGivenAreTheSame() {
         // A -> A (1)
         write(graph).addEdge(nodeA.getId(), nodeA.getId(), Map.of(), 1.0);
-        assertEquals(List.of(nodeA.getId()), runBellman(nodeA.getId(), nodeA.getId()).getPath().getNodeIds());
+        assertEquals(List.of(nodeA.getId()), runBellman(nodeA.getId(), nodeA.getId()).getNodeIds());
     }
 }

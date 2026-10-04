@@ -2,8 +2,6 @@ package graph.algorithms.cycles;
 
 import graph.model.Edge;
 import graph.model.Node;
-import graph.events.GraphListener;
-import graph.events.ObservableGraphView;
 import graph.model.GraphView;
 
 import java.util.HashSet;
@@ -11,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class FilteredGraph implements ObservableGraphView {
+class FilteredGraph implements GraphView {
 
     private final GraphView graph;
     private final Set<String> filteredNodes = new HashSet<String>();
@@ -64,6 +62,4 @@ class FilteredGraph implements ObservableGraphView {
         return null;
     }
 
-    @Override
-    public void addListener(GraphListener listener) {}
 }

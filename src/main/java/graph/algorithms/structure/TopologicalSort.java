@@ -3,37 +3,28 @@ package graph.algorithms.structure;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.exceptions.CycleFoundException;
-import graph.algorithms.Algorithm;
 import graph.model.GraphView;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-class TopologicalSort implements Algorithm {
+public class TopologicalSort {
 
     private final GraphView graph;
     private final Set<String> notVisited;
     private final List<String> order = new LinkedList<String>();
 
-    TopologicalSort(TraversalInput input, GraphView graph) {
+    public TopologicalSort(GraphView graph) {
         this.graph = graph;
         this.notVisited = graph.getNodes().stream().map(Node::getId).collect(Collectors.toSet());
     }
 
-    @Override
-    public TraversalResult performAlgorithm() {
+    /** @throws CycleFoundException if the graph has a cycle */
+    public List<String> run() {
         while (!notVisited.isEmpty()) {
-            String nextNode = notVisited.iterator().next();
-            try {
-                performSort(nextNode, new HashSet<>());
-            } catch (CycleFoundException e) {
-                return new TraversalResult.TraversalResultBuilder().setException(e).build();
-            }
+            performSort(notVisited.iterator().next(), new HashSet<>());
         }
-
-        return new TraversalResult.TraversalResultBuilder().setOrderedNodeIds(new LinkedList<>(order)).build();
+        return List.copyOf(order);
     }
 
     private void performSort(String nodeId, Set<String> onPath) {

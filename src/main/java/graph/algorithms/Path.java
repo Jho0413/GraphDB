@@ -7,7 +7,7 @@ public class Path {
     private final List<String> nodeIds;
 
     public Path(List<String> nodeIds) {
-        this.nodeIds = nodeIds;
+        this.nodeIds = List.copyOf(nodeIds);
     }
 
     public List<String> getNodeIds() {

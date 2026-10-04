@@ -1,63 +1,52 @@
 package graph.query;
 
+import graph.algorithms.GraphAlgorithms;
 import graph.exceptions.NodeNotFoundException;
-import graph.algorithms.AlgorithmManager;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalInput.TraversalInputBuilder;
-import graph.algorithms.TraversalResult;
+import graph.model.GraphView;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
-import static graph.algorithms.AlgorithmType.*;
+import static graph.query.QueryChecks.requireNode;
 
 public class GraphConnectivityAnalyser {
 
-    private final AlgorithmManager algorithmManager;
-    private final GraphQueryValidator validator;
+    private final GraphView graph;
+    private final GraphAlgorithms algorithms;
 
-    public GraphConnectivityAnalyser(AlgorithmManager algorithmManager, GraphQueryValidator validator) {
-        this.algorithmManager = algorithmManager;
-        this.validator = validator;
+    public GraphConnectivityAnalyser(GraphView graph, GraphAlgorithms algorithms) {
+        this.graph = graph;
+        this.algorithms = algorithms;
     }
 
     public boolean allNodesAreReachableFromNodeId(String nodeId) throws NodeNotFoundException {
-        validator.checkNodeExists(nodeId);
-        TraversalInput input = new TraversalInputBuilder().setFromNodeId(nodeId).build();
-        TraversalResult result = algorithmManager.runAlgorithm(DFS_REACHABLE_NODES, input);
-        return result.getConditionResult();
+        requireNode(graph, nodeId);
+        return algorithms.reachesAllNodes(nodeId);
     }
 
     public boolean nodesAreConnected(String fromNodeId, String toNodeId) throws NodeNotFoundException {
-        validator.checkNodeExists(fromNodeId);
-        validator.checkNodeExists(toNodeId);
-        TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).build();
-        TraversalResult result = algorithmManager.runAlgorithm(DFS_NODES_CONNECTED, input);
-        return result.getConditionResult();
+        requireNode(graph, fromNodeId);
+        requireNode(graph, toNodeId);
+        return algorithms.nodesConnected(fromNodeId, toNodeId);
     }
 
     public Set<String> getConnectedNodes(String fromNodeId) throws NodeNotFoundException {
-        validator.checkNodeExists(fromNodeId);
-        TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).build();
-        TraversalResult result = algorithmManager.runAlgorithm(DFS_NODES_CONNECTED_TO, input);
-        return result.getNodeIds();
+        requireNode(graph, fromNodeId);
+        return algorithms.nodesReachableFrom(fromNodeId);
     }
 
-    public Map<Integer, Set<String>> getStronglyConnectedComponents() {
-        return getStronglyConnectedComponentsHelper(StronglyConnectedAlgorithm.TARJAN);
+    public List<Set<String>> getStronglyConnectedComponents() {
+        return getStronglyConnectedComponents(StronglyConnectedAlgorithm.TARJAN);
     }
 
-    public Map<Integer, Set<String>> getStronglyConnectedComponents(StronglyConnectedAlgorithm algorithm) {
-        return getStronglyConnectedComponentsHelper(algorithm);
+    public List<Set<String>> getStronglyConnectedComponents(StronglyConnectedAlgorithm algorithm) {
+        return switch (algorithm) {
+            case TARJAN -> algorithms.tarjan();
+            case KOSARAJU -> algorithms.kosaraju();
+        };
     }
 
     public boolean isStronglyConnected() {
-        Map<Integer, Set<String>> components = getStronglyConnectedComponents(StronglyConnectedAlgorithm.TARJAN);
-        return components.size() == 1;
-    }
-
-    private Map<Integer, Set<String>> getStronglyConnectedComponentsHelper(StronglyConnectedAlgorithm algorithm) {
-        TraversalResult result = algorithmManager.runAlgorithm(AlgorithmMapper.from(algorithm), null);
-        return result.getComponents();
+        return getStronglyConnectedComponents().size() == 1;
     }
 }

@@ -2,17 +2,14 @@ package graph.algorithms.stronglyConnected;
 
 import graph.Graph;
 import graph.model.Node;
-import graph.algorithms.Algorithm;
 import graph.model.GraphView;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.*;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
@@ -24,13 +21,13 @@ public class StronglyConnectedTest {
     private Node nodeA, nodeB, nodeC, nodeD, nodeE, nodeF;
 
     @Parameterized.Parameter(value = 0)
-    public BiFunction<TraversalInput, GraphView, Algorithm> serviceCreator;
+    public Function<GraphView, List<Set<String>>> serviceCreator;
 
     @Parameterized.Parameters(name="{0}")
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
-                (BiFunction<TraversalInput, GraphView, Algorithm>) Kosaraju::new,
-                (BiFunction<TraversalInput, GraphView, Algorithm>) Tarjan::new
+                (Function<GraphView, List<Set<String>>>) graph -> new Kosaraju(graph).run(),
+                (Function<GraphView, List<Set<String>>>) graph -> new Tarjan(graph).run()
         });
     }
 
@@ -45,9 +42,8 @@ public class StronglyConnectedTest {
         nodeF = write(graph).addNode(Map.of("name", "F"));
     }
 
-    private TraversalResult runStronglyConnectedAlgorithm() {
-        Algorithm algorithm = serviceCreator.apply(null, graph);
-        return algorithm.performAlgorithm();
+    private List<Set<String>> runStronglyConnectedAlgorithm() {
+        return serviceCreator.apply(graph);
     }
 
     @Test
@@ -57,11 +53,10 @@ public class StronglyConnectedTest {
         write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
         write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), 1.0);
 
-        TraversalResult result = runStronglyConnectedAlgorithm();
-        Map<Integer, Set<String>> components = result.getComponents();
+        List<Set<String>> components = runStronglyConnectedAlgorithm();
 
         assertEquals(4, components.size());
-        assertTrue(components.containsValue(Set.of(nodeA.getId(), nodeB.getId(), nodeC.getId())));
+        assertTrue(components.contains(Set.of(nodeA.getId(), nodeB.getId(), nodeC.getId())));
     }
 
     @Test
@@ -77,8 +72,7 @@ public class StronglyConnectedTest {
 
         write(graph).addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
 
-        TraversalResult result = runStronglyConnectedAlgorithm();
-        Map<Integer, Set<String>> components = result.getComponents();
+        List<Set<String>> components = runStronglyConnectedAlgorithm();
 
         assertEquals(4, components.size());
 
@@ -89,7 +83,7 @@ public class StronglyConnectedTest {
                 Set.of(nodeF.getId())
         );
 
-        assertTrue(components.values().containsAll(expectedComponents));
+        assertTrue(components.containsAll(expectedComponents));
     }
 
     @Test
@@ -101,19 +95,17 @@ public class StronglyConnectedTest {
         write(graph).addEdge(nodeD.getId(), nodeE.getId(), Map.of(), 1.0);
         write(graph).addEdge(nodeE.getId(), nodeF.getId(), Map.of(), 1.0);
 
-        TraversalResult result = runStronglyConnectedAlgorithm();
-        Map<Integer, Set<String>> components = result.getComponents();
+        List<Set<String>> components = runStronglyConnectedAlgorithm();
 
         assertEquals(6, components.size());
     }
 
     @Test
     public void disconnectedNodesAreConsideredTheirOwnStronglyConnectedComponent() {
-        TraversalResult result = runStronglyConnectedAlgorithm();
-        Map<Integer, Set<String>> components = result.getComponents();
+        List<Set<String>> components = runStronglyConnectedAlgorithm();
 
         assertEquals(6, components.size());
-        for (Set<String> component : components.values()) {
+        for (Set<String> component : components) {
             assertEquals(1, component.size());
         }
     }

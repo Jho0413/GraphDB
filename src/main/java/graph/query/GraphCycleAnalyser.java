@@ -1,29 +1,23 @@
 package graph.query;
 
-import graph.algorithms.AlgorithmManager;
-import graph.algorithms.TraversalResult;
+import graph.algorithms.GraphAlgorithms;
 
 import java.util.List;
 
-
-import static graph.algorithms.AlgorithmType.*;
-
 public class GraphCycleAnalyser {
 
-    private final AlgorithmManager algorithmManager;
+    private final GraphAlgorithms algorithms;
 
-    public GraphCycleAnalyser(AlgorithmManager algorithmManager) {
-        this.algorithmManager = algorithmManager;
+    public GraphCycleAnalyser(GraphAlgorithms algorithms) {
+        this.algorithms = algorithms;
     }
 
     public boolean hasCycle() {
-        TraversalResult result = algorithmManager.runAlgorithm(DFS_HAS_CYCLE, null);;
-        return result.getConditionResult();
+        return algorithms.hasCycle();
     }
 
     public boolean hasNegativeCycle() {
-        TraversalResult result = algorithmManager.runAlgorithm(BELLMAN_FORD_CYCLE, null);
-        return result.getConditionResult();
+        return algorithms.hasNegativeCycle();
     }
 
     public boolean isDAG() {
@@ -31,7 +25,6 @@ public class GraphCycleAnalyser {
     }
 
     public List<List<String>> getAllCycles() {
-        TraversalResult result = algorithmManager.runAlgorithm(JOHNSONS, null);
-        return result.getCycles();
+        return algorithms.allCycles();
     }
 }

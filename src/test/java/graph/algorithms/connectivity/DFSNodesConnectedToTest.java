@@ -2,8 +2,6 @@ package graph.algorithms.connectivity;
 
 import graph.Graph;
 import graph.model.Node;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,10 +36,7 @@ public class DFSNodesConnectedToTest {
     }
 
     private Set<String> getConnectedNodeNamesFrom(Node startNode) {
-        TraversalInput input = new TraversalInput.TraversalInputBuilder().setFromNodeId(startNode.getId()).build();
-        DFSNodesConnectedTo dfs = new DFSNodesConnectedTo(input, graph);
-        TraversalResult result = dfs.performAlgorithm();
-        return getNodeNames(result.getNodeIds());
+        return getNodeNames(new DFSNodesConnectedTo(graph, startNode.getId()).run());
     }
 
     @Test
@@ -88,12 +83,10 @@ public class DFSNodesConnectedToTest {
         Graph singleNodeGraph = Graph.createGraph();
         Node solo = write(singleNodeGraph).addNode(Collections.singletonMap("name", "Solo"));
 
-        TraversalInput input = new TraversalInput.TraversalInputBuilder().setFromNodeId(solo.getId()).build();
-        DFSNodesConnectedTo dfs = new DFSNodesConnectedTo(input, singleNodeGraph);
-        TraversalResult result = dfs.performAlgorithm();
+        Set<String> result = new DFSNodesConnectedTo(singleNodeGraph, solo.getId()).run();
 
         Set<String> names = new HashSet<>();
-        for (String id : result.getNodeIds()) {
+        for (String id : result) {
             names.add((String) singleNodeGraph.getNodeById(id).getAttributes().get("name"));
         }
 

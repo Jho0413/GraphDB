@@ -1,132 +1,108 @@
 package graph.query;
 
+import graph.Graph;
+import graph.algorithms.DistanceMatrix;
+import graph.algorithms.GraphAlgorithms;
 import graph.algorithms.Path;
 import graph.exceptions.NegativeCycleException;
-import graph.testsupport.AlgorithmTypeBaseMatcher;
-import graph.testsupport.TraversalInputBaseMatcher;
-import graph.algorithms.AlgorithmManager;
-import graph.algorithms.AlgorithmType;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
-import org.hamcrest.BaseMatcher;
-import org.jmock.Expectations;
-import org.jmock.integration.junit4.JUnitRuleMockery;
-import org.junit.Rule;
+import graph.exceptions.NegativeWeightException;
+import graph.exceptions.NodeNotFoundException;
+import graph.model.Node;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
-import static graph.algorithms.AlgorithmType.*;
-import static org.junit.Assert.assertEquals;
+import static graph.testsupport.AutoCommitWriter.write;
+import static org.junit.Assert.*;
 
 public class GraphPathFinderTest {
 
-    @Rule
-    public JUnitRuleMockery context = new JUnitRuleMockery();
-    AlgorithmManager algorithmManager = context.mock(AlgorithmManager.class);
-    GraphQueryValidator validator = context.mock(GraphQueryValidator.class);
-    GraphPathFinder finder = new GraphPathFinder(algorithmManager, validator);
-    String FROM_NODE_ID = "n1";
-    String TO_NODE_ID = "n2";
-    Integer MAX_LENGTH = 3;
-    List<Path> PATHS = List.of(new Path(List.of("1", "2", "3")), new Path(List.of("1", "4", "3")), new Path(List.of("1", "3")));
-    Path PATH = new Path(List.of("1", "2", "3"));
+    private final Graph graph = Graph.createGraph();
+    private final GraphPathFinder finder = new GraphPathFinder(graph, new GraphAlgorithms(graph));
+    private Node nodeA, nodeB, nodeC;
+
+    @Before
+    public void setUp() {
+        // A -> B (1), B -> C (2), A -> C (5)
+        nodeA = write(graph).addNode(Map.of("name", "A"));
+        nodeB = write(graph).addNode(Map.of("name", "B"));
+        nodeC = write(graph).addNode(Map.of("name", "C"));
+        write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 2.0);
+        write(graph).addEdge(nodeA.getId(), nodeC.getId(), Map.of(), 5.0);
+    }
 
     @Test
     public void ableToFindAllPathsWithMaxLengthFromANodeToAnother() {
-        setUpFindingAllPaths(MAX_LENGTH);
-        assertEquals(PATHS, finder.findPathsWithMaxLength(FROM_NODE_ID, TO_NODE_ID, MAX_LENGTH));
+        List<Path> paths = finder.findPathsWithMaxLength(nodeA.getId(), nodeC.getId(), 1);
+        assertEquals(List.of(List.of(nodeA.getId(), nodeC.getId())), nodeIds(paths));
     }
 
     @Test
     public void ableToFindAllPathsWithoutNoConstraintsFromANodeToAnother() {
-        setUpFindingAllPaths(null);
-        assertEquals(PATHS, finder.findAllPaths(FROM_NODE_ID, TO_NODE_ID));
+        List<Path> paths = finder.findAllPaths(nodeA.getId(), nodeC.getId());
+        assertEquals(2, paths.size());
+        assertTrue(nodeIds(paths).contains(List.of(nodeA.getId(), nodeB.getId(), nodeC.getId())));
+        assertTrue(nodeIds(paths).contains(List.of(nodeA.getId(), nodeC.getId())));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void negativeMaxLengthIsRejected() {
+        finder.findPathsWithMaxLength(nodeA.getId(), nodeC.getId(), -1);
+    }
+
+    @Test(expected = NodeNotFoundException.class)
+    public void unknownNodeIsRejected() {
+        finder.findAllPaths(nodeA.getId(), "missing");
     }
 
     @Test
-    public void ableToFindShortestPathFromANodeToAnother() throws Exception {
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setPath(PATH).build();
-        setUpFindingShortestPath(result, BELLMAN_FORD);
-
-        assertEquals(PATH, finder.findShortestPath(FROM_NODE_ID, TO_NODE_ID));
+    public void ableToFindShortestPathFromANodeToAnother() {
+        assertEquals(List.of(nodeA.getId(), nodeB.getId(), nodeC.getId()),
+                finder.findShortestPath(nodeA.getId(), nodeC.getId()).getNodeIds());
     }
 
     @Test
-    public void ableToSpecifyWhichShortestPathAlgorithmToUse() throws Exception {
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setPath(PATH).build();
-        setUpFindingShortestPath(result, DIJKSTRA);
-
-        assertEquals(PATH, finder.findShortestPath(FROM_NODE_ID, TO_NODE_ID, ShortestPathAlgorithm.DIJKSTRA));
+    public void ableToSpecifyWhichShortestPathAlgorithmToUse() {
+        assertEquals(List.of(nodeA.getId(), nodeB.getId(), nodeC.getId()),
+                finder.findShortestPath(nodeA.getId(), nodeC.getId(), ShortestPathAlgorithm.DIJKSTRA).getNodeIds());
     }
 
     @Test
-    public void returnSingletonWhenGivenSameNodeForFindingShortestPath() throws Exception {
-        context.checking(new Expectations() {{
-            allowing(validator).checkNodeExists(FROM_NODE_ID);
-        }});
-        assertEquals(List.of(FROM_NODE_ID), finder.findShortestPath(FROM_NODE_ID, FROM_NODE_ID).getNodeIds());
+    public void returnSingletonWhenGivenSameNodeForFindingShortestPath() {
+        assertEquals(List.of(nodeA.getId()), finder.findShortestPath(nodeA.getId(), nodeA.getId()).getNodeIds());
     }
 
     @Test(expected = NegativeCycleException.class)
-    public void exceptionThrownWhenThereIsANegativeCycleWhenFindingShortestPath() throws Exception {
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setException(new NegativeCycleException()).build();
-        setUpFindingShortestPath(result, BELLMAN_FORD);
+    public void exceptionThrownWhenThereIsANegativeCycleWhenFindingShortestPath() {
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), -10.0);
+        finder.findShortestPath(nodeA.getId(), nodeC.getId());
+    }
 
-        finder.findShortestPath(FROM_NODE_ID, TO_NODE_ID);
+    @Test(expected = NegativeWeightException.class)
+    public void exceptionThrownWhenDijkstraMeetsANegativeWeight() {
+        write(graph).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), -1.0);
+        finder.findShortestPath(nodeB.getId(), nodeC.getId(), ShortestPathAlgorithm.DIJKSTRA);
     }
 
     @Test
-    public void ableToFindAllShortestDistancesBetweenAllNodesInGraph() throws Exception {
-        double[][] shortestDistances = { { 0, -2 }, { 3, 0 } };
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setAllShortestDistances(shortestDistances).build();
-        setUpFindingAllShortestDistances(result);
+    public void ableToFindAllShortestDistancesBetweenAllNodesInGraph() {
+        DistanceMatrix distances = finder.findAllShortestDistances();
 
-        assertEquals(shortestDistances, finder.findAllShortestDistances());
+        assertEquals(3.0, distances.distance(nodeA.getId(), nodeC.getId()), 0.001);
+        assertEquals(Double.POSITIVE_INFINITY, distances.distance(nodeC.getId(), nodeA.getId()), 0.001);
+        assertEquals(0.0, distances.distance(nodeB.getId(), nodeB.getId()), 0.001);
     }
 
     @Test(expected = NegativeCycleException.class)
-    public void exceptionThrownWhenThereIsANegativeCycleWhenFindingShortestDistances() throws Exception {
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setException(new NegativeCycleException()).build();
-        setUpFindingAllShortestDistances(result);
-
+    public void exceptionThrownWhenThereIsANegativeCycleWhenFindingShortestDistances() {
+        write(graph).addEdge(nodeC.getId(), nodeA.getId(), Map.of(), -10.0);
         finder.findAllShortestDistances();
     }
 
-    private void setUpFindingAllPaths(Integer maxLength) {
-        TraversalResult result = new TraversalResult.TraversalResultBuilder().setAllPaths(PATHS).build();
-        BaseMatcher<TraversalInput> baseMatcher = new TraversalInputBaseMatcher.TraversalInputBaseMatcherBuilder()
-                .setFromNodeId(FROM_NODE_ID).setToNodeId(TO_NODE_ID).setMaxLength(maxLength).build();
-        context.checking(new Expectations() {{
-            exactly(1).of(validator).testNonNegative(maxLength);
-            exactly(1).of(validator).checkNodeExists(FROM_NODE_ID);
-            exactly(1).of(validator).checkNodeExists(TO_NODE_ID);
-            exactly(1).of(algorithmManager).runAlgorithm(
-                    with(new AlgorithmTypeBaseMatcher(DFS_ALL_PATHS)),
-                    with(baseMatcher)
-            );
-            will(returnValue(result));
-        }});
-    }
-
-    private void setUpFindingShortestPath(TraversalResult result, AlgorithmType algorithmType) {
-        BaseMatcher<TraversalInput> baseMatcher = new TraversalInputBaseMatcher.TraversalInputBaseMatcherBuilder()
-                .setFromNodeId(FROM_NODE_ID).setToNodeId(TO_NODE_ID).build();
-        context.checking(new Expectations() {{
-            exactly(1).of(validator).checkNodeExists(FROM_NODE_ID);
-            exactly(1).of(validator).checkNodeExists(TO_NODE_ID);
-            exactly(1).of(algorithmManager).runAlgorithm(
-                    with(new AlgorithmTypeBaseMatcher(algorithmType)),
-                    with(baseMatcher)
-            );
-            will(returnValue(result));
-        }});
-    }
-
-    private void setUpFindingAllShortestDistances(TraversalResult result) {
-        context.checking(new Expectations() {{
-            exactly(1).of(algorithmManager).runAlgorithm(FLOYD_WARSHALL, null);
-            will(returnValue(result));
-        }});
+    private static List<List<String>> nodeIds(List<Path> paths) {
+        return paths.stream().map(Path::getNodeIds).toList();
     }
 }

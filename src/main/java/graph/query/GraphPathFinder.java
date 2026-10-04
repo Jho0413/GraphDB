@@ -1,38 +1,33 @@
 package graph.query;
 
+import graph.algorithms.DistanceMatrix;
+import graph.algorithms.GraphAlgorithms;
 import graph.algorithms.Path;
 import graph.exceptions.NegativeCycleException;
 import graph.exceptions.NegativeWeightException;
 import graph.exceptions.NodeNotFoundException;
-import graph.algorithms.AlgorithmManager;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalInput.TraversalInputBuilder;
-import graph.algorithms.TraversalResult;
+import graph.model.GraphView;
 
 import java.util.*;
 
-import static graph.algorithms.AlgorithmType.*;
+import static graph.query.QueryChecks.requireNode;
+import static graph.query.QueryChecks.requireNonNegative;
 
 public class GraphPathFinder {
 
-    private final AlgorithmManager algorithmManager;
-    private final GraphQueryValidator validator;
+    private final GraphView graph;
+    private final GraphAlgorithms algorithms;
 
-    public GraphPathFinder(AlgorithmManager algorithmManager, GraphQueryValidator validator) {
-        this.algorithmManager = algorithmManager;
-        this.validator = validator;
+    public GraphPathFinder(GraphView graph, GraphAlgorithms algorithms) {
+        this.graph = graph;
+        this.algorithms = algorithms;
     }
 
     // returns all paths with max length of n (edges) from source to destination (length 0 includes itself)
     public List<Path> findPathsWithMaxLength(String fromNodeId, String toNodeId, Integer maxLength) throws NodeNotFoundException, IllegalArgumentException {
-        validator.testNonNegative(maxLength);
+        requireNonNegative(maxLength);
         validateNodes(fromNodeId, toNodeId);
-        TraversalInput input = new TraversalInputBuilder()
-                .setFromNodeId(fromNodeId)
-                .setToNodeId(toNodeId)
-                .setMaxLength(maxLength).build();
-        TraversalResult result = algorithmManager.runAlgorithm(DFS_ALL_PATHS, input);
-        return result.getAllPaths();
+        return algorithms.allPaths(fromNodeId, toNodeId, maxLength);
     }
 
     // returns all paths from source to destination
@@ -40,39 +35,28 @@ public class GraphPathFinder {
         return findPathsWithMaxLength(fromNodeId, toNodeId, null);
     }
 
-    public Path findShortestPath(String fromNodeId, String toNodeId) throws Exception {
-        return shortestPathHelper(fromNodeId, toNodeId, ShortestPathAlgorithm.BELLMAN_FORD);
+    public Path findShortestPath(String fromNodeId, String toNodeId) throws NodeNotFoundException, NegativeCycleException {
+        return findShortestPath(fromNodeId, toNodeId, ShortestPathAlgorithm.BELLMAN_FORD);
     }
 
-    public Path findShortestPath(String fromNodeId, String toNodeId, ShortestPathAlgorithm algorithm) throws Exception {
-        return shortestPathHelper(fromNodeId, toNodeId, algorithm);
-    }
-
-    private Path shortestPathHelper(String fromNodeId, String toNodeId, ShortestPathAlgorithm algorithm) throws Exception {
+    public Path findShortestPath(String fromNodeId, String toNodeId, ShortestPathAlgorithm algorithm)
+            throws NodeNotFoundException, NegativeCycleException, NegativeWeightException {
         validateNodes(fromNodeId, toNodeId);
         if (fromNodeId.equals(toNodeId)) {
             return new Path(List.of(fromNodeId));
         }
-        TraversalInput input = new TraversalInputBuilder().setFromNodeId(fromNodeId).setToNodeId(toNodeId).build();
-        TraversalResult result = algorithmManager.runAlgorithm(AlgorithmMapper.from(algorithm), input);
-        Exception exception = result.getException();
-        if (exception != null) {
-            throw exception;
-        }
-        return result.getPath();
+        return switch (algorithm) {
+            case DIJKSTRA -> algorithms.dijkstra(fromNodeId, toNodeId);
+            case BELLMAN_FORD -> algorithms.bellmanFord(fromNodeId, toNodeId);
+        };
     }
 
-    public double[][] findAllShortestDistances() {
-        TraversalResult result = algorithmManager.runAlgorithm(FLOYD_WARSHALL, null);
-        NegativeCycleException exception = (NegativeCycleException) result.getException();
-        if (exception != null) {
-            throw exception;
-        }
-        return result.getAllShortestDistances();
+    public DistanceMatrix findAllShortestDistances() throws NegativeCycleException {
+        return algorithms.floydWarshall();
     }
 
     private void validateNodes(String fromNodeId, String toNodeId) throws NodeNotFoundException {
-        validator.checkNodeExists(fromNodeId);
-        validator.checkNodeExists(toNodeId);
+        requireNode(graph, fromNodeId);
+        requireNode(graph, toNodeId);
     }
 }

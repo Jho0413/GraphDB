@@ -3,8 +3,6 @@ package graph.algorithms.paths;
 import graph.Graph;
 import graph.model.Node;
 import graph.algorithms.Path;
-import graph.algorithms.TraversalInput;
-import graph.algorithms.TraversalResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,14 +29,7 @@ public class DFSAllPathsTest {
     }
 
     private List<Path> runDFSAllPaths(Node fromNode, Node toNode, Integer maxLength) {
-        TraversalInput.TraversalInputBuilder builder = new TraversalInput.TraversalInputBuilder()
-                .setFromNodeId(fromNode.getId())
-                .setToNodeId(toNode.getId());
-        if (maxLength != null) builder.setMaxLength(maxLength);
-
-        DFSAllPaths dfs = new DFSAllPaths(builder.build(), graph);
-        TraversalResult result = dfs.performAlgorithm();
-        return result.getAllPaths();
+        return new DFSAllPaths(graph, fromNode.getId(), toNode.getId(), maxLength).run();
     }
 
     @Test

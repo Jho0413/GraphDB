@@ -2,8 +2,6 @@ package graph.algorithms.cycles;
 
 import graph.Graph;
 import graph.model.Node;
-import graph.algorithms.Algorithm;
-import graph.algorithms.TraversalResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,9 +32,7 @@ public class JohnsonsTest {
     }
 
     private List<List<String>> runAndGetCycles() {
-        Algorithm algorithm = new Johnsons(null, graph);
-        TraversalResult result = algorithm.performAlgorithm();
-        return result.getCycles();
+        return new Johnsons(graph).run();
     }
 
     private boolean containsCycle(List<List<String>> cycles, List<String> nodes) {
@@ -159,8 +155,6 @@ public class JohnsonsTest {
     @Test
     public void returnsEmptyListWhenGraphIsEmpty() {
         Graph graph = Graph.createGraph();
-        Algorithm algorithm = new Johnsons(null, graph);
-        TraversalResult result = algorithm.performAlgorithm();
-        assertTrue(result.getCycles().isEmpty());
+        assertTrue(new Johnsons(graph).run().isEmpty());
     }
 }

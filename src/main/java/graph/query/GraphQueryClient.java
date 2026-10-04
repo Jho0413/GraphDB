@@ -1,7 +1,8 @@
 package graph.query;
 
+import graph.algorithms.GraphAlgorithms;
 import graph.events.ObservableGraphView;
-import graph.algorithms.TraversalAlgorithmManager;
+import graph.model.GraphView;
 
 public class GraphQueryClient {
 
@@ -11,15 +12,22 @@ public class GraphQueryClient {
     private final GraphStructureAnalyser structureAnalyser;
     private final GraphCycleAnalyser cycleAnalyser;
 
+    /** A client whose cache is cleared by changes to {@code graph}. */
     public static GraphQueryClient createClient(ObservableGraphView graph) {
-        GraphQueryValidator validator = new DefaultGraphValidator(graph);
-        TraversalAlgorithmManager algorithmManager = TraversalAlgorithmManager.createManager(graph);
-        GraphPathFinder pathFinder = new GraphPathFinder(algorithmManager, validator);
-        GraphConnectivityAnalyser connector = new GraphConnectivityAnalyser(algorithmManager, validator);
-        GraphCommonalityFinder commonalityFinder = new GraphCommonalityFinder(algorithmManager, validator);
-        GraphStructureAnalyser structureAnalyser = new GraphStructureAnalyser(algorithmManager, graph);
-        GraphCycleAnalyser cycleAnalyser = new GraphCycleAnalyser(algorithmManager);
-        return new GraphQueryClient(pathFinder, connector, commonalityFinder, structureAnalyser, cycleAnalyser);
+        GraphAlgorithms algorithms = new GraphAlgorithms(graph);
+        graph.addListener(algorithms);
+        return create(graph, algorithms);
+    }
+
+    /** A client running its queries through {@code algorithms}, which the caller registers for graph changes. */
+    public static GraphQueryClient create(GraphView graph, GraphAlgorithms algorithms) {
+        return new GraphQueryClient(
+                new GraphPathFinder(graph, algorithms),
+                new GraphConnectivityAnalyser(graph, algorithms),
+                new GraphCommonalityFinder(graph, algorithms),
+                new GraphStructureAnalyser(graph, algorithms),
+                new GraphCycleAnalyser(algorithms)
+        );
     }
 
     private GraphQueryClient(
