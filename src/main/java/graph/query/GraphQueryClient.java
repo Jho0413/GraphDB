@@ -1,7 +1,6 @@
 package graph.query;
 
 import graph.algorithms.GraphAlgorithms;
-import graph.events.ObservableGraphView;
 import graph.model.GraphView;
 
 public class GraphQueryClient {
@@ -11,13 +10,6 @@ public class GraphQueryClient {
     private final GraphCommonalityFinder commonalityFinder;
     private final GraphStructureAnalyser structureAnalyser;
     private final GraphCycleAnalyser cycleAnalyser;
-
-    /** A client whose cache is cleared by changes to {@code graph}. */
-    public static GraphQueryClient createClient(ObservableGraphView graph) {
-        GraphAlgorithms algorithms = new GraphAlgorithms(graph);
-        graph.addListener(algorithms);
-        return create(graph, algorithms);
-    }
 
     /** A client running its queries through {@code algorithms}, which the caller registers for graph changes. */
     public static GraphQueryClient create(GraphView graph, GraphAlgorithms algorithms) {

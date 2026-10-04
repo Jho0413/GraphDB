@@ -4,9 +4,13 @@ import graph.model.Edge;
 import graph.model.Node;
 import graph.transaction.Transaction;
 import graph.query.GraphQueryClient;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,6 +19,10 @@ import static org.junit.Assert.*;
 
 public class GraphQueryCacheInvalidationIntegrationTest {
 
+    @Rule
+    public TemporaryFolder temp = new TemporaryFolder();
+
+    private GraphDB db;
     private Graph graph;
     private GraphQueryClient queryClient;
     Node alice, bob, acme, city;
@@ -22,9 +30,15 @@ public class GraphQueryCacheInvalidationIntegrationTest {
 
     @Before
     public void setUp() {
-        this.graph = Graph.createGraph();
-        this.queryClient = GraphQueryClient.createClient(this.graph);
+        this.db = GraphDB.open(temp.getRoot().toPath());
+        this.graph = db.createGraph();
+        this.queryClient = db.createQueryClient(graph.getId());
         setUpGraph(graph);
+    }
+
+    @After
+    public void tearDown() {
+        db.close();
     }
 
     public void setUpGraph(Graph graph) {
@@ -75,5 +89,41 @@ public class GraphQueryCacheInvalidationIntegrationTest {
 
         Set<String> afterNodes = queryClient.connectivity().getConnectedNodes(alice.getId());
         assertEquals(Set.of(alice.getId(), acme.getId(), city.getId()), afterNodes);
+    }
+
+    @Test
+    public void theDatabaseReturnsTheSameClientForAGraph() {
+        assertSame(queryClient, db.createQueryClient(graph.getId()));
+    }
+
+    @Test
+    public void weightUpdateClearsShortestPaths() {
+        // Alice -> Acme directly (1.0) is shorter than Alice -> Bob -> Acme (0.9 + 1.2)
+        assertEquals(List.of(alice.getId(), acme.getId()),
+                queryClient.paths().findShortestPath(alice.getId(), acme.getId()).getNodeIds());
+
+        Edge aliceAcme = graph.getEdgeByNodeIds(alice.getId(), acme.getId());
+        write(graph).updateEdge(aliceAcme.getId(), 5.0);
+
+        assertEquals(List.of(alice.getId(), bob.getId(), acme.getId()),
+                queryClient.paths().findShortestPath(alice.getId(), acme.getId()).getNodeIds());
+    }
+
+    @Test
+    public void addingANodeClearsAllShortestDistances() {
+        assertEquals(4, queryClient.paths().findAllShortestDistances().nodeIds().size());
+
+        Node newNode = write(graph).addNode(Map.of("name", "New"));
+
+        assertTrue(queryClient.paths().findAllShortestDistances().nodeIds().contains(newNode.getId()));
+    }
+
+    @Test
+    public void addingANodeClearsReachability() {
+        assertTrue(queryClient.connectivity().allNodesAreReachableFromNodeId(alice.getId()));
+
+        write(graph).addNode(Map.of("name", "Unreachable"));
+
+        assertFalse(queryClient.connectivity().allNodesAreReachableFromNodeId(alice.getId()));
     }
 }

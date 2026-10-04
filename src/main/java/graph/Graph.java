@@ -7,7 +7,6 @@ import graph.transaction.CommitLog;
 import graph.transaction.TransactionManager;
 import graph.transaction.Transaction;
 import graph.events.GraphListener;
-import graph.events.ObservableGraphView;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
@@ -22,7 +21,7 @@ import java.util.stream.Collectors;
  * A graph's committed state. Reads go straight to storage; the only way to change a graph is through a
  * {@link Transaction}, so every change is logged before it is applied.
  */
-public class Graph implements GraphReader, ObservableGraphView {
+public class Graph implements GraphReader {
 
     private final GraphStorage storage;
     private final TransactionManager manager;
@@ -56,8 +55,8 @@ public class Graph implements GraphReader, ObservableGraphView {
         return manager.begin();
     }
 
-    @Override
-    public void addListener(GraphListener listener) {
+    /** Internal: listeners run inside the commit lock, so only the database registers them (the query cache). */
+    void addListener(GraphListener listener) {
         manager.addListener(listener);
     }
 
