@@ -62,7 +62,7 @@ public class GraphPathFinder {
         return result.getPath();
     }
 
-    public double[][] findAllShortestDistances() throws NegativeCycleException {
+    public double[][] findAllShortestDistances() {
         TraversalResult result = algorithmManager.runAlgorithm(FLOYD_WARSHALL, null);
         NegativeCycleException exception = (NegativeCycleException) result.getException();
         if (exception != null) {

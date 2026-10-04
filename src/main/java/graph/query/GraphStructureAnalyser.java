@@ -30,7 +30,7 @@ public class GraphStructureAnalyser {
         return graph.getEdgesFromNode(nodeId).size();
     }
 
-    public double getGraphDiameter() throws NegativeCycleException, IllegalStateException {
+    public double getGraphDiameter() throws IllegalStateException {
         TraversalResult result = algorithmManager.runAlgorithm(FLOYD_WARSHALL, null);
         NegativeCycleException exception = (NegativeCycleException) result.getException();
         if (exception != null) {
