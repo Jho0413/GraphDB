@@ -68,7 +68,7 @@ public class TransactionOperationsTest {
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
                 (TriFunction<MutableGraphStorage, TransactionStorage, OperationsResolver, Transaction>) (storage, transactionStorage, resolver) ->
-                        new Transaction(storage, transactionStorage, resolver, new GraphCommitter(storage, "g1", CommitLog.NONE))
+                        new Transaction(storage, transactionStorage, resolver, new TransactionManager(storage, "g1", CommitLog.NONE))
         });
     }
 

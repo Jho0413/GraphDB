@@ -20,7 +20,7 @@ import static graph.events.GraphEvent.*;
  * <p>Logging and applying happen under one lock, so the order transactions appear in the log is the order they
  * were applied, and recovery replays exactly what the live graph did.
  */
-public final class GraphCommitter implements ObservableGraph {
+public final class TransactionManager implements ObservableGraph {
 
     private final MutableGraphStorage storage;
     private final String graphId;
@@ -28,13 +28,13 @@ public final class GraphCommitter implements ObservableGraph {
     private final List<GraphListener> listeners = new CopyOnWriteArrayList<>();
     private final Object lock = new Object();
 
-    public GraphCommitter(MutableGraphStorage storage, String graphId, CommitLog commitLog) {
+    public TransactionManager(MutableGraphStorage storage, String graphId, CommitLog commitLog) {
         this.storage = storage;
         this.graphId = graphId;
         this.commitLog = commitLog;
     }
 
-    public Transaction createTransaction() {
+    public Transaction begin() {
         return Transaction.create(storage, this);
     }
 

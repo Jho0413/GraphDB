@@ -4,7 +4,7 @@ import graph.model.Edge;
 import graph.model.GraphReader;
 import graph.model.Node;
 import graph.transaction.CommitLog;
-import graph.transaction.GraphCommitter;
+import graph.transaction.TransactionManager;
 import graph.transaction.Transaction;
 import graph.events.GraphListener;
 import graph.events.ObservableGraphView;
@@ -25,12 +25,12 @@ import java.util.stream.Collectors;
 public class Graph implements GraphReader, ObservableGraphView {
 
     private final GraphStorage storage;
-    private final GraphCommitter committer;
+    private final TransactionManager manager;
     private final String id;
 
-    private Graph(GraphStorage storage, GraphCommitter committer, String id) {
+    private Graph(GraphStorage storage, TransactionManager manager, String id) {
         this.storage = storage;
-        this.committer = committer;
+        this.manager = manager;
         this.id = id;
     }
 
@@ -45,7 +45,7 @@ public class Graph implements GraphReader, ObservableGraphView {
     }
 
     static Graph create(MutableGraphStorage storage, String graphId, CommitLog commitLog) {
-        return new Graph(storage, new GraphCommitter(storage, graphId, commitLog), graphId);
+        return new Graph(storage, new TransactionManager(storage, graphId, commitLog), graphId);
     }
 
     public String getId() {
@@ -53,12 +53,12 @@ public class Graph implements GraphReader, ObservableGraphView {
     }
 
     public Transaction createTransaction() {
-        return committer.createTransaction();
+        return manager.begin();
     }
 
     @Override
     public void addListener(GraphListener listener) {
-        committer.addListener(listener);
+        manager.addListener(listener);
     }
 
     @Override
