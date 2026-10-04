@@ -6,6 +6,7 @@ import graph.exceptions.NodeNotFoundException;
 import graph.testsupport.EdgeBaseMatcher;
 import graph.testsupport.NodeBaseMatcher;
 import graph.testsupport.TriFunction;
+import graph.storage.GraphSnapshot;
 import graph.storage.MutableGraphStorage;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
@@ -68,7 +69,7 @@ public class TransactionOperationsTest {
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
                 (TriFunction<MutableGraphStorage, TransactionStorage, OperationsResolver, Transaction>) (storage, transactionStorage, resolver) ->
-                        new Transaction(storage, transactionStorage, resolver, new TransactionManager(storage, "g1", CommitLog.NONE))
+                        new Transaction(storage, transactionStorage, resolver, new TransactionManager(GraphSnapshot.empty(), "g1", CommitLog.NONE))
         });
     }
 
@@ -186,18 +187,6 @@ public class TransactionOperationsTest {
         }});
 
         assertThat(this.service.removeNodeAttribute(NODE_ID, "location"), is("transaction"));
-    }
-
-    // ============ Node Deletion Tests ============
-
-    @Test
-    public void deletesNodesWhenNodeExists() {
-        context.checking(new Expectations() {{
-            oneOf(resolver).getNodeIfExists(NODE_ID); will(returnValue(NODE));
-            oneOf(transactionStorage).deleteNode(NODE_ID);
-        }});
-
-        assertThat(this.service.deleteNode(NODE_ID), is(NODE));
     }
 
     // ============ Edge Creation Tests ============

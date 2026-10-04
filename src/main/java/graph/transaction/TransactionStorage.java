@@ -24,5 +24,4 @@ public interface TransactionStorage {
     List<Edge> getAllEdges();
 
     List<GraphOperation> getOperations();
-    void clear();
 }

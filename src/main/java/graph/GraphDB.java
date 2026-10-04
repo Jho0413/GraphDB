@@ -58,7 +58,7 @@ public class GraphDB implements AutoCloseable {
             WriteAheadLog wal = WriteAheadLog.open(walFile, log.validLength());
             Map<String, Graph> graphs = new LinkedHashMap<>();
             new RecoveryManager().recover(log.records())
-                    .forEach((graphId, storage) -> graphs.put(graphId, Graph.create(storage, graphId, wal)));
+                    .forEach((graphId, snapshot) -> graphs.put(graphId, Graph.create(snapshot, graphId, wal)));
             return new GraphDB(graphs, wal, lock);
         } catch (RuntimeException e) {
             lock.close();

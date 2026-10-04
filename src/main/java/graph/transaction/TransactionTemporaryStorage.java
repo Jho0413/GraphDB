@@ -101,13 +101,4 @@ public class TransactionTemporaryStorage implements TransactionStorage {
     public List<GraphOperation> getOperations() {
         return Collections.unmodifiableList(operations);
     }
-
-    @Override
-    public void clear() {
-        modifiedNodes.clear();
-        modifiedEdges.clear();
-        deletedNodes.clear();
-        deletedEdges.clear();
-        operations.clear();
-    }
 }

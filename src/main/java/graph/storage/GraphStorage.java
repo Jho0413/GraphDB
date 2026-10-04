@@ -6,8 +6,8 @@ import graph.model.Node;
 import java.util.List;
 
 /**
- * Read access to the committed state of one graph. Only the transaction manager and recovery hold the
- * {@link MutableGraphStorage} that changes it.
+ * Read access to one graph state. Implemented by a committed {@link GraphSnapshot} and by the
+ * {@link GraphSnapshotBuilder} that makes the next one.
  */
 public interface GraphStorage extends EdgeWeightIndex {
     // nodes

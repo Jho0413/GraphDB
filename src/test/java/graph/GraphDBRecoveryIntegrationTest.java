@@ -3,7 +3,14 @@ package graph;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.transaction.Transaction;
+import graph.exceptions.TransactionConflictException;
 import graph.exceptions.WalException;
+import graph.transaction.AddOrUpdateEdge;
+import graph.transaction.AddOrUpdateNode;
+import graph.transaction.DeleteNode;
+import graph.transaction.GraphOperation;
+import graph.wal.WalReader;
+import graph.wal.WriteAheadLog;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -187,7 +194,7 @@ public class GraphDBRecoveryIntegrationTest {
     }
 
     @Test
-    public void conflictingConcurrentTransactionsReplayToTheSameState() {
+    public void rejectedTransactionsAreNotLoggedAndLiveStateEqualsReplayedState() throws IOException {
         Graph graph = db.createGraph();
         Transaction setup = graph.createTransaction();
         Node a = setup.addNode(Map.of("name", "A"));
@@ -205,16 +212,63 @@ public class GraphDBRecoveryIntegrationTest {
         Transaction deletesA = graph.createTransaction();
         deletesA.deleteNode(a.getId());
         deletesA.commit();
-        addsEdgeFromA.commit();
-        deletesEdgeFromA.commit();
+        long logSize = Files.size(dataDirectory.resolve(GraphDB.WAL_FILE_NAME));
+        assertThrows(TransactionConflictException.class, addsEdgeFromA::commit);
+        assertThrows(TransactionConflictException.class, deletesEdgeFromA::commit);
+        assertEquals(logSize, Files.size(dataDirectory.resolve(GraphDB.WAL_FILE_NAME)));
 
         List<String> liveNodes = nodeIds(graph);
         List<String> liveEdges = edgeIds(graph);
         reopen();
 
         Graph recovered = db.getGraph(graph.getId());
+        assertEquals(List.of(b.getId()), liveNodes);
         assertEquals(liveNodes, nodeIds(recovered));
         assertEquals(liveEdges, edgeIds(recovered));
+    }
+
+    // ============ Logs holding data that validation would reject ============
+
+    @Test
+    public void aBareNodeDeleteReplaysWithItsEdges() {
+        String graphId = db.createGraph().getId();
+        appendToLog(graphId, new AddOrUpdateNode(new Node("a", Map.of())), new AddOrUpdateNode(new Node("b", Map.of())),
+                new AddOrUpdateEdge(new Edge("ab", "a", "b", 1.0, Map.of())));
+        appendToLog(graphId, new DeleteNode("a"));
+
+        Graph recovered = db.getGraph(graphId);
+        assertEquals(List.of("b"), nodeIds(recovered));
+        assertTrue(recovered.getEdges().isEmpty());
+    }
+
+    @Test
+    public void aDanglingEdgeRecoversAndCanBeDeletedButNotUpdated() {
+        String graphId = db.createGraph().getId();
+        appendToLog(graphId, new AddOrUpdateNode(new Node("a", Map.of())),
+                new AddOrUpdateEdge(new Edge("ab", "a", "missing", 1.0, Map.of())));
+        Graph recovered = db.getGraph(graphId);
+
+        assertEquals(List.of("ab"), edgeIds(recovered));
+        assertEquals(List.of("ab"), recovered.getEdgesFromNode("a").stream().map(Edge::getId).toList());
+
+        Transaction updates = recovered.createTransaction();
+        updates.updateEdge("ab", 2.0);
+        assertThrows(TransactionConflictException.class, updates::commit);
+
+        Transaction deletes = recovered.createTransaction();
+        deletes.deleteEdge("ab");
+        deletes.commit();
+        assertTrue(recovered.getEdges().isEmpty());
+    }
+
+    /** Commits {@code operations} straight to the log, bypassing validation, then reopens the database. */
+    private void appendToLog(String graphId, GraphOperation... operations) {
+        db.close();
+        Path walFile = dataDirectory.resolve(GraphDB.WAL_FILE_NAME);
+        try (WriteAheadLog wal = WriteAheadLog.open(walFile, WalReader.read(walFile).validLength())) {
+            wal.logCommit(graphId, List.of(operations));
+        }
+        db = GraphDB.open(dataDirectory);
     }
 
     private static List<String> nodeIds(Graph graph) {

@@ -2,8 +2,8 @@ package graph.wal;
 
 import graph.wal.WalRecord.*;
 import graph.transaction.GraphOperation;
-import graph.storage.MutableGraphStorage;
-import graph.storage.InMemoryGraphStorage;
+import graph.storage.GraphSnapshot;
+import graph.storage.GraphSnapshotBuilder;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -16,27 +16,27 @@ import java.util.Map;
  */
 public class RecoveryManager {
 
-    private final Map<String, MutableGraphStorage> storages = new LinkedHashMap<>();
+    private final Map<String, GraphSnapshotBuilder> builders = new LinkedHashMap<>();
 
-    /** @return the recovered storage of every graph that exists at the end of the log, by graph id */
-    public Map<String, MutableGraphStorage> recover(List<WalRecord> records) {
+    /** @return the recovered snapshot of every graph that exists at the end of the log, by graph id */
+    public Map<String, GraphSnapshot> recover(List<WalRecord> records) {
         String transactionGraphId = null;
         List<GraphOperation> transactionOperations = new ArrayList<>();
 
         for (WalRecord record : records) {
             switch (record) {
-                case GraphCreated r -> storages.putIfAbsent(r.graphId(), InMemoryGraphStorage.create());
-                case GraphDropped r -> storages.remove(r.graphId());
+                case GraphCreated r -> builders.putIfAbsent(r.graphId(), GraphSnapshotBuilder.create());
+                case GraphDropped r -> builders.remove(r.graphId());
                 case TransactionBegin r -> {
                     transactionGraphId = r.graphId();
                     transactionOperations.clear();
                 }
                 case Operation r -> transactionOperations.add(r.operation());
                 case TransactionCommit r -> {
-                    MutableGraphStorage storage = storages.get(transactionGraphId);
+                    GraphSnapshotBuilder builder = builders.get(transactionGraphId);
                     // A transaction for a graph that was never created or has been dropped is not replayed.
-                    if (storage != null) {
-                        transactionOperations.forEach(operation -> operation.apply(storage));
+                    if (builder != null) {
+                        transactionOperations.forEach(operation -> operation.apply(builder));
                     }
                     transactionGraphId = null;
                     transactionOperations.clear();
@@ -44,6 +44,8 @@ public class RecoveryManager {
             }
         }
 
-        return storages;
+        Map<String, GraphSnapshot> snapshots = new LinkedHashMap<>();
+        builders.forEach((graphId, builder) -> snapshots.put(graphId, builder.freeze()));
+        return snapshots;
     }
 }

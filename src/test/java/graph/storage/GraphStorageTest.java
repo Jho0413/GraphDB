@@ -31,7 +31,7 @@ public class GraphStorageTest {
     @Parameters(name = "{0}")
     public static Collection<Object> storages() {
         return Arrays.asList(new Object[] {
-                (Supplier<MutableGraphStorage>) InMemoryGraphStorage::create,
+                (Supplier<MutableGraphStorage>) GraphSnapshotBuilder::create,
         });
     }
 

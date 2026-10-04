@@ -8,51 +8,46 @@ import org.pcollections.PMap;
 import org.pcollections.PSet;
 import org.pcollections.TreePMap;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 /**
- * Graph storage on persistent maps: every write replaces a field with a new map that shares structure with the
- * old one, so a copy of the fields is an O(1) snapshot that later writes do not change.
+ * Builds the next {@link GraphSnapshot} from a previous one. Every write replaces a field with a new persistent
+ * map that shares structure with the old one, so starting from a snapshot and freezing into one are both O(1).
  *
- * <p>Not thread-safe: a read that races a write is undefined.
+ * <p>Not thread-safe; it lives only inside the commit path and recovery.
  */
-public class InMemoryGraphStorage implements MutableGraphStorage {
+public final class GraphSnapshotBuilder implements MutableGraphStorage {
 
-    private PMap<String, Node> nodes = HashTreePMap.empty();
-    private PMap<String, Edge> edges = HashTreePMap.empty();
-    // Adjacency by (source, target) slot: outgoing is keyed by source, incoming by target, and both always hold the
-    // same slots. An edge put on an occupied slot takes it over; removing an edge clears its slot even when another
-    // edge holds it. Emptied inner collections are dropped so removed nodes leave nothing behind.
-    private PMap<String, PMap<String, String>> outgoing = HashTreePMap.empty();
-    private PMap<String, PMap<String, String>> incoming = HashTreePMap.empty();
-    // Every edge touching a node, by edge id rather than slot, so removeNode also finds an edge whose slot
-    // another edge took over.
-    private PMap<String, PSet<String>> incidentEdges = HashTreePMap.empty();
-    private TreePMap<Double, PMap<String, Edge>> edgesByWeight = TreePMap.empty();
+    private PMap<String, Node> nodes;
+    private PMap<String, Edge> edges;
+    // An edge put on an occupied slot takes it over; removing an edge clears its slot even when another edge
+    // holds it. See GraphSnapshot for what each index holds.
+    private PMap<String, PMap<String, String>> outgoing;
+    private PMap<String, PMap<String, String>> incoming;
+    private PMap<String, PSet<String>> incidentEdges;
+    private TreePMap<Double, PMap<String, Edge>> edgesByWeight;
 
-    private InMemoryGraphStorage() {
+    private GraphSnapshotBuilder(GraphSnapshot base) {
+        nodes = base.nodes;
+        edges = base.edges;
+        outgoing = base.outgoing;
+        incoming = base.incoming;
+        incidentEdges = base.incidentEdges;
+        edgesByWeight = base.edgesByWeight;
     }
 
-    public static InMemoryGraphStorage create() {
-        return new InMemoryGraphStorage();
+    public static GraphSnapshotBuilder create() {
+        return from(GraphSnapshot.empty());
     }
 
-    /** An O(1) read-only copy of the current state; later writes to this storage do not change it. */
-    GraphStorage snapshot() {
-        InMemoryGraphStorage copy = new InMemoryGraphStorage();
-        copy.nodes = nodes;
-        copy.edges = edges;
-        copy.outgoing = outgoing;
-        copy.incoming = incoming;
-        copy.incidentEdges = incidentEdges;
-        copy.edgesByWeight = edgesByWeight;
-        return copy;
+    /** A builder starting at {@code base}; its writes never change {@code base}. */
+    public static GraphSnapshotBuilder from(GraphSnapshot base) {
+        return new GraphSnapshotBuilder(base);
     }
 
-    @Override
-    public Node getNode(String id) {
-        return nodes.get(id);
+    /** The current state as a snapshot; later writes to this builder do not change it. */
+    public GraphSnapshot freeze() {
+        return new GraphSnapshot(nodes, edges, outgoing, incoming, incidentEdges, edgesByWeight);
     }
 
     @Override
@@ -62,31 +57,11 @@ public class InMemoryGraphStorage implements MutableGraphStorage {
 
     @Override
     public Node removeNode(String id) {
+        // Must stay: write-ahead logs hold bare DeleteNode records that rely on it to remove the node's edges.
         incidentEdges.getOrDefault(id, HashTreePSet.empty()).forEach(this::removeEdge);
         Node removed = nodes.get(id);
         nodes = nodes.minus(id);
         return removed;
-    }
-
-    @Override
-    public List<Node> getAllNodes() {
-        return new ArrayList<>(nodes.values());
-    }
-
-    @Override
-    public boolean containsNode(String id) {
-        return nodes.containsKey(id);
-    }
-
-    @Override
-    public Edge getEdge(String id) {
-        return edges.get(id);
-    }
-
-    @Override
-    public Edge getEdgeByNodeIds(String source, String target) {
-        String edgeId = outgoingFrom(source).get(target);
-        return edgeId == null ? null : edges.get(edgeId);
     }
 
     @Override
@@ -125,10 +100,6 @@ public class InMemoryGraphStorage implements MutableGraphStorage {
                 : edgesByWeight.plus(edge.getWeight(), sameWeight);
     }
 
-    private PMap<String, String> outgoingFrom(String nodeId) {
-        return outgoing.getOrDefault(nodeId, HashTreePMap.empty());
-    }
-
     private static PMap<String, PMap<String, String>> plusEntry(
             PMap<String, PMap<String, String>> map, String key, String innerKey, String value) {
         return map.plus(key, map.getOrDefault(key, HashTreePMap.empty()).plus(innerKey, value));
@@ -150,55 +121,72 @@ public class InMemoryGraphStorage implements MutableGraphStorage {
     }
 
     @Override
+    public Node getNode(String id) {
+        return freeze().getNode(id);
+    }
+
+    @Override
+    public List<Node> getAllNodes() {
+        return freeze().getAllNodes();
+    }
+
+    @Override
+    public boolean containsNode(String id) {
+        return freeze().containsNode(id);
+    }
+
+    @Override
+    public Edge getEdge(String id) {
+        return freeze().getEdge(id);
+    }
+
+    @Override
+    public Edge getEdgeByNodeIds(String source, String target) {
+        return freeze().getEdgeByNodeIds(source, target);
+    }
+
+    @Override
     public List<Edge> getAllEdges() {
-        return new ArrayList<>(edges.values());
+        return freeze().getAllEdges();
     }
 
     @Override
     public boolean containsEdge(String id) {
-        return edges.containsKey(id);
+        return freeze().containsEdge(id);
     }
 
     @Override
     public List<Edge> getEdgesFromNode(String id) {
-        List<Edge> edgeList = new ArrayList<>();
-        outgoingFrom(id).values().forEach(edgeId -> edgeList.add(edges.get(edgeId)));
-        return edgeList;
+        return freeze().getEdgesFromNode(id);
     }
 
     @Override
     public List<String> nodesIdsWithEdgesToNode(String id) {
-        return new ArrayList<>(incoming.getOrDefault(id, HashTreePMap.empty()).keySet());
+        return freeze().nodesIdsWithEdgesToNode(id);
     }
 
     @Override
     public boolean edgeExists(String source, String target) {
-        return outgoingFrom(source).containsKey(target);
+        return freeze().edgeExists(source, target);
     }
 
     @Override
     public List<Edge> getEdgesByWeight(double weight) {
-        PMap<String, Edge> sameWeight = edgesByWeight.get(weight);
-        return sameWeight == null ? new ArrayList<>() : sameWeight.values().stream().toList();
+        return freeze().getEdgesByWeight(weight);
     }
 
     @Override
     public List<Edge> getEdgesByWeightRange(double min, double max) {
-        return flatten(edgesByWeight.subMap(min, true, max, true));
+        return freeze().getEdgesByWeightRange(min, max);
     }
 
     @Override
     public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
-        return flatten(edgesByWeight.tailMap(weight, false));
+        return freeze().getEdgesWithWeightGreaterThan(weight);
     }
 
     @Override
     public List<Edge> getEdgesWithWeightLessThan(double weight) {
-        return flatten(edgesByWeight.headMap(weight, false));
-    }
-
-    private static List<Edge> flatten(SortedMap<Double, PMap<String, Edge>> byWeight) {
-        return byWeight.values().stream().flatMap(sameWeight -> sameWeight.values().stream())
-                .collect(Collectors.toList());
+        return freeze().getEdgesWithWeightLessThan(weight);
     }
 }

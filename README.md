@@ -7,10 +7,10 @@
 ## Key Features
 
 - **ACID Transactions with Write-Ahead Logging (WAL)**  
-A committed transaction is written to a binary, checksummed log as one block and forced to disk (`fsync`) before it is applied to the graph, so every acknowledged commit survives a crash. On startup the log is replayed; a transaction torn by a crash is discarded.
+A committed transaction is written to a binary, checksummed log as one block and forced to disk (`fsync`) before it is published to readers, so every acknowledged commit survives a crash. On startup the log is replayed; a transaction torn by a crash is discarded.
 
-- **Read Committed Isolation via Staged Updates**  
-Each transaction operates in an isolated workspace: writes are staged, and reads see the committed graph plus the transaction's own staged changes. Upon commit, changes are logged and then applied to the main state under a single lock. This prevents dirty reads and ensures **Read Committed isolation level**.
+- **Snapshot Isolation**  
+Each transaction reads the immutable snapshot committed when it began, plus its own staged changes, and never sees a half-applied commit; each non-transactional read sees the latest committed snapshot. Commits are first-committer-wins: a transaction is rejected with `TransactionConflictException`, before anything is logged, if a concurrent commit changed a node, edge or edge slot it writes, or removed an endpoint of an edge it adds. What a transaction only read is not checked, so write skew is possible.
 
 - **Advanced Graph Query Engine**  
 Supports high-performance queries powered by classic algorithms (Dijkstra, DFS, Bellman-Ford, etc.).
@@ -94,7 +94,7 @@ db.close();
 > **Note:** Only graphs created through a `GraphDB` are durable. `Graph.createGraph()` creates a standalone in-memory graph whose transactions are not logged.
 
 ### Transactions
-A `Graph` is read-only: the only way to modify it is through a transaction, so every change is written to the log before it is applied. `Graph` exposes reads (`GraphReader`); a `Transaction` exposes both reads and writes (`GraphReader` + `GraphWriter`). The `Node` and `Edge` objects that reads return are immutable, so they cannot be used to change the graph either.
+A `Graph` is read-only: the only way to modify it is through a transaction, so every change is written to the log before it is published. `Graph` exposes reads (`GraphReader`); a `Transaction` exposes both reads and writes (`GraphReader` + `GraphWriter`). The `Node` and `Edge` objects that reads return are immutable, so they cannot be used to change the graph either.
 
 > **Note:** If any operation within the transaction throws an exception, the transaction will **not commit** and the exception will be propagated. This guarantees that partial or faulty changes are never applied.
 

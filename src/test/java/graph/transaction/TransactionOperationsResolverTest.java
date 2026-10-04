@@ -199,9 +199,22 @@ public class TransactionOperationsResolverTest {
             oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
             oneOf(storage).getEdgeByNodeIds(NODE_ID, NODE_ID_2); will(returnValue(GRAPH_EDGE));
             oneOf(transactionStorage).edgeDeleted(EDGE_ID); will(returnValue(true));
+            oneOf(transactionStorage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(false));
         }});
 
         checkEdgeWithNodeIdsDoesNotThrowException();
+    }
+
+    @Test
+    public void throwsEdgeExistsExceptionIfTransactionDeletedTheStoredEdgeAndStagedANewOneWithThePairOfNodes() {
+        context.checking(new Expectations() {{
+            oneOf(storage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+            oneOf(storage).getEdgeByNodeIds(NODE_ID, NODE_ID_2); will(returnValue(GRAPH_EDGE));
+            oneOf(transactionStorage).edgeDeleted(EDGE_ID); will(returnValue(true));
+            oneOf(transactionStorage).edgeExists(NODE_ID, NODE_ID_2); will(returnValue(true));
+        }});
+
+        checkEdgeWithNodeIdsThrowsException();
     }
 
     @Test

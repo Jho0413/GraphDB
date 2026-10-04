@@ -58,14 +58,11 @@ public class TransactionOperationsResolver implements OperationsResolver {
 
     @Override
     public void edgeExists(String source, String target) throws EdgeExistsException {
-        if (this.storage.edgeExists(source, target)) {
-            Edge edge = this.storage.getEdgeByNodeIds(source, target);
-            if (!transactionStorage.edgeDeleted(edge.getId()))
-                throw new EdgeExistsException(source, target);
-        } else {
-            if (this.transactionStorage.edgeExists(source, target)) {
-                throw new EdgeExistsException(source, target);
-            }
+        boolean committedEdgeVisible = this.storage.edgeExists(source, target)
+                && !transactionStorage.edgeDeleted(this.storage.getEdgeByNodeIds(source, target).getId());
+        // A deleted committed edge frees the slot only until the transaction stages a new edge on it.
+        if (committedEdgeVisible || this.transactionStorage.edgeExists(source, target)) {
+            throw new EdgeExistsException(source, target);
         }
     }
 

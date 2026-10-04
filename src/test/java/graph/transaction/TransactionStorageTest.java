@@ -11,6 +11,7 @@ import graph.model.Node;
 import graph.model.Edge;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -20,22 +21,23 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 public class TransactionStorageTest {
 
-    private final TransactionStorage transactionStorage;
+    private final Supplier<TransactionStorage> storageCreator;
+    private TransactionStorage transactionStorage;
 
-    public TransactionStorageTest(TransactionStorage transactionStorage) {
-        this.transactionStorage = transactionStorage;
+    public TransactionStorageTest(Supplier<TransactionStorage> storageCreator) {
+        this.storageCreator = storageCreator;
     }
 
     @Parameters(name = "{0}")
     public static Collection<Object> storages() {
         return Arrays.asList(new Object[] {
-                new TransactionTemporaryStorage()
+                (Supplier<TransactionStorage>) TransactionTemporaryStorage::new
         });
     }
 
     @Before
     public void setUp() {
-        this.transactionStorage.clear();
+        this.transactionStorage = storageCreator.get();
     }
 
     private Node createTestNode(String id) {

@@ -10,7 +10,7 @@ import java.util.function.Function;
 
 /**
  * Test helper for setting up graphs concisely: every call runs as its own committed transaction, so test data
- * goes through the same commit path (log, apply, events) as real writes.
+ * goes through the same commit path (validate, log, publish, events) as real writes.
  *
  * <pre>{@code
  * Node a = write(graph).addNode(Map.of("name", "A"));

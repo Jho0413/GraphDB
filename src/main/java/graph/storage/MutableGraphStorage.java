@@ -4,12 +4,11 @@ import graph.model.Edge;
 import graph.model.Node;
 
 /**
- * The committed state of one graph, with the writes that change it.
+ * A graph state under construction, with the writes that change it.
  *
- * <p>Every operation is defined for every input. Concurrent transactions are not validated at commit, so one can
- * commit an operation whose target another has already removed: removing a missing node or edge does nothing, and
- * an edge is stored even if one of its endpoints is gone. This keeps a live commit and its replay from the
- * write-ahead log identical.
+ * <p>Every operation is defined for every input: removing a missing node or edge does nothing, and an edge is
+ * stored even if one of its endpoints is gone. Write-ahead logs can hold such data, so recovery must replay them
+ * exactly as the original commits applied them.
  */
 public interface MutableGraphStorage extends GraphStorage {
     void putNode(Node node);
