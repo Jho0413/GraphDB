@@ -5,7 +5,7 @@ import graph.model.Node;
 
 import java.util.*;
 
-public class InMemoryGraphStorage implements GraphStorage {
+public class InMemoryGraphStorage implements MutableGraphStorage {
 
     private final Map<String, Node> nodes;
     private final Map<String, Edge> edges;

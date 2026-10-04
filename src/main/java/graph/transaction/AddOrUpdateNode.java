@@ -1,12 +1,12 @@
 package graph.transaction;
 
 import graph.model.Node;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 
 public record AddOrUpdateNode(Node node) implements GraphOperation {
 
     @Override
-    public void apply(GraphStorage storage) {
+    public void apply(MutableGraphStorage storage) {
         storage.putNode(node);
     }
 }

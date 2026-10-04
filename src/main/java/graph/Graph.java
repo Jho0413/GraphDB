@@ -11,6 +11,7 @@ import graph.events.ObservableGraphView;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 import graph.storage.InMemoryGraphStorage;
 
 import java.util.List;
@@ -43,7 +44,7 @@ public class Graph implements GraphReader, ObservableGraphView {
         return create(InMemoryGraphStorage.create(), graphId, commitLog);
     }
 
-    static Graph create(GraphStorage storage, String graphId, CommitLog commitLog) {
+    static Graph create(MutableGraphStorage storage, String graphId, CommitLog commitLog) {
         return new Graph(storage, new GraphCommitter(storage, graphId, commitLog), graphId);
     }
 

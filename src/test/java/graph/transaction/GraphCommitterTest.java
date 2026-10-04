@@ -4,7 +4,7 @@ import graph.events.GraphEvent;
 import graph.exceptions.WalException;
 import graph.model.Edge;
 import graph.model.Node;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 import graph.storage.InMemoryGraphStorage;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 
 public class GraphCommitterTest {
 
-    private final GraphStorage storage = InMemoryGraphStorage.create();
+    private final MutableGraphStorage storage = InMemoryGraphStorage.create();
     private final List<List<GraphOperation>> logged = new ArrayList<>();
     private final List<GraphEvent> events = new ArrayList<>();
     private GraphCommitter committer;

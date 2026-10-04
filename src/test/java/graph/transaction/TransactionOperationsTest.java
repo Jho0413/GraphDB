@@ -6,7 +6,7 @@ import graph.exceptions.NodeNotFoundException;
 import graph.testsupport.EdgeBaseMatcher;
 import graph.testsupport.NodeBaseMatcher;
 import graph.testsupport.TriFunction;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Before;
@@ -30,7 +30,7 @@ public class TransactionOperationsTest {
 
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
-    private final GraphStorage storage = context.mock(GraphStorage.class);
+    private final MutableGraphStorage storage = context.mock(MutableGraphStorage.class);
     private final TransactionStorage transactionStorage = context.mock(TransactionStorage.class);
     private final OperationsResolver resolver = context.mock(OperationsResolver.class);
 
@@ -57,7 +57,7 @@ public class TransactionOperationsTest {
     private final List<Edge> TRANSACTION_EDGES = List.of(TRANSACTION_EDGE);
 
     @Parameterized.Parameter(value = 0)
-    public TriFunction<GraphStorage, TransactionStorage, OperationsResolver, Transaction> serviceCreator;
+    public TriFunction<MutableGraphStorage, TransactionStorage, OperationsResolver, Transaction> serviceCreator;
 
     @Before
     public void setUp() {
@@ -67,7 +67,7 @@ public class TransactionOperationsTest {
     @Parameterized.Parameters(name="{0}")
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
-                (TriFunction<GraphStorage, TransactionStorage, OperationsResolver, Transaction>) (storage, transactionStorage, resolver) ->
+                (TriFunction<MutableGraphStorage, TransactionStorage, OperationsResolver, Transaction>) (storage, transactionStorage, resolver) ->
                         new Transaction(storage, transactionStorage, resolver, new GraphCommitter(storage, "g1", CommitLog.NONE))
         });
     }

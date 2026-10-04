@@ -3,7 +3,7 @@ package graph.transaction;
 import graph.exceptions.NodeNotFoundException;
 import graph.model.Edge;
 import graph.model.Node;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 import graph.storage.InMemoryGraphStorage;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,7 +17,7 @@ import static org.junit.Assert.*;
 /** A transaction reads the committed graph with its own staged changes applied on top. */
 public class TransactionReadsTest {
 
-    private final GraphStorage storage = InMemoryGraphStorage.create();
+    private final MutableGraphStorage storage = InMemoryGraphStorage.create();
     private final GraphCommitter committer = new GraphCommitter(storage, "g1", CommitLog.NONE);
     private Node a, b, c;
     private Edge ab;

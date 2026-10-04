@@ -2,7 +2,7 @@ package graph.wal;
 
 import graph.wal.WalRecord.*;
 import graph.transaction.GraphOperation;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 import graph.storage.InMemoryGraphStorage;
 
 import java.util.ArrayList;
@@ -16,10 +16,10 @@ import java.util.Map;
  */
 public class RecoveryManager {
 
-    private final Map<String, GraphStorage> storages = new LinkedHashMap<>();
+    private final Map<String, MutableGraphStorage> storages = new LinkedHashMap<>();
 
     /** @return the recovered storage of every graph that exists at the end of the log, by graph id */
-    public Map<String, GraphStorage> recover(List<WalRecord> records) {
+    public Map<String, MutableGraphStorage> recover(List<WalRecord> records) {
         String transactionGraphId = null;
         List<GraphOperation> transactionOperations = new ArrayList<>();
 
@@ -33,7 +33,7 @@ public class RecoveryManager {
                 }
                 case Operation r -> transactionOperations.add(r.operation());
                 case TransactionCommit r -> {
-                    GraphStorage storage = storages.get(transactionGraphId);
+                    MutableGraphStorage storage = storages.get(transactionGraphId);
                     // A transaction for a graph that was never created or has been dropped is not replayed.
                     if (storage != null) {
                         transactionOperations.forEach(operation -> operation.apply(storage));

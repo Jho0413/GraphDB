@@ -4,7 +4,7 @@ import graph.transaction.CommitLog;
 import graph.model.Edge;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
-import graph.storage.GraphStorage;
+import graph.storage.MutableGraphStorage;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Before;
@@ -28,12 +28,12 @@ public class GraphTest {
 
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
-    private final GraphStorage storage = context.mock(GraphStorage.class);
+    private final MutableGraphStorage storage = context.mock(MutableGraphStorage.class);
 
     private Graph graph;
 
     @Parameterized.Parameter(value = 0)
-    public BiFunction<GraphStorage, String, Graph> serviceCreator;
+    public BiFunction<MutableGraphStorage, String, Graph> serviceCreator;
 
     @Before
     public void setUp() {
@@ -43,7 +43,7 @@ public class GraphTest {
     @Parameters(name="{0}")
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
-                (BiFunction<GraphStorage, String, Graph>) (storage, graphId) -> Graph.create(storage, graphId, CommitLog.NONE)
+                (BiFunction<MutableGraphStorage, String, Graph>) (storage, graphId) -> Graph.create(storage, graphId, CommitLog.NONE)
         });
     }
 
