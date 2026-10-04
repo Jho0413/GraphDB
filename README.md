@@ -16,7 +16,7 @@ Each transaction operates in an isolated workspace: writes are staged, and reads
 Supports high-performance queries powered by classic algorithms (Dijkstra, DFS, Bellman-Ford, etc.).
 
 - **LRU Caching**  
-Query results are cached using a Least Recently Used strategy to accelerate repeated computations.
+Query results are cached using a Least Recently Used strategy to accelerate repeated computations. Results are grouped by what they depend on, so a commit clears only the ones it affects (for example, an edge weight update does not clear strongly connected components).
 
 - **Indexed Edge Lookup**  
 Enables fast retrieval of edges by weight through indexing.
@@ -112,22 +112,26 @@ txn.commit();
 Run graph queries and analyses using the query client:
 
 ```java
-GraphQueryClient client = db.createQueryClient(graphId);
+GraphQueryClient client = db.createQueryClient(graphId);   // one client (and cache) per graph
 
 // Shortest path
-List<String> path = client.paths().findShortestPath("A", "B");
+List<String> path = client.paths().findShortestPath(nodeA.getId(), nodeB.getId()).getNodeIds();
+
+// Shortest distances between every pair of nodes
+DistanceMatrix distances = client.paths().findAllShortestDistances();
+double distance = distances.distance(nodeA.getId(), nodeB.getId());
 
 // Check for cycles
 boolean hasCycle = client.cycles().hasCycle();
 
 // Find strongly connected components
-List<List<String>> sccs = client.connectivity().getStronglyConnectedComponents();
+List<Set<String>> sccs = client.connectivity().getStronglyConnectedComponents();
 
 // Get common neighbours
-List<String> common = client.commonality().findCommonNeighbours("A", "B");
+Set<String> common = client.commonality().findCommonNeighbours(nodeA.getId(), nodeB.getId());
 
 // Compute graph diameter
-int diameter = client.structure().getGraphDiameter();
+double diameter = client.structure().getGraphDiameter();
 ```
 
 ---
