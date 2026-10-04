@@ -271,6 +271,72 @@ public class GraphStorageTest {
         assertThat(result, hasItems(EDGE_1));
     }
 
+    @Test
+    public void edgesWithEqualWeightsAreAllReturned() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node3", "node4");
+        Edge sameWeight = new Edge("edge4", "node3", "node4", 5.0, Map.of());
+        storage.putEdge(EDGE_1);
+        storage.putEdge(sameWeight);
+
+        List<Edge> result = storage.getEdgesByWeight(5.0);
+        assertThat(result.size(), is(2));
+        assertThat(result, hasItems(EDGE_1, sameWeight));
+    }
+
+    @Test
+    public void weightRangeIncludesBothBoundsInAscendingOrder() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node3", "node4");
+        storage.putEdge(EDGE_3);
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_2);
+
+        assertThat(storage.getEdgesByWeightRange(5.0, 20.0), is(List.of(EDGE_1, EDGE_2, EDGE_3)));
+    }
+
+    @Test
+    public void weightGreaterThanExcludesTheBound() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node2", "node3");
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_2);
+
+        assertThat(storage.getEdgesWithWeightGreaterThan(5.0), is(List.of(EDGE_2)));
+    }
+
+    @Test
+    public void weightLessThanExcludesTheBound() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node2", "node3");
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_2);
+
+        assertThat(storage.getEdgesWithWeightLessThan(10.0), is(List.of(EDGE_1)));
+    }
+
+    @Test
+    public void weightQueriesWithNoMatchReturnEmptyLists() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+
+        assertTrue(storage.getEdgesByWeight(99.0).isEmpty());
+        assertTrue(storage.getEdgesByWeightRange(6.0, 9.0).isEmpty());
+        assertTrue(storage.getEdgesWithWeightGreaterThan(5.0).isEmpty());
+        assertTrue(storage.getEdgesWithWeightLessThan(5.0).isEmpty());
+    }
+
+    @Test
+    public void removingAnEdgeRemovesItFromWeightQueries() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+
+        storage.removeEdge("edge1");
+
+        assertTrue(storage.getEdgesByWeight(5.0).isEmpty());
+        assertTrue(storage.getEdgesByWeightRange(0.0, 100.0).isEmpty());
+    }
+
     // ============ REPLACING EXISTING ENTRIES ============
 
     @Test
@@ -298,6 +364,222 @@ public class GraphStorageTest {
         assertThat(storage.getEdgesByWeightRange(0.0, 100.0), is(List.of(reweighted)));
     }
 
+    @Test
+    public void replacingAnEdgeOnTheSameEndpointsKeepsOneAdjacencyEntry() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+        Edge reweighted = new Edge("edge1", "node1", "node2", 7.0, Map.of());
+
+        storage.putEdge(reweighted);
+
+        assertThat(storage.getEdgesFromNode("node1"), is(List.of(reweighted)));
+        assertThat(storage.nodesIdsWithEdgesToNode("node2"), is(List.of("node1")));
+    }
+
+    @Test
+    public void replacingAnEdgeWithNewEndpointsMovesItInTheAdjacency() {
+        initialiseNodes("node1", "node2");
+        storage.putNode(createTestNode("node3"));
+        storage.putEdge(EDGE_1);
+
+        storage.putEdge(new Edge("edge1", "node1", "node3", 5.0, Map.of()));
+
+        assertFalse(storage.edgeExists("node1", "node2"));
+        assertTrue(storage.nodesIdsWithEdgesToNode("node2").isEmpty());
+        assertThat(storage.nodesIdsWithEdgesToNode("node3"), is(List.of("node1")));
+        assertThat(storage.getEdgesFromNode("node1").size(), is(1));
+    }
+
+    // ============ REMOVING NODES ============
+
+    @Test
+    public void removingANodeRemovesItsIncomingAndOutgoingEdges() {
+        initialiseNodes("node1", "node2");
+        initialiseNodes("node2", "node3");
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_2);
+
+        storage.removeNode("node2");
+
+        assertTrue(storage.getAllEdges().isEmpty());
+        assertTrue(storage.getEdgesFromNode("node1").isEmpty());
+        assertFalse(storage.edgeExists("node1", "node2"));
+        assertTrue(storage.nodesIdsWithEdgesToNode("node3").isEmpty());
+        assertTrue(storage.getEdgesByWeightRange(0.0, 100.0).isEmpty());
+    }
+
+    @Test
+    public void removingANodeRemovesItsSelfLoop() {
+        storage.putNode(createTestNode("node1"));
+        storage.putEdge(new Edge("loop", "node1", "node1", 1.0, Map.of()));
+
+        storage.removeNode("node1");
+
+        assertTrue(storage.getAllEdges().isEmpty());
+        assertFalse(storage.edgeExists("node1", "node1"));
+        assertTrue(storage.nodesIdsWithEdgesToNode("node1").isEmpty());
+    }
+
+    @Test
+    public void removingANodeRemovesAnEdgeWhoseOtherEndpointIsMissing() {
+        storage.putNode(createTestNode("node2"));
+        storage.putEdge(EDGE_1);
+
+        storage.removeNode("node2");
+
+        assertTrue(storage.getAllEdges().isEmpty());
+        assertTrue(storage.getEdgesFromNode("node1").isEmpty());
+        assertFalse(storage.edgeExists("node1", "node2"));
+        assertTrue(storage.getEdgesByWeightRange(0.0, 100.0).isEmpty());
+    }
+
+    @Test
+    public void removingANodeRemovesAnEdgeWhoseTargetIsMissing() {
+        storage.putNode(createTestNode("node1"));
+        storage.putEdge(EDGE_1);
+
+        storage.removeNode("node1");
+
+        assertTrue(storage.getAllEdges().isEmpty());
+        assertTrue(storage.nodesIdsWithEdgesToNode("node2").isEmpty());
+        assertTrue(storage.getEdgesByWeightRange(0.0, 100.0).isEmpty());
+    }
+
+    @Test
+    public void removingTheOldEndpointOfAMovedEdgeKeepsTheEdge() {
+        initialiseNodes("node1", "node2");
+        storage.putNode(createTestNode("node3"));
+        storage.putEdge(EDGE_1);
+        storage.putEdge(new Edge("edge1", "node1", "node3", 5.0, Map.of()));
+
+        storage.removeNode("node2");
+
+        assertTrue(storage.containsEdge("edge1"));
+    }
+
+    @Test
+    public void removingTheNewEndpointOfAMovedEdgeRemovesTheEdge() {
+        initialiseNodes("node1", "node2");
+        storage.putNode(createTestNode("node3"));
+        storage.putEdge(EDGE_1);
+        storage.putEdge(new Edge("edge1", "node1", "node3", 5.0, Map.of()));
+
+        storage.removeNode("node3");
+
+        assertTrue(storage.getAllEdges().isEmpty());
+        assertTrue(storage.getEdgesFromNode("node1").isEmpty());
+    }
+
+    @Test
+    public void nodesWithEdgesToANodeExcludeRemovedEdges() {
+        Edge edge1 = createTestEdge("edge1", "node1", "node3");
+        Edge edge2 = createTestEdge("edge2", "node2", "node3");
+        storage.putEdge(edge1);
+        storage.putEdge(edge2);
+
+        storage.removeEdge("edge1");
+
+        assertThat(storage.nodesIdsWithEdgesToNode("node3"), is(List.of("node2")));
+    }
+
+    @Test
+    public void aNodeWithoutEdgesHasNoEdgesFromIt() {
+        storage.putNode(createTestNode("node1"));
+        assertTrue(storage.getEdgesFromNode("node1").isEmpty());
+    }
+
+    @Test
+    public void thereIsNoEdgeBetweenNodesWithoutEdges() {
+        initialiseNodes("node1", "node2");
+        assertNull(storage.getEdgeByNodeIds("node1", "node2"));
+    }
+
+    @Test
+    public void anUnknownSourceHasNoEdgeByNodeIds() {
+        storage.putNode(createTestNode("node2"));
+        assertNull(storage.getEdgeByNodeIds("unknown", "node2"));
+    }
+
+    @Test
+    public void anUnknownNodeHasNoEdgesFromIt() {
+        assertTrue(storage.getEdgesFromNode("unknown").isEmpty());
+    }
+
+    // ============ TWO EDGES ON ONE (SOURCE, TARGET) SLOT ============
+    // Unvalidated concurrent commits, and logs recovered from them, can put two edges on one slot. The later edge
+    // takes the slot over; the earlier one is still stored.
+
+    private final Edge EDGE_1_TWIN = new Edge("edge1twin", "node1", "node2", 6.0, Map.of());
+
+    @Test
+    public void removingASourceNodeRemovesBothEdgesOnASharedSlot() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_1_TWIN);
+
+        storage.removeNode("node1");
+
+        assertTrue(storage.getAllEdges().isEmpty());
+        assertFalse(storage.containsEdge("edge1"));
+        assertTrue(storage.getEdgesByWeightRange(0.0, 100.0).isEmpty());
+        assertTrue(storage.nodesIdsWithEdgesToNode("node2").isEmpty());
+    }
+
+    @Test
+    public void removingATargetNodeRemovesBothEdgesOnASharedSlot() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_1_TWIN);
+
+        storage.removeNode("node2");
+
+        assertTrue(storage.getAllEdges().isEmpty());
+        assertTrue(storage.getEdgesByWeightRange(0.0, 100.0).isEmpty());
+        assertTrue(storage.getEdgesFromNode("node1").isEmpty());
+    }
+
+    @Test
+    public void removingTheTakenOverEdgeOnASharedSlotClearsTheSlotInBothDirections() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_1_TWIN);
+
+        storage.removeEdge("edge1");
+
+        assertFalse(storage.edgeExists("node1", "node2"));
+        assertTrue(storage.getEdgesFromNode("node1").isEmpty());
+        assertTrue(storage.nodesIdsWithEdgesToNode("node2").isEmpty());
+        assertThat(storage.getAllEdges(), is(List.of(EDGE_1_TWIN)));
+    }
+
+    @Test
+    public void removingTheSlotHoldingEdgeClearsTheSlotInBothDirections() {
+        initialiseNodes("node1", "node2");
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_1_TWIN);
+
+        storage.removeEdge("edge1twin");
+
+        assertFalse(storage.edgeExists("node1", "node2"));
+        assertTrue(storage.getEdgesFromNode("node1").isEmpty());
+        assertTrue(storage.nodesIdsWithEdgesToNode("node2").isEmpty());
+        assertThat(storage.getAllEdges(), is(List.of(EDGE_1)));
+    }
+
+    @Test
+    public void movingAnEdgeOffASlotAnotherEdgeTookOverClearsTheSlot() {
+        initialiseNodes("node1", "node2");
+        storage.putNode(createTestNode("node3"));
+        storage.putEdge(EDGE_1);
+        storage.putEdge(EDGE_1_TWIN);
+
+        storage.putEdge(new Edge("edge1", "node1", "node3", 5.0, Map.of()));
+
+        assertFalse(storage.edgeExists("node1", "node2"));
+        assertTrue(storage.nodesIdsWithEdgesToNode("node2").isEmpty());
+        assertThat(storage.getEdgeByNodeIds("node1", "node3").getId(), is("edge1"));
+    }
+
     // ============ OPERATIONS ON MISSING ENTRIES ============
     // Concurrent transactions can commit an operation whose target another transaction already removed. Storage
     // applies these without failing, so the live commit and log replay always end in the same state.
@@ -307,6 +589,24 @@ public class GraphStorageTest {
         initialiseNodes("node1", "node2");
         assertNull(storage.removeEdge("missing"));
         assertTrue(storage.getAllEdges().isEmpty());
+    }
+
+    @Test
+    public void removingAMissingNodeIsANoOp() {
+        initialiseNodes("node1", "node2");
+        assertNull(storage.removeNode("missing"));
+        assertThat(storage.getAllNodes().size(), is(2));
+    }
+
+    @Test
+    public void removingAMissingNodeRemovesEdgesThatReferenceIt() {
+        storage.putNode(createTestNode("node2"));
+        storage.putEdge(EDGE_1);
+
+        assertNull(storage.removeNode("node1"));
+
+        assertTrue(storage.getAllEdges().isEmpty());
+        assertTrue(storage.nodesIdsWithEdgesToNode("node2").isEmpty());
     }
 
     @Test
