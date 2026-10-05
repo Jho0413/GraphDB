@@ -51,8 +51,8 @@ public final class GraphSnapshot implements GraphStorage {
     }
 
     /**
-     * This snapshot's commit version: one more than the snapshot it was built from. It identifies a snapshot only
-     * within one graph's history, which starts at 0 when the graph is created or recovered.
+     * This snapshot's commit version: 0 for a new or recovered graph, then one more per commit. It identifies a
+     * snapshot only within one graph's history.
      */
     public long version() {
         return version;

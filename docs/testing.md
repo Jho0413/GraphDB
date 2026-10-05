@@ -5,7 +5,7 @@ mvn -q test                      # everything, about 10 seconds
 mvn -q test -Dtest=GraphTest     # one test class
 ```
 
-The build needs JDK 21. Tests use JUnit 4. jMock and Mockito provide mocks in the few tests that isolate one class,
+The build needs JDK 21. Tests use JUnit 4. jMock provides mocks in the few tests that isolate one class,
 and ArchUnit checks the package rules.
 
 ## How the tests are organised

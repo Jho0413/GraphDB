@@ -11,11 +11,11 @@ import java.util.Map;
 
 public class TransactionOperationsResolver implements OperationsResolver {
 
-    private final GraphStorage storage;
+    private final GraphStorage base;
     private final TransactionStorage transactionStorage;
 
-    public TransactionOperationsResolver(GraphStorage storage, TransactionStorage transactionStorage) {
-        this.storage = storage;
+    public TransactionOperationsResolver(GraphStorage base, TransactionStorage transactionStorage) {
+        this.base = base;
         this.transactionStorage = transactionStorage;
     }
 
@@ -29,7 +29,7 @@ public class TransactionOperationsResolver implements OperationsResolver {
     @Override
     public void checkNodeId(String nodeId) throws NodeNotFoundException {
         if (!this.transactionStorage.containsNode(nodeId) && (
-                this.transactionStorage.nodeDeleted(nodeId) || !this.storage.containsNode(nodeId)
+                this.transactionStorage.nodeDeleted(nodeId) || !this.base.containsNode(nodeId)
         )) {
             throw new NodeNotFoundException(nodeId);
         }
@@ -50,7 +50,7 @@ public class TransactionOperationsResolver implements OperationsResolver {
     @Override
     public void checkEdgeId(String edgeId) throws EdgeNotFoundException {
         if (!this.transactionStorage.containsEdge(edgeId) && (
-                this.transactionStorage.edgeDeleted(edgeId) || !this.storage.containsEdge(edgeId)
+                this.transactionStorage.edgeDeleted(edgeId) || !this.base.containsEdge(edgeId)
         )) {
             throw new EdgeNotFoundException(edgeId);
         }
@@ -58,8 +58,8 @@ public class TransactionOperationsResolver implements OperationsResolver {
 
     @Override
     public void edgeExists(String source, String target) throws EdgeExistsException {
-        boolean committedEdgeVisible = this.storage.edgeExists(source, target)
-                && !transactionStorage.edgeDeleted(this.storage.getEdgeByNodeIds(source, target).getId());
+        boolean committedEdgeVisible = this.base.edgeExists(source, target)
+                && !transactionStorage.edgeDeleted(this.base.getEdgeByNodeIds(source, target).getId());
         // A deleted committed edge frees the slot only until the transaction stages a new edge on it.
         if (committedEdgeVisible || this.transactionStorage.edgeExists(source, target)) {
             throw new EdgeExistsException(source, target);
@@ -70,13 +70,13 @@ public class TransactionOperationsResolver implements OperationsResolver {
     public Edge getEdgeByNodeIdsIfExists(String source, String target) throws EdgeNotFoundException {
         checkNodeId(source);
         checkNodeId(target);
-        boolean inStorage = this.storage.edgeExists(source, target);
+        boolean inBase = this.base.edgeExists(source, target);
         boolean inTransactionStorage = this.transactionStorage.edgeExists(source, target);
         Edge edge = null;
 
-        // currently in main storage
-        if (inStorage) {
-            edge = this.storage.getEdgeByNodeIds(source, target);
+        // in the base snapshot
+        if (inBase) {
+            edge = this.base.getEdgeByNodeIds(source, target);
             // check if transaction has deleted this edge
             if (this.transactionStorage.edgeDeleted(edge.getId())) {
                 edge = null;
@@ -96,13 +96,13 @@ public class TransactionOperationsResolver implements OperationsResolver {
         // pre-condition: the node exists
         return this.transactionStorage.containsNode(nodeId)
                 ? this.transactionStorage.getNode(nodeId)
-                : this.storage.getNode(nodeId);
+                : this.base.getNode(nodeId);
     }
 
     private Edge getMostUpdatedEdge(String edgeId) {
         // pre-condition: the edge exists
         return this.transactionStorage.containsEdge(edgeId)
                 ? this.transactionStorage.getEdge(edgeId)
-                : this.storage.getEdge(edgeId);
+                : this.base.getEdge(edgeId);
     }
 }

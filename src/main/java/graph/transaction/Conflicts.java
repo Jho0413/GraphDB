@@ -8,9 +8,9 @@ import java.util.List;
 
 /**
  * Snapshot isolation's first-committer-wins rule. A transaction that began on snapshot {@code base} is rejected if
- * (a) a node or edge it writes is not the same object in {@code current} as in {@code base}, (b) an edge slot it puts
- * to changed occupant in between, or (c) in the snapshot its commit builds, an edge it puts lacks an endpoint or does
- * not hold its slot. Write skew is allowed: what a transaction only read is not checked.
+ * (a) a node or edge it writes is not the same object in {@code current} as in {@code base}, (b) the slot of an edge
+ * it puts changed occupant in between, or (c) in the snapshot its commit builds, an edge it puts lacks an endpoint or
+ * does not hold its slot. Write skew is allowed: what a transaction only read is not checked.
  *
  * <p>Comparisons use {@code ==}. This is sound because every staged put carries a newly constructed {@code Node} or
  * {@code Edge} ({@code addNode}, {@code addEdge}, {@link ModelChanges}) with a UUID id, so an object that is the same

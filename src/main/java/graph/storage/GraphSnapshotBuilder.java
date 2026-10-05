@@ -8,8 +8,6 @@ import org.pcollections.PMap;
 import org.pcollections.PSet;
 import org.pcollections.TreePMap;
 
-import java.util.List;
-
 /**
  * Builds the next {@link GraphSnapshot} from a previous one. Every write replaces a field with a new persistent
  * map that shares structure with the old one, so starting from a snapshot and freezing into one are both O(1).
@@ -63,7 +61,7 @@ public final class GraphSnapshotBuilder implements MutableGraphStorage {
 
     @Override
     public Node removeNode(String id) {
-        // Must stay: write-ahead logs hold bare DeleteNode records that rely on it to remove the node's edges.
+        // Write-ahead logs can hold bare DeleteNode records, and replay relies on this to remove the node's edges.
         incidentEdges.getOrDefault(id, HashTreePSet.empty()).forEach(this::removeEdge);
         Node removed = nodes.get(id);
         nodes = nodes.minus(id);
@@ -124,75 +122,5 @@ public final class GraphSnapshotBuilder implements MutableGraphStorage {
     private static PMap<String, PSet<String>> minusMember(PMap<String, PSet<String>> map, String key, String member) {
         PSet<String> members = map.getOrDefault(key, HashTreePSet.empty()).minus(member);
         return members.isEmpty() ? map.minus(key) : map.plus(key, members);
-    }
-
-    @Override
-    public Node getNode(String id) {
-        return freeze().getNode(id);
-    }
-
-    @Override
-    public List<Node> getAllNodes() {
-        return freeze().getAllNodes();
-    }
-
-    @Override
-    public boolean containsNode(String id) {
-        return freeze().containsNode(id);
-    }
-
-    @Override
-    public Edge getEdge(String id) {
-        return freeze().getEdge(id);
-    }
-
-    @Override
-    public Edge getEdgeByNodeIds(String source, String target) {
-        return freeze().getEdgeByNodeIds(source, target);
-    }
-
-    @Override
-    public List<Edge> getAllEdges() {
-        return freeze().getAllEdges();
-    }
-
-    @Override
-    public boolean containsEdge(String id) {
-        return freeze().containsEdge(id);
-    }
-
-    @Override
-    public List<Edge> getEdgesFromNode(String id) {
-        return freeze().getEdgesFromNode(id);
-    }
-
-    @Override
-    public List<String> nodesIdsWithEdgesToNode(String id) {
-        return freeze().nodesIdsWithEdgesToNode(id);
-    }
-
-    @Override
-    public boolean edgeExists(String source, String target) {
-        return freeze().edgeExists(source, target);
-    }
-
-    @Override
-    public List<Edge> getEdgesByWeight(double weight) {
-        return freeze().getEdgesByWeight(weight);
-    }
-
-    @Override
-    public List<Edge> getEdgesByWeightRange(double min, double max) {
-        return freeze().getEdgesByWeightRange(min, max);
-    }
-
-    @Override
-    public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
-        return freeze().getEdgesWithWeightGreaterThan(weight);
-    }
-
-    @Override
-    public List<Edge> getEdgesWithWeightLessThan(double weight) {
-        return freeze().getEdgesWithWeightLessThan(weight);
     }
 }

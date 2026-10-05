@@ -98,8 +98,8 @@ interface it needs, `CommitLog`, and `WriteAheadLog` implements it. `GraphDB` co
 - **Committed state is an immutable value.** Snapshots are built from persistent maps, so making the next one
   copies very little and readers never lock. See [Storage](storage.md).
 - **There is one write path.** All changes go through a transaction and the `TransactionManager`. Only the commit
-  path and recovery can build a snapshot, and the read-only and writable storage interfaces enforce that at compile
-  time.
+  path and recovery build snapshots. The read-only and writable storage interfaces are separate, so a half-built
+  graph cannot be passed to code that reads one.
 - **Operations are the unit of change.** One operation list is applied to build the next snapshot, recorded in the
   log and replayed by recovery, so the live graph and the recovered graph cannot disagree.
 - **The log comes before visibility.** A commit is written and forced to disk before it is published.

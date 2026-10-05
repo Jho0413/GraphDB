@@ -253,6 +253,20 @@ public class TransactionConflictTest {
         assertEquals(2, manager.current().getAllEdges().size());
     }
 
+    @Test
+    public void whatATransactionOnlyReadIsNotChecked() {
+        Transaction first = manager.begin();
+        Transaction second = manager.begin();
+        first.updateNode(b.getId(), "copy", first.getNodeById(a.getId()).getAttribute("name"));
+        second.updateNode(a.getId(), "copy", second.getNodeById(b.getId()).getAttribute("name"));
+
+        first.commit();
+        second.commit();
+
+        assertEquals("A", manager.current().getNode(b.getId()).getAttribute("copy"));
+        assertEquals("B", manager.current().getNode(a.getId()).getAttribute("copy"));
+    }
+
     // ============ A rejected transaction ============
 
     @Test

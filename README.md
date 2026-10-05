@@ -19,8 +19,8 @@ write-ahead log, and each analytic query runs on one consistent snapshot of the 
   reachability, topological sort, diameter and common neighbours. Each query runs on one snapshot.
 - **A query result cache.** Results are kept in an LRU cache keyed by snapshot version, so a commit never makes a
   cached result stale.
-- **Indexed reads.** Edges are indexed by endpoint and by weight, so neighbour and weight lookups do not scan the
-  whole graph.
+- **Indexed reads.** Edges are indexed by endpoint and by weight, so neighbour and weight lookups on a graph and in
+  queries do not scan the whole graph.
 
 | Query group | Queries | Algorithms |
 |---|---|---|

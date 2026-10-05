@@ -56,13 +56,15 @@ The only way to make a snapshot other than the empty one is `GraphSnapshotBuilde
 3. `freeze()` returns the result as a new snapshot.
 
 A builder is used in exactly two places: the [commit path](transactions.md#the-commit-path) and
-[recovery](durability.md#recovery). The storage interfaces make this a compile-time rule. Everything else is given
-the read-only `GraphStorage` interface. Only the builder implements the writable `MutableGraphStorage`.
+[recovery](durability.md#recovery). Everything else reads the read-only `GraphStorage` interface, which only
+snapshots implement. The builder implements only the writable `MutableGraphStorage`, so the compiler rejects passing
+a half-built graph to code that reads one.
 
 ### Writes are defined for every input
 
 A builder write never fails. Removing a node or edge that is not there does nothing. Removing a node also removes
-every edge that touches it. If another edge already holds a node pair's slot, putting a new edge on that pair gives the slot to the new edge.
+every edge that touches it. If another edge already holds a node pair's slot, putting a new edge on that pair gives
+the slot to the new edge.
 
 Recovery depends on this. It replays the write-ahead log through these same writes, and a log written by an older
 version of the engine can contain data that today's commit validation would reject. Replay has to apply that data

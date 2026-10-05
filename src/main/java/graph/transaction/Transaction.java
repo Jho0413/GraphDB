@@ -23,15 +23,15 @@ import java.util.function.Predicate;
  */
 public class Transaction implements GraphReader, GraphWriter {
 
-    private final GraphStorage storage;
+    private final GraphStorage base;
     private final TransactionStorage transactionStorage;
     private final OperationsResolver resolver;
     private final TransactionManager manager;
     private boolean committed;
 
-    Transaction(GraphStorage storage, TransactionStorage transactionStorage, OperationsResolver resolver,
+    Transaction(GraphStorage base, TransactionStorage transactionStorage, OperationsResolver resolver,
                 TransactionManager manager) {
-        this.storage = storage;
+        this.base = base;
         this.transactionStorage = transactionStorage;
         this.resolver = resolver;
         this.manager = manager;
@@ -60,7 +60,7 @@ public class Transaction implements GraphReader, GraphWriter {
 
     @Override
     public List<Node> getNodes() {
-        List<Node> nodes = this.storage.getAllNodes();
+        List<Node> nodes = this.base.getAllNodes();
         List<Node> newNodes = new LinkedList<>();
         List<Node> modifiedNodes = this.transactionStorage.getAllNodes();
         Set<String> nodeIds = new HashSet<>();
@@ -81,7 +81,8 @@ public class Transaction implements GraphReader, GraphWriter {
     }
 
     @Override
-    public void updateNode(String id, Map<String, Object> attributes) throws NodeNotFoundException, IllegalArgumentException {
+    public void updateNode(String id, Map<String, Object> attributes)
+            throws NodeNotFoundException, IllegalArgumentException {
         checkNotCommitted();
         resolver.checkAttributes(attributes);
         Node currentNode = resolver.getNodeIfExists(id);
@@ -114,14 +115,15 @@ public class Transaction implements GraphReader, GraphWriter {
     }
 
     /**
-     * The node's edges as this transaction sees them, in its snapshot or staged, in O(degree). A second edge on one
-     * slot, possible only in recovered data, is missed here and removed by the delete's cascade at commit.
+     * The node's edges as this transaction sees them, in its snapshot or staged, in O(degree + staged edges). A
+     * second edge on one slot, possible only in recovered data, is missed here and removed by the delete's cascade
+     * at commit.
      */
     private Set<String> incidentEdgeIds(String nodeId) {
         Set<String> edgeIds = new LinkedHashSet<>();
-        this.storage.getEdgesFromNode(nodeId).forEach(edge -> edgeIds.add(edge.getId()));
-        for (String source : this.storage.nodesIdsWithEdgesToNode(nodeId)) {
-            edgeIds.add(this.storage.getEdgeByNodeIds(source, nodeId).getId());
+        this.base.getEdgesFromNode(nodeId).forEach(edge -> edgeIds.add(edge.getId()));
+        for (String source : this.base.nodesIdsWithEdgesToNode(nodeId)) {
+            edgeIds.add(this.base.getEdgeByNodeIds(source, nodeId).getId());
         }
         for (Edge edge : this.transactionStorage.getAllEdges()) {
             if (edge.getSource().equals(nodeId) || edge.getDestination().equals(nodeId)) {
@@ -133,7 +135,8 @@ public class Transaction implements GraphReader, GraphWriter {
     }
 
     @Override
-    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight) throws IllegalArgumentException, NodeNotFoundException, EdgeExistsException {
+    public Edge addEdge(String source, String target, Map<String, Object> properties, double weight)
+            throws IllegalArgumentException, NodeNotFoundException, EdgeExistsException {
         checkNotCommitted();
         resolver.checkNodeId(source);
         resolver.checkNodeId(target);
@@ -157,7 +160,7 @@ public class Transaction implements GraphReader, GraphWriter {
 
     @Override
     public List<Edge> getEdges() {
-        List<Edge> edges = this.storage.getAllEdges();
+        List<Edge> edges = this.base.getAllEdges();
         List<Edge> modifiedEdges = this.transactionStorage.getAllEdges();
         List<Edge> newEdges = new LinkedList<>();
         Set<String> edgeIds = new HashSet<>();
@@ -233,7 +236,8 @@ public class Transaction implements GraphReader, GraphWriter {
     }
 
     @Override
-    public void updateEdge(String edgeId, Map<String, Object> properties) throws EdgeNotFoundException, IllegalArgumentException {
+    public void updateEdge(String edgeId, Map<String, Object> properties)
+            throws EdgeNotFoundException, IllegalArgumentException {
         checkNotCommitted();
         resolver.checkAttributes(properties);
         Edge currentEdge = resolver.getEdgeIfExists(edgeId);
@@ -269,7 +273,7 @@ public class Transaction implements GraphReader, GraphWriter {
         checkNotCommitted();
         // Set before committing so the transaction is spent whatever the outcome.
         committed = true;
-        manager.commit(this.storage, this.transactionStorage.getOperations());
+        manager.commit(this.base, this.transactionStorage.getOperations());
     }
 
     private void checkNotCommitted() {

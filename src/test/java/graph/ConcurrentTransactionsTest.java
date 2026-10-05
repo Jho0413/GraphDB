@@ -31,7 +31,7 @@ public class ConcurrentTransactionsTest {
         executor.shutdownNow();
     }
 
-    @Test
+    @Test(timeout = 60_000)
     public void writersOnDisjointNodesAllCommit() throws Exception {
         List<Node> nodes = new ArrayList<>();
         Transaction setup = graph.createTransaction();
@@ -58,7 +58,7 @@ public class ConcurrentTransactionsTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60_000)
     public void retriedIncrementsOfOneCounterLoseNoUpdate() throws Exception {
         Transaction setup = graph.createTransaction();
         Node counter = setup.addNode(Map.of("count", 0));
@@ -78,7 +78,7 @@ public class ConcurrentTransactionsTest {
         assertEquals(THREADS * COMMITS_PER_THREAD, graph.getNodeById(counter.getId()).getAttribute("count"));
     }
 
-    @Test
+    @Test(timeout = 60_000)
     public void readersNeverSeePartOfACommit() throws Exception {
         AtomicBoolean writing = new AtomicBoolean(true);
         List<Future<?>> writers = new ArrayList<>();
@@ -101,7 +101,7 @@ public class ConcurrentTransactionsTest {
                     oddReads++;
                 }
                 reading.countDown();
-            } while (writing.get());
+            } while (writing.get() && !Thread.currentThread().isInterrupted());
             return oddReads;
         });
         // Writers start only once the reader is in its loop, so its reads overlap their commits.
@@ -122,7 +122,8 @@ public class ConcurrentTransactionsTest {
     }
 
     private void incrementWithRetry(String nodeId) {
-        while (true) {
+        // Stops on interrupt so a failed test's shutdownNow does not leave it spinning.
+        while (!Thread.currentThread().isInterrupted()) {
             Transaction transaction = graph.createTransaction();
             int count = (Integer) transaction.getNodeById(nodeId).getAttribute("count");
             transaction.updateNode(nodeId, "count", count + 1);

@@ -11,6 +11,9 @@ import graph.model.Node;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -180,7 +183,7 @@ public class GraphTest {
         assertEquals(2, graph.getNodes().size());
     }
 
-    @Test
+    @Test(timeout = 60_000)
     public void readsDuringACommitSeeNoneOfItUntilItIsPublished() throws Exception {
         CountDownLatch logging = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
@@ -192,16 +195,19 @@ public class GraphTest {
         Node a = transaction.addNode(Map.of());
         Node b = transaction.addNode(Map.of());
         transaction.addEdge(a.getId(), b.getId(), Map.of(), 1.0);
-        Thread committer = new Thread(transaction::commit);
-        committer.start();
-
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            assertTrue(logging.await(5, TimeUnit.SECONDS));
-            assertTrue(graph.getNodes().isEmpty());
-            assertTrue(graph.getEdges().isEmpty());
+            Future<?> committer = executor.submit(transaction::commit);
+            try {
+                assertTrue(logging.await(30, TimeUnit.SECONDS));
+                assertTrue(graph.getNodes().isEmpty());
+                assertTrue(graph.getEdges().isEmpty());
+            } finally {
+                release.countDown();
+            }
+            committer.get(30, TimeUnit.SECONDS);
         } finally {
-            release.countDown();
-            committer.join(5000);
+            executor.shutdownNow();
         }
         assertEquals(2, graph.getNodes().size());
         assertEquals(1, graph.getEdges().size());
@@ -211,9 +217,12 @@ public class GraphTest {
 
     private static void await(CountDownLatch latch) {
         try {
-            latch.await(5, TimeUnit.SECONDS);
+            if (!latch.await(30, TimeUnit.SECONDS)) {
+                throw new AssertionError("latch never opened");
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            throw new AssertionError("interrupted while waiting", e);
         }
     }
 

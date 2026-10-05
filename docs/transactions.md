@@ -48,6 +48,9 @@ A `Transaction` has the same read interface as a `Graph`. It shows the base snap
 changes laid on top: staged objects replace or add to the snapshot's, and deleted ones are hidden. Commits that
 other transactions make after this one began are never visible to it.
 
+Neighbour and weight lookups inside a transaction are not indexed: they scan every committed edge so that staged
+edges can be merged in.
+
 ## The commit path
 
 ```mermaid

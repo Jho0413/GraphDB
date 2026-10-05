@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * A graph's committed state. Each read sees the latest committed snapshot, taken once per call, so it never sees a
  * half-applied commit; consecutive calls may see different snapshots. The only way to change a graph is through a
- * {@link Transaction}, so every change is logged before it is published.
+ * {@link Transaction}.
  */
 public class Graph implements GraphReader {
 

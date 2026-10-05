@@ -8,7 +8,7 @@ import graph.model.Node;
 
 import java.util.Map;
 
-/** Every write on a graph. Only a {@link Transaction} can write, so every change is logged before it is published. */
+/** Every write on a graph. Only a {@link Transaction} can write. */
 public interface GraphWriter {
 
     Node addNode(Map<String, Object> attributes) throws IllegalArgumentException;
