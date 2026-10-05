@@ -187,7 +187,7 @@ public class GraphTest {
     public void readsDuringACommitSeeNoneOfItUntilItIsPublished() throws Exception {
         CountDownLatch logging = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        Graph graph = Graph.create(GraphSnapshotBuilder.create().freeze(), "1", (graphId, operations) -> {
+        Graph graph = Graph.create(GraphSnapshotBuilder.create().freeze(), "1", (graphId, operations) -> () -> {
             logging.countDown();
             await(release);
         });
