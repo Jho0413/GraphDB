@@ -1,7 +1,9 @@
 # Concurrency
 
 GraphDB is built for many threads reading and writing the same graph at once. Committed state is immutable, so
-reads never wait for writes. A commit waits only for other commits to the same graph and for the log.
+reads never wait for writes. A commit holds its graph's lock only while it validates, builds and appends, and waits
+for the disk without it, so many commits share one `fsync`. A commit that conflicts also waits until the newest
+in-flight commit to its graph is durable before it fails.
 
 ## The model
 
@@ -10,10 +12,17 @@ reads never wait for writes. A commit waits only for other commits to the same g
   reading it. A reader that arrives afterwards sees the whole new one.
 - **Staging runs fully in parallel.** Transactions stage writes and read their own changes without touching any
   shared lock.
-- **Commits to one graph take turns.** Each graph has one commit lock, held from validation to publishing. This
-  keeps the log order the same as the publish order.
-- **Logging takes turns across graphs.** All graphs in a `GraphDB` share one log, and each append holds the log's
-  lock through its `fsync`. Commits are not batched, so each one does its own `fsync`.
+- **Commits to one graph take turns to append, not to wait for the disk.** Each graph has one commit lock. A commit
+  holds it to check for conflicts, build its snapshot and append to the log, then releases it while the log is
+  forced to disk, and takes it again briefly to publish. The next commit can append while the previous one is still
+  waiting, so both can share an `fsync`.
+- **The log batches commits from every graph.** All graphs in a `GraphDB` share one log. Appended commits gather in
+  a batch, and one flusher thread writes and forces each batch with a single `fsync`. While it does, newly appended
+  commits gather in the next batch, so the busier the database, the more commits each `fsync` covers. A lone commit
+  is flushed at once; nothing waits for a batch to fill.
+- **A conflicting commit waits for the commit in flight.** If a commit conflicts, it waits until the newest commit
+  appended to its graph is durable and published, then throws. A retry therefore starts on a snapshot that contains
+  the winner, instead of conflicting again until the winner is published.
 - **Taking turns is not conflicting.** Transactions that write different data all commit, one after another. Only
   overlapping writes conflict (see [Transactions](transactions.md#conflict-detection)).
 
@@ -25,8 +34,14 @@ Each graph's `TransactionManager` keeps its latest committed snapshot in one fie
 private volatile GraphSnapshot current;
 ```
 
-A commit builds the next snapshot privately, then publishes it with a single write, `current = next`. Readers,
-new transactions and queries read `current` without taking any lock. The `volatile` keyword makes this safe.
+A commit builds the next snapshot privately and, once it is durable, publishes it with a single write,
+`current = next`. Readers, new transactions and queries read `current` without taking any lock. The `volatile`
+keyword makes this safe.
+
+Commits woken by the same `fsync` can reach the publish step in any order. Each snapshot is built on the one
+appended before it, so a newer snapshot contains every older one. Publishing therefore replaces `current` only with
+a newer version: `current` never goes backwards, and if a newer commit publishes first, the older snapshot is never
+published on its own. Readers can skip a version, but never see one that is not durable.
 
 ### What `volatile` guarantees
 
@@ -53,10 +68,10 @@ Nothing in between is possible, so no reader ever sees part of a commit.
 ### What it does not do
 
 `volatile` makes a single read or write safe. It does not make a sequence of steps atomic. A commit checks for
-conflicts against `current`, builds from it and then replaces it, and two commits doing that at the same time
-could both build on the same snapshot and lose one of the commits. That is why the whole commit also runs under
-the graph's commit lock: the lock lets commits to one graph run only one at a time, and `volatile` safely publishes
-each result to readers that do not take the lock.
+conflicts against the newest snapshot, builds on it and appends to the log, and two commits doing that at the same
+time could both build on the same snapshot and lose one of the commits. That is why those steps run under the
+graph's commit lock, and so does publishing. Only the wait for the disk runs outside it. The lock lets commits to
+one graph append one at a time, and `volatile` safely publishes each result to readers that do not take the lock.
 
 ## What is thread-safe
 
@@ -72,9 +87,16 @@ each result to readers that do not take the lock.
 
 There are three locks, and each guards one thing:
 
-- **Commit lock**, one per graph: held for the whole of one commit.
-- **Log lock**, one per database: held while one block is written and forced to disk.
+- **Commit lock**, one per graph: held while a commit validates, builds and appends, and again while it publishes.
+  Never held while waiting for the disk.
+- **Log lock**, one per database: held only to add a block to the open batch, or for the flusher to take a batch.
+  Never held during a write or an `fsync`.
 - **Cache lock**, one per query client: held only for a cache lookup or insert, never while an algorithm runs.
 
 A commit takes its commit lock and then the log lock, and no code takes them in the opposite order, so they cannot
-deadlock. The cache lock is never held together with either of the others.
+deadlock. The flusher takes only the log lock, and waiting for a batch happens with no lock held. The cache lock is
+never held together with either of the others.
+
+Only the flusher thread writes to the log file. Interrupting a thread that is committing therefore cannot disturb
+the file: the commit carries on waiting until it is durable and returns with the thread's interrupt flag still set.
+Nothing bounds that wait, so if the disk stalls, `commit()` and `GraphDB.close()` stall with it.

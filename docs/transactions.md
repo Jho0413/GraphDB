@@ -8,7 +8,7 @@ Every change to a graph goes through a `Transaction`. Every transaction commits 
 ```mermaid
 flowchart LR
     begin["begin: remember the current snapshot (the base)"] --> stage["stage: check and record writes privately"]
-    stage --> commit["commit: validate, build, log, publish"]
+    stage --> commit["commit: validate, build, append, wait for disk, publish"]
 ```
 
 1. **Begin.** `graph.createTransaction()` creates a transaction, which remembers the latest committed snapshot as
@@ -61,21 +61,28 @@ sequenceDiagram
     T->>M: commit(base snapshot, operations)
     Note over M: take the graph's commit lock
     M->>M: check for conflicts with commits since the base
-    M->>M: build the next snapshot from the current one
+    M->>M: build the next snapshot from the newest appended one
     M->>M: check the result is a valid graph
-    M->>L: log the operations and fsync
-    M->>M: publish the next snapshot
+    M->>L: append the operations to the open batch
+    Note over M: release the lock
+    L-->>M: the batch is written and fsynced
+    Note over M: take the lock again
+    M->>M: publish the snapshot, unless a newer one is published
     Note over M: release the lock
 ```
 
 The order of these steps is what makes commits safe:
 
-- **Validate and build before logging.** Every commit that reaches the log can be published.
-- **Log before publishing.** Readers never see data that a crash could lose.
-- **Do all of it under one lock per graph.** Commits to one graph happen one at a time, so the log records them in
-  the order readers saw them.
-- **Publish with one reference swap.** The current snapshot is a `volatile` field. A reader sees either the whole
-  commit or none of it (see [Concurrency](concurrency.md#publishing-a-snapshot)).
+- **Validate and build before appending.** Every commit that reaches the log can be published.
+- **Build on the newest appended snapshot.** It already contains every commit appended before, durable or not, so
+  conflicts are checked against all of them, and each snapshot in the log is built on the one before it.
+- **Append under one lock per graph.** Commits to one graph are appended one at a time, so the log records them in
+  the order their snapshots were built. Waiting for the disk happens without the lock, so the next commit can join
+  the same `fsync`.
+- **Wait for the disk before publishing.** Readers never see data that a crash could lose.
+- **Publish with one reference swap, and only forwards.** The current snapshot is a `volatile` field. A reader sees
+  either the whole commit or none of it, and the published version only ever increases (see
+  [Concurrency](concurrency.md#publishing-a-snapshot)).
 
 If any step fails, the current snapshot is left as it was. A transaction with no staged writes returns from
 `commit()` straight away and does nothing.
@@ -83,9 +90,10 @@ If any step fails, the current snapshot is left as it was. A transaction with no
 ## Conflict detection
 
 GraphDB uses **snapshot isolation with first-committer-wins**. When two transactions write the same thing, the one
-that commits first wins. The other gets a `TransactionConflictException`.
+that commits first wins. The other gets a `TransactionConflictException`. "First" means first to append to the log:
+a commit that is appended but not yet durable already counts.
 
-At commit time, the transaction's writes are compared with what other transactions committed since its base
+At commit time, the transaction's writes are compared with what other transactions appended since its base
 snapshot. The transaction is rejected if:
 
 - **(a)** a node or edge it writes was changed or deleted by someone else;
@@ -119,9 +127,13 @@ write a shared node, so that they conflict.
 ## When commit fails
 
 - `TransactionConflictException`: someone else committed a conflicting write first. Start a new transaction, read
-  again and retry.
-- `WalException`: the log could not be written (see [Durability](durability.md#write-failures)). Retrying in a
-  loop rarely helps.
+  again and retry. Before throwing, `commit()` waits until the newest commit appended to the graph is durable and
+  published, even if that is not the commit it conflicted with. The retry then starts on a snapshot that contains
+  it.
+- `WalException`: the log could not be written (see [Durability](durability.md#write-failures)). Once the log has
+  failed, every later commit fails this way until the database is reopened, so retrying never helps. A commit that
+  conflicts can also get `WalException`: if the in-flight commit it waits for fails, it reports that instead of the
+  conflict.
 - `IllegalStateException`: this transaction was already committed.
 
 Whatever the failure, nothing was published, and the transaction cannot be used again.
