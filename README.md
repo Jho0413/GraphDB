@@ -1,141 +1,103 @@
 # GraphDB
 
-**GraphDB** is a modular, in-memory graph database engine written in **Java**. It is focused on transactional integrity, advanced graph analytics, and performance. It features ACID-compliant transactions with recovery, a modular query engine built on classic graph algorithms, and optimizations such as caching and indexing.
+**GraphDB** is an embedded, in-memory graph engine written in **Java 21**. Many threads can run transactions and
+whole-graph analytics on the same live data. Transactions use snapshot isolation, every commit goes through a
+write-ahead log, and each analytic query runs on one consistent snapshot of the graph.
 
 ---
 
-## Key Features
+## What is supported
 
-- **ACID Transactions with Write-Ahead Logging (WAL)**  
-A committed transaction is written to a binary, checksummed log as one block and forced to disk (`fsync`) before it is published to readers, so every acknowledged commit survives a crash. On startup the log is replayed; a transaction torn by a crash is discarded.
+- **Transactions with snapshot isolation.** A transaction reads the graph as it was when it began, plus its own
+  changes. Conflicting writers are resolved first-committer-wins, and the loser gets a
+  `TransactionConflictException` and can retry. Readers never wait for writers.
+- **Durability.** Each commit is written to a checksummed write-ahead log and forced to disk before it becomes
+  visible. Graphs are rebuilt from the log when the database is opened again.
+- **Immutable snapshots.** Committed state is an immutable snapshot built from persistent maps. A commit makes a new
+  snapshot and never edits an old one.
+- **Graph analytics.** Shortest paths, all paths, cycles, negative cycles, strongly connected components,
+  reachability, topological sort, diameter and common neighbours. Each query runs on one snapshot.
+- **A query result cache.** Results are kept in an LRU cache keyed by snapshot version, so a commit never makes a
+  cached result stale.
+- **Indexed reads.** Edges are indexed by endpoint and by weight, so neighbour and weight lookups do not scan the
+  whole graph.
 
-- **Snapshot Isolation**  
-Each transaction reads the immutable snapshot committed when it began, plus its own staged changes, and never sees a half-applied commit; each non-transactional read sees the latest committed snapshot. Commits are first-committer-wins: a transaction is rejected with `TransactionConflictException`, before anything is logged, if a concurrent commit changed a node, edge or edge slot it writes, or removed an endpoint of an edge it adds. What a transaction only read is not checked, so write skew is possible.
-
-- **Advanced Graph Query Engine**  
-Supports high-performance queries powered by classic algorithms (Dijkstra, DFS, Bellman-Ford, etc.).
-
-- **LRU Caching**  
-Query results are cached using a Least Recently Used strategy to accelerate repeated computations. Results are cached per snapshot version, so a commit never serves a stale result, and the cache is safe for concurrent queries.
-
-- **Indexed Edge Lookup**  
-Enables fast retrieval of edges by weight through indexing.
-
----
-
-## Graph Query Modules & Algorithms
-
-Each module in the query engine focuses on a specific aspect of graph analysis, using efficient algorithms under the hood:
-
-- **Structure Analysis**: Node degrees, topological sort, diameter  
-  → *Floyd-Warshall, Topological Sort (DFS)*
-
-- **Pathfinding**: All/shortest/bounded paths  
-  → *DFS, Dijkstra, Bellman-Ford, Floyd-Warshall*
-
-- **Cycle Detection**: Cycle checks and cycle listing  
-  → *DFS, Bellman-Ford (negative cycle), Johnson's algorithm*
-
-- **Connectivity**: Reachability, strongly connected components  
-  → *DFS, Tarjan’s SCC, Kosaraju’s SCC*
-
-- **Commonality**: Shared neighbors or reachable nodes  
-  → *BFS-based strategies*
+| Query group | Queries | Algorithms |
+|---|---|---|
+| `paths()` | shortest, all and bounded-length paths; all-pairs distances | Bellman-Ford, Dijkstra, DFS, Floyd-Warshall |
+| `connectivity()` | reachability, strongly connected components | DFS, Tarjan, Kosaraju |
+| `cycles()` | cycle checks, negative cycles, all cycles | DFS, Bellman-Ford, Johnson |
+| `structure()` | degrees, diameter, topological sort | Floyd-Warshall, DFS |
+| `commonality()` | common neighbours, common nodes by depth | BFS |
 
 ---
 
-## Getting Started & Testing
-All core functionality in **GraphDB** is thoroughly tested with unit and integration tests.
+## Getting started
 
-### Prerequisites
-- **Java 21** installed.  
-- **Maven** installed and configured in your system PATH.
+You need **Java 21** and **[Maven](https://maven.apache.org/install.html)**.
 
-### How to install Maven
-- **Windows:**  
-Download Maven from the [official website](https://maven.apache.org/download.cgi).  
-Follow [this guide](https://maven.apache.org/install.html#windows) to set up environment variables.
-
-- **MacOS:**  
-If you have Homebrew installed, run:  
-```bash
-brew install maven
-```
-
-- **Linux (Ubuntu/Debian):**
-```bash
-sudo apt update
-sudo apt install maven
-```
-
-### Clone and run tests
 ```bash
 git clone https://github.com/Jho0413/GraphDB.git
 cd GraphDB
 mvn test
 ```
 
----
-
-## Core Concepts
-
-### Graph Management
-Create and manage multiple graphs through a `GraphDB`. Its data (the write-ahead log) lives in a directory, `graphdb-data/` by default; graphs and their committed transactions are recovered automatically when it is opened again:
+### Create a database and a graph
 
 ```java
 GraphDB db = GraphDB.getInstance();                 // uses ./graphdb-data
 // or: GraphDB db = GraphDB.open(Path.of("my-data"));
 Graph graph = db.createGraph();
-String graphId = graph.getId();
 // ...
 db.close();
 ```
 
-> **Note:** Only graphs created through a `GraphDB` are durable. `Graph.createGraph()` creates a standalone in-memory graph whose transactions are not logged.
+Graphs created through a `GraphDB` are durable and are recovered when the directory is opened again.
+`Graph.createGraph()` creates a standalone in-memory graph instead, whose commits are not logged.
 
-### Transactions
-A `Graph` is read-only: the only way to modify it is through a transaction, so every change is written to the log before it is published. `Graph` exposes reads (`GraphReader`); a `Transaction` exposes both reads and writes (`GraphReader` + `GraphWriter`). The `Node` and `Edge` objects that reads return are immutable, so they cannot be used to change the graph either.
+### Write with a transaction
 
-> **Note:** If any operation within the transaction throws an exception, the transaction will **not commit** and the exception will be propagated. This guarantees that partial or faulty changes are never applied.
+A `Graph` is read-only. The only way to change it is through a transaction:
 
 ```java
 Transaction txn = graph.createTransaction();
 
-Node nodeA = txn.addNode(Map.of("name", "A"));
-Node nodeB = txn.addNode(Map.of("name", "B"));
-txn.addEdge(nodeA.getId(), nodeB.getId(), Map.of("label", "connects"), 1.0);
+Node a = txn.addNode(Map.of("name", "A"));
+Node b = txn.addNode(Map.of("name", "B"));
+txn.addEdge(a.getId(), b.getId(), Map.of("label", "connects"), 1.0);
 
-txn.commit();
+txn.commit();   // on TransactionConflictException, start a new transaction and retry
 ```
 
-### Querying with GraphQueryClient
-Run graph queries and analyses using the query client:
+### Run queries
 
 ```java
-GraphQueryClient client = db.createQueryClient(graphId);   // one client (and cache) per graph
+GraphQueryClient client = db.createQueryClient(graph.getId());   // one client (and cache) per graph
 
-// Shortest path
-List<String> path = client.paths().findShortestPath(nodeA.getId(), nodeB.getId()).getNodeIds();
-
-// Shortest distances between every pair of nodes
-DistanceMatrix distances = client.paths().findAllShortestDistances();
-double distance = distances.distance(nodeA.getId(), nodeB.getId());
-
-// Check for cycles
+List<String> path = client.paths().findShortestPath(a.getId(), b.getId()).getNodeIds();
 boolean hasCycle = client.cycles().hasCycle();
-
-// Find strongly connected components
 List<Set<String>> sccs = client.connectivity().getStronglyConnectedComponents();
-
-// Get common neighbours
-Set<String> common = client.commonality().findCommonNeighbours(nodeA.getId(), nodeB.getId());
-
-// Compute graph diameter
 double diameter = client.structure().getGraphDiameter();
 ```
 
 ---
 
-## Future Work
-- [ ] Concurrent transaction execution with thread-safe WAL and graph locking
-- [ ] Persistent storage for graph save/load
+## Documentation
+
+The pages in [`docs/`](docs/) explain how the engine works:
+
+1. [Architecture overview](docs/overview.md): the main objects, how reads and writes flow, the package layers and
+   the key design decisions.
+2. [Storage](docs/storage.md): immutable snapshots built from persistent maps.
+3. [Transactions](docs/transactions.md): staging, the commit path and conflict detection.
+4. [Durability and recovery](docs/durability.md): the write-ahead log, and rebuilding a database from it.
+5. [Query engine](docs/query-engine.md): how a query runs, the algorithms, and the cache.
+6. [Concurrency](docs/concurrency.md): what runs in parallel, what takes turns, and the locks.
+7. [Guarantees and limits](docs/guarantees.md): the exact contract.
+8. [Testing](docs/testing.md): how the tests are organised, and how races are tested.
+
+---
+
+## Future work
+
+- [ ] Disk-backed storage
