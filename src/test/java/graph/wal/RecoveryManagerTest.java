@@ -7,10 +7,13 @@ import graph.testsupport.EdgeBaseMatcher;
 import graph.testsupport.NodeBaseMatcher;
 import graph.transaction.AddOrUpdateEdge;
 import graph.transaction.AddOrUpdateNode;
+import graph.transaction.CommitLog;
 import graph.transaction.DeleteEdge;
 import graph.transaction.DeleteNode;
 import graph.transaction.GraphOperation;
-import graph.storage.MutableGraphStorage;
+import graph.transaction.Transaction;
+import graph.transaction.TransactionManager;
+import graph.storage.GraphSnapshot;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,7 +49,7 @@ public class RecoveryManagerTest {
 
     @Test
     public void recoversEmptyGraphsFromCreateRecords() {
-        Map<String, MutableGraphStorage> graphs = recoveryManager.recover(List.of(new GraphCreated("g1")));
+        Map<String, GraphSnapshot> graphs = recoveryManager.recover(List.of(new GraphCreated("g1")));
         assertEquals(1, graphs.size());
         assertTrue(graphs.get("g1").getAllNodes().isEmpty());
     }
@@ -70,19 +73,19 @@ public class RecoveryManagerTest {
 
     @Test
     public void ableToRecoverAddedNodes() {
-        Map<String, MutableGraphStorage> graphs = recover(transaction("g1", addNode1));
+        Map<String, GraphSnapshot> graphs = recover(transaction("g1", addNode1));
         checkNodeComponents("n1", ATTRIBUTES, graphs.get("g1").getAllNodes().getFirst());
     }
 
     @Test
     public void updatesReplaceTheWholeNode() {
-        Map<String, MutableGraphStorage> graphs = recover(transaction("g1", addNode1, updateNode1));
+        Map<String, GraphSnapshot> graphs = recover(transaction("g1", addNode1, updateNode1));
         checkNodeComponents("n1", COMBINED_ATTRS_1_2, graphs.get("g1").getNode("n1"));
     }
 
     @Test
     public void ableToRecoverDeletedNodes() {
-        Map<String, MutableGraphStorage> graphs = recover(transaction("g1", addNode1, deleteNode1));
+        Map<String, GraphSnapshot> graphs = recover(transaction("g1", addNode1, deleteNode1));
         assertTrue(graphs.get("g1").getAllNodes().isEmpty());
     }
 
@@ -90,7 +93,7 @@ public class RecoveryManagerTest {
 
     @Test
     public void ableToRecoverAddedEdges() {
-        Map<String, MutableGraphStorage> graphs = recover(transaction("g1", addNode1, addNode2, addEdge));
+        Map<String, GraphSnapshot> graphs = recover(transaction("g1", addNode1, addNode2, addEdge));
         List<Edge> edges = graphs.get("g1").getAllEdges();
         assertEquals(1, edges.size());
         checkEdgeComponents("e1", "n1", "n2", 1.5, ATTRIBUTES, edges.getFirst());
@@ -98,13 +101,13 @@ public class RecoveryManagerTest {
 
     @Test
     public void updatesReplaceTheWholeEdge() {
-        Map<String, MutableGraphStorage> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, updateEdge));
+        Map<String, GraphSnapshot> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, updateEdge));
         checkEdgeComponents("e1", "n1", "n2", 2.0, COMBINED_ATTRS_1_2, graphs.get("g1").getEdge("e1"));
     }
 
     @Test
     public void ableToRecoverDeletedEdges() {
-        Map<String, MutableGraphStorage> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, deleteEdge));
+        Map<String, GraphSnapshot> graphs = recover(transaction("g1", addNode1, addNode2, addEdge, deleteEdge));
         assertTrue(graphs.get("g1").getAllEdges().isEmpty());
     }
 
@@ -117,9 +120,32 @@ public class RecoveryManagerTest {
         log.addAll(transaction("g1", addNode1));
         log.addAll(transaction("g1", addNode2, addEdge));
 
-        MutableGraphStorage graph = recoveryManager.recover(log).get("g1");
+        GraphSnapshot graph = recoveryManager.recover(log).get("g1");
         assertEquals(2, graph.getAllNodes().size());
         checkEdgeComponents("e1", "n1", "n2", 1.5, ATTRIBUTES, graph.getAllEdges().getFirst());
+    }
+
+    @Test
+    public void aRecoveredGraphStartsAtVersionZeroWhateverItsHistory() {
+        List<WalRecord> log = new ArrayList<>();
+        log.add(new GraphCreated("g1"));
+        log.addAll(transaction("g1", addNode1));
+        log.addAll(transaction("g1", addNode2));
+        log.addAll(transaction("g1", addEdge));
+
+        assertEquals(0, recoveryManager.recover(log).get("g1").version());
+    }
+
+    @Test
+    public void theFirstCommitAfterRecoveryIsVersionOne() {
+        GraphSnapshot recovered = recover(transaction("g1", addNode1, addNode2)).get("g1");
+        TransactionManager manager = new TransactionManager(recovered, "g1", CommitLog.NONE);
+
+        Transaction transaction = manager.begin();
+        transaction.addNode(ATTRIBUTES);
+        transaction.commit();
+
+        assertEquals(1, manager.current().version());
     }
 
     @Test
@@ -130,7 +156,7 @@ public class RecoveryManagerTest {
         log.addAll(transaction("g1", addNode1));
         log.addAll(transaction("g2", addNode1));
 
-        Map<String, MutableGraphStorage> graphs = recoveryManager.recover(log);
+        Map<String, GraphSnapshot> graphs = recoveryManager.recover(log);
         assertEquals(2, graphs.size());
         checkNodeComponents("n1", ATTRIBUTES, graphs.get("g1").getNode("n1"));
         checkNodeComponents("n1", ATTRIBUTES, graphs.get("g2").getNode("n1"));
@@ -144,32 +170,32 @@ public class RecoveryManagerTest {
         log.add(new Operation(addNode1));
         log.addAll(transaction("g1", addNode2));
 
-        MutableGraphStorage graph = recoveryManager.recover(log).get("g1");
+        GraphSnapshot graph = recoveryManager.recover(log).get("g1");
         assertEquals(1, graph.getAllNodes().size());
         assertEquals("n2", graph.getAllNodes().getFirst().getId());
     }
 
     // ============ Replay does exactly what the live commit did ============
-    // Concurrent transactions can log an operation whose target was already removed (Read Committed does not
-    // validate at commit). Replay applies it just as the live commit did instead of skipping or failing.
+    // A log can hold an operation whose target was already removed, such as one written by an earlier version.
+    // Replay applies it just as the original commit did instead of skipping or failing.
 
     @Test
     public void edgeToAMissingNodeIsReplayedAsTheLiveCommitStoredIt() {
-        MutableGraphStorage graph = recover(transaction("g1", addNode1, addEdge)).get("g1");
+        GraphSnapshot graph = recover(transaction("g1", addNode1, addEdge)).get("g1");
         assertEquals(1, graph.getAllNodes().size());
         assertEquals(1, graph.getAllEdges().size());
     }
 
     @Test
     public void deletesOfMissingNodesAndEdgesAreNoOps() {
-        MutableGraphStorage graph = recover(transaction("g1", addNode2, deleteEdge, deleteNode1)).get("g1");
+        GraphSnapshot graph = recover(transaction("g1", addNode2, deleteEdge, deleteNode1)).get("g1");
         assertEquals(1, graph.getAllNodes().size());
         assertTrue(graph.getAllEdges().isEmpty());
     }
 
     // ============ Helper Functions ============
 
-    private Map<String, MutableGraphStorage> recover(List<WalRecord> transaction) {
+    private Map<String, GraphSnapshot> recover(List<WalRecord> transaction) {
         List<WalRecord> log = new ArrayList<>();
         log.add(new GraphCreated("g1"));
         log.addAll(transaction);

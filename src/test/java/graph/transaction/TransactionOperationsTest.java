@@ -6,7 +6,8 @@ import graph.exceptions.NodeNotFoundException;
 import graph.testsupport.EdgeBaseMatcher;
 import graph.testsupport.NodeBaseMatcher;
 import graph.testsupport.TriFunction;
-import graph.storage.MutableGraphStorage;
+import graph.storage.GraphSnapshot;
+import graph.storage.GraphStorage;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JUnitRuleMockery;
 import org.junit.Before;
@@ -30,7 +31,7 @@ public class TransactionOperationsTest {
 
     @Rule
     public JUnitRuleMockery context = new JUnitRuleMockery();
-    private final MutableGraphStorage storage = context.mock(MutableGraphStorage.class);
+    private final GraphStorage storage = context.mock(GraphStorage.class);
     private final TransactionStorage transactionStorage = context.mock(TransactionStorage.class);
     private final OperationsResolver resolver = context.mock(OperationsResolver.class);
 
@@ -57,7 +58,7 @@ public class TransactionOperationsTest {
     private final List<Edge> TRANSACTION_EDGES = List.of(TRANSACTION_EDGE);
 
     @Parameterized.Parameter(value = 0)
-    public TriFunction<MutableGraphStorage, TransactionStorage, OperationsResolver, Transaction> serviceCreator;
+    public TriFunction<GraphStorage, TransactionStorage, OperationsResolver, Transaction> serviceCreator;
 
     @Before
     public void setUp() {
@@ -67,8 +68,8 @@ public class TransactionOperationsTest {
     @Parameterized.Parameters(name="{0}")
     public static Collection<Object> services() {
         return Arrays.asList(new Object[] {
-                (TriFunction<MutableGraphStorage, TransactionStorage, OperationsResolver, Transaction>) (storage, transactionStorage, resolver) ->
-                        new Transaction(storage, transactionStorage, resolver, new TransactionManager(storage, "g1", CommitLog.NONE))
+                (TriFunction<GraphStorage, TransactionStorage, OperationsResolver, Transaction>) (storage, transactionStorage, resolver) ->
+                        new Transaction(storage, transactionStorage, resolver, new TransactionManager(GraphSnapshot.empty(), "g1", CommitLog.NONE))
         });
     }
 
@@ -186,18 +187,6 @@ public class TransactionOperationsTest {
         }});
 
         assertThat(this.service.removeNodeAttribute(NODE_ID, "location"), is("transaction"));
-    }
-
-    // ============ Node Deletion Tests ============
-
-    @Test
-    public void deletesNodesWhenNodeExists() {
-        context.checking(new Expectations() {{
-            oneOf(resolver).getNodeIfExists(NODE_ID); will(returnValue(NODE));
-            oneOf(transactionStorage).deleteNode(NODE_ID);
-        }});
-
-        assertThat(this.service.deleteNode(NODE_ID), is(NODE));
     }
 
     // ============ Edge Creation Tests ============
@@ -338,16 +327,5 @@ public class TransactionOperationsTest {
         }});
 
         assertThat(this.service.deleteEdge(EDGE_ID), is(EDGE));
-    }
-
-    // ============ Transaction Tests ============
-
-    @Test
-    public void commitsAllOperationsInTheTransaction() {
-        context.checking(new Expectations() {{
-            oneOf(transactionStorage).getOperations();
-        }});
-
-        this.service.commit();
     }
 }

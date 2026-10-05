@@ -7,13 +7,6 @@ public class ListNode<K, V> {
     ListNode<K, V> next;
     ListNode<K, V> prev;
 
-    public ListNode(K key, V value, ListNode<K, V> next, ListNode<K, V> prev) {
-        this.key = key;
-        this.value = value;
-        this.next = next;
-        this.prev = prev;
-    }
-
     public ListNode(K key, V value) {
         this.key = key;
         this.value = value;

@@ -11,6 +11,7 @@ target/
 *.iws
 *.iml
 *.ipr
+.idea/inspectionProfiles/
 
 ### Eclipse ###
 .apt_generated
@@ -33,6 +34,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Metals ###
+.metals/
 
 ### Mac OS ###
 .DS_Store

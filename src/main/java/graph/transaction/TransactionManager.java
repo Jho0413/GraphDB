@@ -1,76 +1,64 @@
 package graph.transaction;
 
-import graph.events.GraphEvent;
-import graph.events.GraphListener;
-import graph.model.Edge;
-import graph.storage.MutableGraphStorage;
+import graph.storage.GraphSnapshot;
+import graph.storage.GraphSnapshotBuilder;
+import graph.storage.GraphStorage;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import static graph.events.GraphEvent.*;
 
 /**
- * The single path by which a graph changes. One per graph: it creates the graph's transactions and commits them by
- * logging the operations, applying them to storage and notifying listeners.
+ * The single path by which a graph changes. One per graph: it holds the graph's latest committed snapshot, creates
+ * its transactions and commits them.
  *
- * <p>Logging and applying happen under one lock, so the order transactions appear in the log is the order they
- * were applied, and recovery replays exactly what the live graph did.
+ * <p>A commit validates the operations against {@link Conflicts}, builds the next snapshot, logs the operations, then
+ * publishes the snapshot, all under one lock, so log order equals publish order and recovery replays exactly what
+ * the live graph did. A failure before publishing leaves the current snapshot unchanged and, before logging, leaves
+ * nothing in the log. Readers never take the lock.
+ *
+ * <p>Each snapshot is built from the current one, so versions increase by one per non-empty commit and log order
+ * equals version order equals publish order.
  */
 public final class TransactionManager {
 
-    private final MutableGraphStorage storage;
+    private volatile GraphSnapshot current;
     private final String graphId;
     private final CommitLog commitLog;
-    private final List<GraphListener> listeners = new CopyOnWriteArrayList<>();
     private final Object lock = new Object();
 
-    public TransactionManager(MutableGraphStorage storage, String graphId, CommitLog commitLog) {
-        this.storage = storage;
+    public TransactionManager(GraphSnapshot initial, String graphId, CommitLog commitLog) {
+        this.current = initial;
         this.graphId = graphId;
         this.commitLog = commitLog;
     }
 
+    /** A transaction that reads the latest committed snapshot. */
     public Transaction begin() {
-        return Transaction.create(storage, this);
+        return Transaction.create(current, this);
     }
 
-    /** Listeners are told of each commit's changes, inside the commit lock, after it is applied. */
-    public void addListener(GraphListener listener) {
-        listeners.add(listener);
+    /** The latest committed snapshot. */
+    public GraphSnapshot current() {
+        return current;
     }
 
-    void commit(List<GraphOperation> operations) {
-        synchronized (lock) {
-            // Write-ahead: the transaction must be durable before any of it is applied to the graph.
-            commitLog.logCommit(graphId, operations);
-            List<GraphEvent> events = new ArrayList<>();
-            for (GraphOperation operation : operations) {
-                classify(operation).ifPresent(events::add);
-                operation.apply(storage);
-            }
-            for (GraphListener listener : listeners) {
-                events.forEach(listener::onGraphChange);
-            }
+    /**
+     * Commits operations staged on snapshot {@code base}.
+     *
+     * @throws graph.exceptions.TransactionConflictException if a commit since {@code base} conflicts with them
+     */
+    void commit(GraphStorage base, List<GraphOperation> operations) {
+        if (operations.isEmpty()) {
+            return;
         }
-    }
-
-    /** The event an operation causes, judged against storage before the operation is applied. */
-    private Optional<GraphEvent> classify(GraphOperation operation) {
-        GraphEvent event = switch (operation) {
-            case AddOrUpdateNode op -> storage.containsNode(op.node().getId()) ? null : ADD_NODE;
-            case DeleteNode op -> storage.containsNode(op.nodeId()) ? DELETE_NODE : null;
-            case AddOrUpdateEdge op -> {
-                Edge current = storage.getEdge(op.edge().getId());
-                if (current == null) {
-                    yield ADD_EDGE;
-                }
-                yield current.getWeight() != op.edge().getWeight() ? UPDATE_EDGE_WEIGHT : null;
-            }
-            case DeleteEdge op -> storage.containsEdge(op.edgeId()) ? DELETE_EDGE : null;
-        };
-        return Optional.ofNullable(event);
+        synchronized (lock) {
+            Conflicts.checkWrites(base, current, operations);
+            GraphSnapshotBuilder builder = GraphSnapshotBuilder.from(current);
+            operations.forEach(operation -> operation.apply(builder));
+            GraphSnapshot next = builder.freeze();
+            Conflicts.checkResult(next, operations);
+            // Write-ahead: the transaction must be durable before anyone can read it.
+            commitLog.logCommit(graphId, operations);
+            current = next;
+        }
     }
 }

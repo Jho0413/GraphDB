@@ -2,20 +2,21 @@ package graph.query;
 
 import graph.algorithms.GraphAlgorithms;
 import graph.exceptions.NodeNotFoundException;
-import graph.model.GraphView;
+import graph.storage.SnapshotReader;
 
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static graph.query.QueryChecks.requireNode;
 import static graph.query.QueryChecks.requireNonNegative;
 
 public class GraphCommonalityFinder {
 
-    private final GraphView graph;
+    private final Supplier<SnapshotReader> snapshots;
     private final GraphAlgorithms algorithms;
 
-    public GraphCommonalityFinder(GraphView graph, GraphAlgorithms algorithms) {
-        this.graph = graph;
+    GraphCommonalityFinder(Supplier<SnapshotReader> snapshots, GraphAlgorithms algorithms) {
+        this.snapshots = snapshots;
         this.algorithms = algorithms;
     }
 
@@ -26,17 +27,19 @@ public class GraphCommonalityFinder {
 
     // returns all common nodes that can be reached by <= k edges by both nodes
     public Set<String> findCommonNodesByMaximumDepth(String fromNodeId, String toNodeId, int depth) throws IllegalArgumentException, NodeNotFoundException {
-        validate(fromNodeId, toNodeId, depth);
-        return algorithms.commonNodes(fromNodeId, toNodeId, depth, false);
+        SnapshotReader graph = snapshots.get();
+        validate(graph, fromNodeId, toNodeId, depth);
+        return algorithms.commonNodes(graph, fromNodeId, toNodeId, depth, false);
     }
 
     // returns all common nodes that can be reached at exactly k edges by both nodes
     public Set<String> findCommonNodesByExactDepth(String fromNodeId, String toNodeId, int depth) throws IllegalArgumentException, NodeNotFoundException {
-        validate(fromNodeId, toNodeId, depth);
-        return algorithms.commonNodes(fromNodeId, toNodeId, depth, true);
+        SnapshotReader graph = snapshots.get();
+        validate(graph, fromNodeId, toNodeId, depth);
+        return algorithms.commonNodes(graph, fromNodeId, toNodeId, depth, true);
     }
 
-    private void validate(String fromNodeId, String toNodeId, int depth) throws IllegalArgumentException, NodeNotFoundException {
+    private static void validate(SnapshotReader graph, String fromNodeId, String toNodeId, int depth) throws IllegalArgumentException, NodeNotFoundException {
         requireNonNegative(depth);
         requireNode(graph, fromNodeId);
         requireNode(graph, toNodeId);

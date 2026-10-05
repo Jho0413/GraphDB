@@ -4,48 +4,23 @@ import graph.transaction.CommitLog;
 import graph.model.Edge;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
-import graph.storage.MutableGraphStorage;
-import org.jmock.Expectations;
-import org.jmock.integration.junit4.JUnitRuleMockery;
-import org.junit.Before;
-import org.junit.Rule;
+import graph.storage.GraphSnapshotBuilder;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 import graph.model.Node;
 
 import java.util.*;
-import java.util.function.BiFunction;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
-@RunWith(Parameterized.class)
 public class GraphTest {
-
-    @Rule
-    public JUnitRuleMockery context = new JUnitRuleMockery();
-    private final MutableGraphStorage storage = context.mock(MutableGraphStorage.class);
-
-    private Graph graph;
-
-    @Parameterized.Parameter(value = 0)
-    public BiFunction<MutableGraphStorage, String, Graph> serviceCreator;
-
-    @Before
-    public void setUp() {
-        this.graph = this.serviceCreator.apply(storage, "1");
-    }
-
-    @Parameters(name="{0}")
-    public static Collection<Object> services() {
-        return Arrays.asList(new Object[] {
-                (BiFunction<MutableGraphStorage, String, Graph>) (storage, graphId) -> Graph.create(storage, graphId, CommitLog.NONE)
-        });
-    }
 
     // Test data
     private final Map<String, Object> TEST_ATTRIBUTES = Map.of("name", "test");
@@ -59,282 +34,203 @@ public class GraphTest {
     private final String EDGE_ID_3 = "edge3";
     private final double TEST_WEIGHT = 2.0;
     private final double TEST_OTHER_WEIGHT = 3.0;
+    private final Node NODE = new Node(NODE_ID, TEST_ATTRIBUTES);
+    private final Node NODE_2 = new Node(NODE_ID_2, DEFAULT_ATTRIBUTES);
+    private final Node NODE_3 = new Node(NODE_ID_3, TEST_OTHER_ATTRIBUTES);
     private final Edge EDGE = new Edge(EDGE_ID, NODE_ID, NODE_ID_2, TEST_WEIGHT, TEST_ATTRIBUTES);
     private final Edge EDGE_2 = new Edge(EDGE_ID_2, NODE_ID_2, NODE_ID, TEST_OTHER_WEIGHT, DEFAULT_ATTRIBUTES);
-    private final List<Edge> EDGES = List.of(
-            EDGE,
-            EDGE_2,
-            new Edge(EDGE_ID_3, NODE_ID, NODE_ID_3, TEST_WEIGHT, TEST_OTHER_ATTRIBUTES)
-    );
+    private final Edge EDGE_3 = new Edge(EDGE_ID_3, NODE_ID, NODE_ID_3, TEST_WEIGHT, TEST_OTHER_ATTRIBUTES);
 
     // ============= Node Retrieval Tests =============
 
     @Test
     public void retrievesNodeIfExists() {
-        Node expectedNode = new Node(NODE_ID, TEST_ATTRIBUTES);
-        getNodeIfExistsCheck(NODE_ID, true, expectedNode);
-
-        Node result = this.graph.getNodeById(NODE_ID);
-        assertEquals(expectedNode, result);
+        Graph graph = graphWith(List.of(NODE), List.of());
+        assertEquals(NODE, graph.getNodeById(NODE_ID));
     }
 
     @Test(expected = NodeNotFoundException.class)
     public void throwsNodeNotFoundExceptionIfNodeDoesNotExistForRetrieval() {
-        getNodeIfExistsCheck(NODE_ID, false, null);
-        this.graph.getNodeById(NODE_ID);
+        graphWith(List.of(), List.of()).getNodeById(NODE_ID);
     }
 
     @Test
     public void retrievesAllNodes() {
-        List<Node> nodes = List.of(new Node(NODE_ID, new HashMap<>()),  new Node(NODE_ID_2, new HashMap<>()));
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).getAllNodes();
-            will(returnValue(nodes));
-        }});
-        List<Node> returnedNodes = graph.getNodes();
-        assertEquals(nodes, returnedNodes);
+        Graph graph = graphWith(List.of(NODE, NODE_2), List.of());
+        assertEquals(Set.of(NODE, NODE_2), Set.copyOf(graph.getNodes()));
     }
 
     @Test
     public void retrievesFilteredNodesByAttributeCorrectly() {
-        List<Node> nodes = List.of(
-                new Node(NODE_ID, TEST_ATTRIBUTES),
-                new Node(NODE_ID_2, DEFAULT_ATTRIBUTES),
-                new Node(NODE_ID_3, TEST_OTHER_ATTRIBUTES)
-        );
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).getAllNodes();
-            will(returnValue(nodes));
-        }});
-
-        List<Node> filteredNodes = this.graph.getNodesByAttribute("name", "test");
-        assertThat(filteredNodes.size(), is(1));
+        Graph graph = graphWith(List.of(NODE, NODE_2, NODE_3), List.of());
+        assertEquals(List.of(NODE), graph.getNodesByAttribute("name", "test"));
     }
-
-
 
     // ============= Edge Retrieval Tests ============= //
 
     @Test
     public void retrievesEdgeIfExists() {
-        Edge expectedEdge = new Edge(EDGE_ID, NODE_ID, NODE_ID_2, TEST_WEIGHT, TEST_ATTRIBUTES);
-        getEdgeIfExistsCheck(EDGE_ID, true, expectedEdge);
-
-        Edge result = this.graph.getEdgeById(EDGE_ID);
-        assertEquals(expectedEdge, result);
+        Graph graph = graphWith(List.of(NODE, NODE_2), List.of(EDGE));
+        assertEquals(EDGE, graph.getEdgeById(EDGE_ID));
     }
 
     @Test(expected = EdgeNotFoundException.class)
     public void throwsEdgeNotFoundExceptionIfEdgeDoesNotExistForRetrieval() {
-        getEdgeIfExistsCheck(EDGE_ID, false, null);
-        this.graph.getEdgeById(EDGE_ID);
+        graphWith(List.of(NODE, NODE_2), List.of()).getEdgeById(EDGE_ID);
     }
 
     @Test(expected = NodeNotFoundException.class)
     public void throwsNodeNotFoundExceptionIfSourceNodeDoesNotExistForRetrieval() {
-        expectNodeExists(NODE_ID, false);
-        this.graph.getEdgeByNodeIds(NODE_ID, NODE_ID_2);
+        graphWith(List.of(NODE_2), List.of()).getEdgeByNodeIds(NODE_ID, NODE_ID_2);
     }
 
     @Test(expected = NodeNotFoundException.class)
     public void throwsNodeNotFoundExceptionIfDestinationNodeDoesNotExistForRetrieval() {
-        expectNodeExists(NODE_ID, true);
-        expectNodeExists(NODE_ID_2, false);
-        this.graph.getEdgeByNodeIds(NODE_ID, NODE_ID_2);
+        graphWith(List.of(NODE), List.of()).getEdgeByNodeIds(NODE_ID, NODE_ID_2);
     }
 
     @Test(expected = EdgeNotFoundException.class)
     public void throwsEdgeNotFoundExceptionIfEdgeDoesNotExistForRetrievalUsingNodeIds() {
-        expectNodeExists(NODE_ID, true);
-        expectNodeExists(NODE_ID_2, true);
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).edgeExists(NODE_ID, NODE_ID_2);
-            will(returnValue(false));
-        }});
-        this.graph.getEdgeByNodeIds(NODE_ID, NODE_ID_2);
+        graphWith(List.of(NODE, NODE_2), List.of(EDGE_2)).getEdgeByNodeIds(NODE_ID, NODE_ID_2);
     }
 
     @Test
     public void retrievesEdgeByNodeIdIfAllConditionsMet() {
-        Edge expectedEdge = EDGE;
-        expectNodeExists(NODE_ID, true);
-        expectNodeExists(NODE_ID_2, true);
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).edgeExists(NODE_ID, NODE_ID_2);
-            will(returnValue(true));
-            exactly(1).of(storage).getEdgeByNodeIds(NODE_ID, NODE_ID_2);
-            will(returnValue(expectedEdge));
-        }});
-
-        Edge returnedEdge = this.graph.getEdgeByNodeIds(NODE_ID, NODE_ID_2);
-        assertEquals(expectedEdge, returnedEdge);
+        Graph graph = graphWith(List.of(NODE, NODE_2), List.of(EDGE));
+        assertEquals(EDGE, graph.getEdgeByNodeIds(NODE_ID, NODE_ID_2));
     }
 
     @Test
     public void retrievesAllEdges() {
-        List<Edge> edges = EDGES;
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).getAllEdges();
-            will(returnValue(edges));
-        }});
-        List<Edge> returnedEdges = graph.getEdges();
-        assertEquals(edges, returnedEdges);
+        Graph graph = graphWith(List.of(NODE, NODE_2, NODE_3), List.of(EDGE, EDGE_2, EDGE_3));
+        assertEquals(Set.of(EDGE, EDGE_2, EDGE_3), Set.copyOf(graph.getEdges()));
     }
 
     @Test
     public void retrievesFilteredEdgesByPropertyCorrectly() {
-        List<Edge> edges = EDGES;
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).getAllEdges();
-            will(returnValue(edges));
-        }});
-
-        List<Edge> filteredEdges = this.graph.getEdgesByProperty("name", "test");
-        assertThat(filteredEdges.size(), is(1));
+        Graph graph = graphWith(List.of(NODE, NODE_2, NODE_3), List.of(EDGE, EDGE_2, EDGE_3));
+        assertEquals(List.of(EDGE), graph.getEdgesByProperty("name", "test"));
     }
 
     @Test
     public void retrievesFilteredEdgesByWeightCorrectly() {
-        List<Edge> edges = List.of(EDGE);
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).getEdgesByWeight(TEST_WEIGHT);
-            will(returnValue(edges));
-        }});
-
-        List<Edge> filteredEdges = this.graph.getEdgesByWeight(TEST_WEIGHT);
-        assertThat(filteredEdges.size(), is(1));
-        assertEquals(EDGE, filteredEdges.getFirst());
+        Graph graph = graphWith(List.of(NODE, NODE_2), List.of(EDGE, EDGE_2));
+        assertEquals(List.of(EDGE), graph.getEdgesByWeight(TEST_WEIGHT));
     }
 
     @Test
     public void retrievesFilteredEdgesByWeightRangeCorrectly() {
-        List<Edge> edges = List.of(EDGE);
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).getEdgesByWeightRange(TEST_WEIGHT, TEST_OTHER_WEIGHT);
-            will(returnValue(edges));
-        }});
-
-        List<Edge> filteredEdges = this.graph.getEdgesByWeightRange(TEST_WEIGHT, TEST_OTHER_WEIGHT);
-        assertThat(filteredEdges.size(), is(1));
-        assertEquals(EDGE, filteredEdges.getFirst());
+        Graph graph = graphWith(List.of(NODE, NODE_2), List.of(EDGE, EDGE_2));
+        assertEquals(List.of(EDGE), graph.getEdgesByWeightRange(1.0, TEST_WEIGHT));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void throwsIllegalArgumentExceptionIfGivenMinIsGreaterThanMax() {
-        context.checking(new Expectations() {{
-            never(storage);
-        }});
-
-        this.graph.getEdgesByWeightRange(TEST_OTHER_WEIGHT, TEST_WEIGHT);
+        graphWith(List.of(), List.of()).getEdgesByWeightRange(TEST_OTHER_WEIGHT, TEST_WEIGHT);
     }
 
     @Test
     public void retrievesFilteredEdgesByGreaterThanGivenWeightCorrectly() {
-        List<Edge> edges = List.of(EDGE_2);
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).getEdgesWithWeightGreaterThan(TEST_WEIGHT);
-            will(returnValue(edges));
-        }});
-
-        List<Edge> filteredEdges = this.graph.getEdgesWithWeightGreaterThan(TEST_WEIGHT);
-        assertThat(filteredEdges.size(), is(1));
-        assertEquals(EDGE_2, filteredEdges.getFirst());
+        Graph graph = graphWith(List.of(NODE, NODE_2), List.of(EDGE, EDGE_2));
+        assertEquals(List.of(EDGE_2), graph.getEdgesWithWeightGreaterThan(TEST_WEIGHT));
     }
 
     @Test
     public void retrievesFilteredEdgesByLessThanGivenWeightCorrectly() {
-        List<Edge> edges = List.of(EDGE);
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).getEdgesWithWeightLessThan(TEST_OTHER_WEIGHT);
-            will(returnValue(edges));
-        }});
-
-        List<Edge> filteredEdges = this.graph.getEdgesWithWeightLessThan(TEST_OTHER_WEIGHT);
-        assertThat(filteredEdges.size(), is(1));
-        assertEquals(EDGE, filteredEdges.getFirst());
+        Graph graph = graphWith(List.of(NODE, NODE_2), List.of(EDGE, EDGE_2));
+        assertEquals(List.of(EDGE), graph.getEdgesWithWeightLessThan(TEST_OTHER_WEIGHT));
     }
-
 
     // ============= Advanced Retrieval Tests =============
 
     @Test(expected = NodeNotFoundException.class)
     public void throwsNodeNotFoundExceptionWhenNodeDoesNotExistForGetEdgesFromNode() {
-        expectNodeExists(NODE_ID, false);
-        this.graph.getEdgesFromNode(NODE_ID);
+        graphWith(List.of(), List.of()).getEdgesFromNode(NODE_ID);
     }
 
     @Test
     public void retrievesEdgesFromANodeWhenNodeExists() {
-        List<Edge> edges = List.of(EDGE);
-        expectNodeExists(NODE_ID, true);
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).getEdgesFromNode(NODE_ID);
-            will(returnValue(edges));
-        }});
-        assertEquals(edges, this.graph.getEdgesFromNode(NODE_ID));
+        Graph graph = graphWith(List.of(NODE, NODE_2, NODE_3), List.of(EDGE, EDGE_2, EDGE_3));
+        assertEquals(Set.of(EDGE, EDGE_3), Set.copyOf(graph.getEdgesFromNode(NODE_ID)));
     }
 
     @Test(expected = NodeNotFoundException.class)
     public void throwsNodeNotFoundExceptionWhenNodeDoesNotExistForGetNodesIdWithEdgeToNode() {
-        expectNodeExists(NODE_ID, false);
-        this.graph.getNodesIdWithEdgeToNode(NODE_ID);
+        graphWith(List.of(), List.of()).getNodesIdWithEdgeToNode(NODE_ID);
     }
 
     @Test
     public void retrievesNodesThatHaveAnEdgeToNodeWhenNodeExists() {
-        List<String> nodes = List.of(NODE_ID_2);
-        expectNodeExists(NODE_ID, true);
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).nodesIdsWithEdgesToNode(NODE_ID);
-            will(returnValue(nodes));
-        }});
-        assertEquals(nodes, this.graph.getNodesIdWithEdgeToNode(NODE_ID));
+        Graph graph = graphWith(List.of(NODE, NODE_2, NODE_3), List.of(EDGE, EDGE_2, EDGE_3));
+        assertThat(graph.getNodesIdWithEdgeToNode(NODE_ID), is(List.of(NODE_ID_2)));
     }
 
-    // ============= Transaction Creation Tests =============
+    // ============= Transaction Tests =============
 
     @Test
     public void transactionCanBeCreated() {
-        assertNotNull(this.graph.createTransaction());
+        assertNotNull(graphWith(List.of(), List.of()).createTransaction());
+    }
+
+    @Test
+    public void readsSeeACommitAsSoonAsItIsPublished() {
+        Graph graph = graphWith(List.of(NODE), List.of());
+        var transaction = graph.createTransaction();
+        Node added = transaction.addNode(Map.of());
+        transaction.commit();
+
+        assertEquals(added, graph.getNodeById(added.getId()));
+        assertEquals(2, graph.getNodes().size());
+    }
+
+    @Test(timeout = 60_000)
+    public void readsDuringACommitSeeNoneOfItUntilItIsPublished() throws Exception {
+        CountDownLatch logging = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        Graph graph = Graph.create(GraphSnapshotBuilder.create().freeze(), "1", (graphId, operations) -> {
+            logging.countDown();
+            await(release);
+        });
+        var transaction = graph.createTransaction();
+        Node a = transaction.addNode(Map.of());
+        Node b = transaction.addNode(Map.of());
+        transaction.addEdge(a.getId(), b.getId(), Map.of(), 1.0);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> committer = executor.submit(transaction::commit);
+            try {
+                assertTrue(logging.await(30, TimeUnit.SECONDS));
+                assertTrue(graph.getNodes().isEmpty());
+                assertTrue(graph.getEdges().isEmpty());
+            } finally {
+                release.countDown();
+            }
+            committer.get(30, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
+        assertEquals(2, graph.getNodes().size());
+        assertEquals(1, graph.getEdges().size());
     }
 
     // ============= Helper Methods =============
 
-    private void getNodeIfExistsCheck(String nodeId, boolean expected, Node expectedNode) {
-        expectNodeExists(nodeId, expected);
-        context.checking(new Expectations() {{
-            if (expected) {
-                exactly(1).of(storage).getNode(nodeId);
-                will(returnValue(expectedNode));
-            } else {
-                never(storage).getNode(nodeId);
+    private static void await(CountDownLatch latch) {
+        try {
+            if (!latch.await(30, TimeUnit.SECONDS)) {
+                throw new AssertionError("latch never opened");
             }
-        }});
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("interrupted while waiting", e);
+        }
     }
 
-    private void expectNodeExists(String nodeId, boolean expected) {
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).containsNode(nodeId);
-            will(returnValue(expected));
-        }});
-    }
 
-    private void getEdgeIfExistsCheck(String edgeId, boolean expected, Edge expectedEdge) {
-        expectEdgeExists(edgeId, expected);
-        context.checking(new Expectations() {{
-            if (expected) {
-                exactly(1).of(storage).getEdge(edgeId);
-                will(returnValue(expectedEdge));
-            } else {
-                never(storage).getEdge(edgeId);
-            }
-        }});
-    }
-
-    private void expectEdgeExists(String edgeId, boolean expected) {
-        context.checking(new Expectations() {{
-            exactly(1).of(storage).containsEdge(edgeId);
-            will(returnValue(expected));
-        }});
+    private static Graph graphWith(List<Node> nodes, List<Edge> edges) {
+        GraphSnapshotBuilder builder = GraphSnapshotBuilder.create();
+        nodes.forEach(builder::putNode);
+        edges.forEach(builder::putEdge);
+        return Graph.create(builder.freeze(), "1", CommitLog.NONE);
     }
 }

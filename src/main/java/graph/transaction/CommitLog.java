@@ -4,7 +4,7 @@ package graph.transaction;
 import java.util.List;
 
 /**
- * Where a transaction's operations are made durable before they are applied to the graph.
+ * Where a transaction's operations are made durable before they are published to the graph.
  */
 public interface CommitLog {
 
@@ -13,7 +13,7 @@ public interface CommitLog {
 
     /**
      * Durably logs a committed transaction. When this returns, the transaction survives a crash;
-     * if it throws, nothing was logged and the transaction must not be applied.
+     * if it throws, nothing was logged and the transaction must not be published.
      */
     void logCommit(String graphId, List<GraphOperation> operations);
 }

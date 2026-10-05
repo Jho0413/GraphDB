@@ -65,18 +65,4 @@ public class DoublyLinkedListTest {
         assertNull(first.next);
         assertNull(last.prev);
     }
-
-    @Test
-    public void clearsListAndResetsHeadAndTail() {
-        list.insert("one", "1");
-        list.insert("two", "2");
-        list.insert("three", "3");
-
-        list.clear();
-
-        assertNull(list.removeLeft());
-        assertNull(list.removeRight());
-        list.insert("four", "4");
-        assertThat(list.removeLeft().getKey(), is("four"));
-    }
 }

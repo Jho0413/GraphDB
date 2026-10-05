@@ -1,101 +1,158 @@
 package graph.algorithms;
 
-import graph.Graph;
 import graph.exceptions.NegativeWeightException;
 import graph.model.Edge;
 import graph.model.Node;
+import graph.storage.GraphSnapshot;
+import graph.storage.SnapshotReader;
+import graph.transaction.CommitLog;
+import graph.transaction.TransactionManager;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static graph.events.GraphEvent.*;
 import static graph.testsupport.AutoCommitWriter.write;
 import static org.junit.Assert.*;
 
-/**
- * The algorithms here are not registered as a listener on the graph, so the graph can be changed without the
- * cache being told; only {@code onGraphChange} clears it.
- */
 public class GraphAlgorithmsTest {
 
-    private final Graph graph = Graph.createGraph();
-    private final GraphAlgorithms algorithms = new GraphAlgorithms(graph);
+    private final TransactionManager manager = new TransactionManager(GraphSnapshot.empty(), "g1", CommitLog.NONE);
+    private final GraphAlgorithms algorithms = new GraphAlgorithms();
     private Node nodeA, nodeB, nodeC;
     private Edge ab;
 
     @Before
     public void setUp() {
-        nodeA = write(graph).addNode(Map.of("name", "A"));
-        nodeB = write(graph).addNode(Map.of("name", "B"));
-        nodeC = write(graph).addNode(Map.of("name", "C"));
-        ab = write(graph).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+        nodeA = write(manager).addNode(Map.of("name", "A"));
+        nodeB = write(manager).addNode(Map.of("name", "B"));
+        nodeC = write(manager).addNode(Map.of("name", "C"));
+        ab = write(manager).addEdge(nodeA.getId(), nodeB.getId(), Map.of(), 1.0);
+    }
+
+    // ============ Cache by snapshot version ============
+
+    @Test
+    public void repeatedQueryOnOneSnapshotIsServedFromTheCache() {
+        SnapshotReader graph = current();
+        assertSame(algorithms.tarjan(graph), algorithms.tarjan(graph));
     }
 
     @Test
-    public void repeatedQueryIsServedFromTheCache() {
-        assertSame(algorithms.tarjan(), algorithms.tarjan());
+    public void queriesOnTwoReadersOfOneSnapshotShareTheCache() {
+        assertSame(algorithms.tarjan(current()), algorithms.tarjan(current()));
+    }
+
+    @Test
+    public void aQueryOnALaterSnapshotIsRecomputed() {
+        assertFalse(algorithms.nodesReachableFrom(current(), nodeA.getId()).contains(nodeC.getId()));
+
+        write(manager).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+
+        assertTrue(algorithms.nodesReachableFrom(current(), nodeA.getId()).contains(nodeC.getId()));
+    }
+
+    @Test
+    public void aQueryOnAnUnchangedLaterSnapshotIsStillRecomputed() {
+        Set<String> before = algorithms.nodesReachableFrom(current(), nodeA.getId());
+
+        write(manager).updateNode(nodeC.getId(), "name", "C2");
+        Set<String> after = algorithms.nodesReachableFrom(current(), nodeA.getId());
+
+        assertEquals(before, after);
+        assertNotSame(before, after);
+    }
+
+    @Test
+    public void aResultForAnOlderSnapshotIsNeverServedForANewerOne() {
+        SnapshotReader older = current();
+        write(manager).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        SnapshotReader newer = current();
+
+        Set<String> newerResult = algorithms.nodesReachableFrom(newer, nodeA.getId());
+        assertFalse(algorithms.nodesReachableFrom(older, nodeA.getId()).contains(nodeC.getId()));
+
+        assertSame(newerResult, algorithms.nodesReachableFrom(newer, nodeA.getId()));
     }
 
     @Test
     public void queriesWithDifferentArgumentsAreCachedSeparately() {
-        write(graph).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
-        Path toB = algorithms.dijkstra(nodeA.getId(), nodeB.getId());
-        Path toC = algorithms.dijkstra(nodeA.getId(), nodeC.getId());
+        write(manager).addEdge(nodeB.getId(), nodeC.getId(), Map.of(), 1.0);
+        SnapshotReader graph = current();
+        Path toB = algorithms.dijkstra(graph, nodeA.getId(), nodeB.getId());
+        Path toC = algorithms.dijkstra(graph, nodeA.getId(), nodeC.getId());
 
         assertEquals(List.of(nodeA.getId(), nodeB.getId()), toB.getNodeIds());
         assertEquals(List.of(nodeA.getId(), nodeB.getId(), nodeC.getId()), toC.getNodeIds());
-        assertSame(toB, algorithms.dijkstra(nodeA.getId(), nodeB.getId()));
-    }
-
-    @Test
-    public void anEventAResultDependsOnClearsIt() {
-        List<?> before = algorithms.tarjan();
-        algorithms.onGraphChange(ADD_NODE);
-        assertNotSame(before, algorithms.tarjan());
-    }
-
-    @Test
-    public void anEventAResultDoesNotDependOnKeepsIt() {
-        List<?> components = algorithms.tarjan();
-        Path path = algorithms.dijkstra(nodeA.getId(), nodeB.getId());
-
-        algorithms.onGraphChange(UPDATE_EDGE_WEIGHT);
-
-        assertSame(components, algorithms.tarjan());
-        assertNotSame(path, algorithms.dijkstra(nodeA.getId(), nodeB.getId()));
-    }
-
-    @Test
-    public void addingANodeClearsAllShortestDistances() {
-        DistanceMatrix before = algorithms.floydWarshall();
-        algorithms.onGraphChange(ADD_NODE);
-        assertNotSame(before, algorithms.floydWarshall());
+        assertSame(toB, algorithms.dijkstra(graph, nodeA.getId(), nodeB.getId()));
     }
 
     @Test
     public void leastRecentlyUsedResultIsEvictedWhenTheCacheIsFull() {
-        List<Path> first = algorithms.allPaths(nodeA.getId(), nodeB.getId(), 1);
-        for (int maxLength = 2; maxLength <= 6; maxLength++) {
-            algorithms.allPaths(nodeA.getId(), nodeB.getId(), maxLength);
+        SnapshotReader graph = current();
+        List<Path> first = algorithms.allPaths(graph, nodeA.getId(), nodeB.getId(), 1);
+        for (int maxLength = 2; maxLength <= 21; maxLength++) {
+            algorithms.allPaths(graph, nodeA.getId(), nodeB.getId(), maxLength);
         }
-        assertNotSame(first, algorithms.allPaths(nodeA.getId(), nodeB.getId(), 1));
+        assertNotSame(first, algorithms.allPaths(graph, nodeA.getId(), nodeB.getId(), 1));
     }
 
     @Test
-    public void failuresAreNotCached() {
-        write(graph).updateEdge(ab.getId(), -1.0);
-        assertThrows(NegativeWeightException.class, () -> algorithms.dijkstra(nodeA.getId(), nodeB.getId()));
-
-        write(graph).updateEdge(ab.getId(), 1.0);
-        assertEquals(List.of(nodeA.getId(), nodeB.getId()), algorithms.dijkstra(nodeA.getId(), nodeB.getId()).getNodeIds());
+    public void aFullCacheKeepsItsTwentyMostRecentResults() {
+        SnapshotReader graph = current();
+        List<Path> first = algorithms.allPaths(graph, nodeA.getId(), nodeB.getId(), 1);
+        for (int maxLength = 2; maxLength <= 20; maxLength++) {
+            algorithms.allPaths(graph, nodeA.getId(), nodeB.getId(), maxLength);
+        }
+        assertSame(first, algorithms.allPaths(graph, nodeA.getId(), nodeB.getId(), 1));
     }
 
     @Test
-    public void cachedResultsCannotBeModified() {
-        assertThrows(UnsupportedOperationException.class, () -> algorithms.tarjan().clear());
+    public void aFailedQueryIsNotCached() {
+        write(manager).updateEdge(ab.getId(), -1.0);
+        SnapshotReader graph = current();
+
+        NegativeWeightException first = assertThrows(NegativeWeightException.class,
+                () -> algorithms.dijkstra(graph, nodeA.getId(), nodeB.getId()));
+        NegativeWeightException second = assertThrows(NegativeWeightException.class,
+                () -> algorithms.dijkstra(graph, nodeA.getId(), nodeB.getId()));
+
+        assertNotSame(first, second);
+    }
+
+    // ============ Cached results are shared, so they cannot be modified ============
+
+    @Test
+    public void theListOfComponentsCannotBeModified() {
+        assertThrows(UnsupportedOperationException.class, () -> algorithms.tarjan(current()).clear());
+    }
+
+    @Test
+    public void aComponentCannotBeModified() {
+        assertThrows(UnsupportedOperationException.class, () -> algorithms.tarjan(current()).getFirst().add("x"));
+    }
+
+    @Test
+    public void aCycleCannotBeModified() {
+        write(manager).addEdge(nodeB.getId(), nodeA.getId(), Map.of(), 1.0);
+        assertThrows(UnsupportedOperationException.class, () -> algorithms.allCycles(current()).getFirst().add("x"));
+    }
+
+    @Test
+    public void aPathCannotBeModified() {
         assertThrows(UnsupportedOperationException.class,
-                () -> algorithms.nodesReachableFrom(nodeA.getId()).add("x"));
+                () -> algorithms.dijkstra(current(), nodeA.getId(), nodeB.getId()).getNodeIds().add("x"));
+    }
+
+    @Test
+    public void reachableNodesCannotBeModified() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> algorithms.nodesReachableFrom(current(), nodeA.getId()).add("x"));
+    }
+
+    private SnapshotReader current() {
+        return new SnapshotReader(manager.current());
     }
 }

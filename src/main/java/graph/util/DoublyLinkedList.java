@@ -70,9 +70,4 @@ public class DoublyLinkedList<K, V> {
         ListNode<K, V> node = new ListNode<>(key, value);
         return this.insert(node);
     }
-
-    public void clear() {
-        this.head = null;
-        this.tail = null;
-    }
 }

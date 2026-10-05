@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * Every read on a graph: the traversal reads algorithms need ({@link GraphView}) plus attribute, property and
- * weight queries. Implemented by both a committed graph and a transaction, which sees its own uncommitted changes.
+ * weight queries. Implemented by a committed snapshot and by a transaction, which sees its own uncommitted changes.
  */
 public interface GraphReader extends GraphView {
 

@@ -4,13 +4,15 @@ import graph.Graph;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.transaction.Transaction;
+import graph.transaction.TransactionManager;
 
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Test helper for setting up graphs concisely: every call runs as its own committed transaction, so test data
- * goes through the same commit path (log, apply, events) as real writes.
+ * goes through the same commit path (validate, log, publish) as real writes.
  *
  * <pre>{@code
  * Node a = write(graph).addNode(Map.of("name", "A"));
@@ -19,14 +21,18 @@ import java.util.function.Function;
  */
 public final class AutoCommitWriter {
 
-    private final Graph graph;
+    private final Supplier<Transaction> begin;
 
-    private AutoCommitWriter(Graph graph) {
-        this.graph = graph;
+    private AutoCommitWriter(Supplier<Transaction> begin) {
+        this.begin = begin;
     }
 
     public static AutoCommitWriter write(Graph graph) {
-        return new AutoCommitWriter(graph);
+        return new AutoCommitWriter(graph::createTransaction);
+    }
+
+    public static AutoCommitWriter write(TransactionManager manager) {
+        return new AutoCommitWriter(manager::begin);
     }
 
     public Node addNode(Map<String, Object> attributes) {
@@ -74,7 +80,7 @@ public final class AutoCommitWriter {
     }
 
     private <T> T commit(Function<Transaction, T> write) {
-        Transaction transaction = graph.createTransaction();
+        Transaction transaction = begin.get();
         T result = write.apply(transaction);
         transaction.commit();
         return result;

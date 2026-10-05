@@ -6,45 +6,42 @@ import graph.model.Node;
 import graph.transaction.CommitLog;
 import graph.transaction.TransactionManager;
 import graph.transaction.Transaction;
-import graph.events.GraphListener;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
-import graph.storage.GraphStorage;
-import graph.storage.MutableGraphStorage;
-import graph.storage.InMemoryGraphStorage;
+import graph.storage.GraphSnapshot;
+import graph.storage.SnapshotReader;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * A graph's committed state. Reads go straight to storage; the only way to change a graph is through a
- * {@link Transaction}, so every change is logged before it is applied.
+ * A graph's committed state. Each read sees the latest committed snapshot, taken once per call, so it never sees a
+ * half-applied commit; consecutive calls may see different snapshots. The only way to change a graph is through a
+ * {@link Transaction}.
  */
 public class Graph implements GraphReader {
 
-    private final GraphStorage storage;
     private final TransactionManager manager;
     private final String id;
 
-    private Graph(GraphStorage storage, TransactionManager manager, String id) {
-        this.storage = storage;
+    private Graph(TransactionManager manager, String id) {
         this.manager = manager;
         this.id = id;
     }
 
     /** Creates a standalone in-memory graph. Its transactions are not logged, so it does not survive a restart. */
     public static Graph createGraph() {
-        return create(InMemoryGraphStorage.create(), UUID.randomUUID().toString(), CommitLog.NONE);
+        return create(GraphSnapshot.empty(), UUID.randomUUID().toString(), CommitLog.NONE);
     }
 
     /** Creates an empty graph whose committed transactions are made durable through {@code commitLog}. */
     public static Graph createGraph(String graphId, CommitLog commitLog) {
-        return create(InMemoryGraphStorage.create(), graphId, commitLog);
+        return create(GraphSnapshot.empty(), graphId, commitLog);
     }
 
-    static Graph create(MutableGraphStorage storage, String graphId, CommitLog commitLog) {
-        return new Graph(storage, new TransactionManager(storage, graphId, commitLog), graphId);
+    static Graph create(GraphSnapshot initial, String graphId, CommitLog commitLog) {
+        return new Graph(new TransactionManager(initial, graphId, commitLog), graphId);
     }
 
     public String getId() {
@@ -55,91 +52,72 @@ public class Graph implements GraphReader {
         return manager.begin();
     }
 
-    /** Internal: listeners run inside the commit lock, so only the database registers them (the query cache). */
-    void addListener(GraphListener listener) {
-        manager.addListener(listener);
-    }
-
     @Override
     public Node getNodeById(String id) throws NodeNotFoundException {
-        checkNodeId(id);
-        return storage.getNode(id);
+        return reader().getNodeById(id);
     }
 
     @Override
     public List<Node> getNodes() {
-        return storage.getAllNodes();
+        return reader().getNodes();
     }
 
     @Override
     public Edge getEdgeById(String id) throws EdgeNotFoundException {
-        if (!storage.containsEdge(id)) {
-            throw new EdgeNotFoundException(id);
-        }
-        return storage.getEdge(id);
+        return reader().getEdgeById(id);
     }
 
     @Override
     public Edge getEdgeByNodeIds(String source, String target) throws NodeNotFoundException, EdgeNotFoundException {
-        checkNodeId(source);
-        checkNodeId(target);
-        if (storage.edgeExists(source, target)) {
-            return storage.getEdgeByNodeIds(source, target);
-        }
-        throw new EdgeNotFoundException(source, target);
+        return reader().getEdgeByNodeIds(source, target);
     }
 
     @Override
     public List<Edge> getEdges() {
-        return storage.getAllEdges();
+        return reader().getEdges();
     }
 
     @Override
     public List<Edge> getEdgesByWeight(double weight) {
-        return storage.getEdgesByWeight(weight);
+        return reader().getEdgesByWeight(weight);
     }
 
     @Override
     public List<Edge> getEdgesByWeightRange(double min, double max) throws IllegalArgumentException {
-        if (min > max) {
-            throw new IllegalArgumentException("min must be smaller or equals to max");
-        }
-        return storage.getEdgesByWeightRange(min, max);
+        return reader().getEdgesByWeightRange(min, max);
     }
 
     @Override
     public List<Edge> getEdgesWithWeightGreaterThan(double weight) {
-        return storage.getEdgesWithWeightGreaterThan(weight);
+        return reader().getEdgesWithWeightGreaterThan(weight);
     }
 
     @Override
     public List<Edge> getEdgesWithWeightLessThan(double weight) {
-        return storage.getEdgesWithWeightLessThan(weight);
+        return reader().getEdgesWithWeightLessThan(weight);
     }
 
     @Override
     public List<Edge> getEdgesFromNode(String nodeId) throws NodeNotFoundException {
-        checkNodeId(nodeId);
-        return storage.getEdgesFromNode(nodeId);
+        return reader().getEdgesFromNode(nodeId);
     }
 
     @Override
     public List<String> getNodesIdWithEdgeToNode(String nodeId) throws NodeNotFoundException {
-        checkNodeId(nodeId);
-        return storage.nodesIdsWithEdgesToNode(nodeId);
+        return reader().getNodesIdWithEdgeToNode(nodeId);
     }
 
-    private void checkNodeId(String nodeId) throws NodeNotFoundException {
-        if (!storage.containsNode(nodeId)) {
-            throw new NodeNotFoundException(nodeId);
-        }
+    /** A reader of the latest committed snapshot; the query engine takes one per query. */
+    SnapshotReader reader() {
+        return new SnapshotReader(manager.current());
     }
 
     @Override
     public String toString() {
+        SnapshotReader reader = reader();
         return
                 "Graph [id=" + id + "]\n" +
-                "Nodes: " + getNodes().stream().map(Node::toString).collect(Collectors.joining(", ")) + "\n" +
-                "Edges: " + getEdges().stream().map(Edge::toString).collect(Collectors.joining(", "));
+                "Nodes: " + reader.getNodes().stream().map(Node::toString).collect(Collectors.joining(", ")) + "\n" +
+                "Edges: " + reader.getEdges().stream().map(Edge::toString).collect(Collectors.joining(", "));
     }
 }

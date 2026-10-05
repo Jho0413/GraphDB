@@ -1,23 +1,27 @@
 package graph.query;
 
 import graph.algorithms.GraphAlgorithms;
+import graph.storage.SnapshotReader;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class GraphCycleAnalyser {
 
+    private final Supplier<SnapshotReader> snapshots;
     private final GraphAlgorithms algorithms;
 
-    public GraphCycleAnalyser(GraphAlgorithms algorithms) {
+    GraphCycleAnalyser(Supplier<SnapshotReader> snapshots, GraphAlgorithms algorithms) {
+        this.snapshots = snapshots;
         this.algorithms = algorithms;
     }
 
     public boolean hasCycle() {
-        return algorithms.hasCycle();
+        return algorithms.hasCycle(snapshots.get());
     }
 
     public boolean hasNegativeCycle() {
-        return algorithms.hasNegativeCycle();
+        return algorithms.hasNegativeCycle(snapshots.get());
     }
 
     public boolean isDAG() {
@@ -25,6 +29,6 @@ public class GraphCycleAnalyser {
     }
 
     public List<List<String>> getAllCycles() {
-        return algorithms.allCycles();
+        return algorithms.allCycles(snapshots.get());
     }
 }

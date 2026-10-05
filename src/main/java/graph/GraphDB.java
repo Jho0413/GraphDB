@@ -1,6 +1,5 @@
 package graph;
 
-import graph.algorithms.GraphAlgorithms;
 import graph.wal.WalReader;
 import graph.wal.WriteAheadLog;
 import graph.wal.RecoveryManager;
@@ -22,6 +21,7 @@ public class GraphDB implements AutoCloseable {
 
     public static final Path DEFAULT_DATA_DIRECTORY = Path.of("graphdb-data");
     static final String WAL_FILE_NAME = "wal.log";
+    private static final System.Logger LOGGER = System.getLogger(GraphDB.class.getName());
 
     private static GraphDB instance;
 
@@ -52,13 +52,14 @@ public class GraphDB implements AutoCloseable {
             Path walFile = dataDirectory.resolve(WAL_FILE_NAME);
             WalReader.Result log = WalReader.read(walFile);
             if (log.hasDiscardedTail()) {
-                System.out.println("Discarding " + (log.fileLength() - log.validLength())
-                        + " bytes of incomplete write-ahead log at the end of " + walFile);
+                LOGGER.log(System.Logger.Level.WARNING,
+                        "Discarding {0} bytes of incomplete write-ahead log at the end of {1}",
+                        log.fileLength() - log.validLength(), walFile);
             }
             WriteAheadLog wal = WriteAheadLog.open(walFile, log.validLength());
             Map<String, Graph> graphs = new LinkedHashMap<>();
             new RecoveryManager().recover(log.records())
-                    .forEach((graphId, storage) -> graphs.put(graphId, Graph.create(storage, graphId, wal)));
+                    .forEach((graphId, snapshot) -> graphs.put(graphId, Graph.create(snapshot, graphId, wal)));
             return new GraphDB(graphs, wal, lock);
         } catch (RuntimeException e) {
             lock.close();
@@ -103,14 +104,7 @@ public class GraphDB implements AutoCloseable {
         if (graph == null) {
             throw new GraphNotFoundException(graphId);
         }
-        return queryClients.computeIfAbsent(graphId, id -> newQueryClient(graph));
-    }
-
-    /** A query client whose cache is cleared by the graph's commits. */
-    static GraphQueryClient newQueryClient(Graph graph) {
-        GraphAlgorithms algorithms = new GraphAlgorithms(graph);
-        graph.addListener(algorithms);
-        return GraphQueryClient.create(graph, algorithms);
+        return queryClients.computeIfAbsent(graphId, id -> GraphQueryClient.create(graph::reader));
     }
 
     /** Closes the write-ahead log. Graphs from this database can no longer commit transactions afterwards. */
