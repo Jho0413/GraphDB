@@ -1,7 +1,9 @@
 package graph.query;
 
 import graph.algorithms.GraphAlgorithms;
-import graph.model.GraphView;
+import graph.storage.SnapshotReader;
+
+import java.util.function.Supplier;
 
 public class GraphQueryClient {
 
@@ -11,14 +13,18 @@ public class GraphQueryClient {
     private final GraphStructureAnalyser structureAnalyser;
     private final GraphCycleAnalyser cycleAnalyser;
 
-    /** A client running its queries through {@code algorithms}, which the caller registers for graph changes. */
-    public static GraphQueryClient create(GraphView graph, GraphAlgorithms algorithms) {
+    /**
+     * A client whose queries each run on one reader from {@code snapshots}, sharing one result cache. Every reader
+     * it supplies must come from the same graph, since the cache tells snapshots apart by version alone.
+     */
+    public static GraphQueryClient create(Supplier<SnapshotReader> snapshots) {
+        GraphAlgorithms algorithms = new GraphAlgorithms();
         return new GraphQueryClient(
-                new GraphPathFinder(graph, algorithms),
-                new GraphConnectivityAnalyser(graph, algorithms),
-                new GraphCommonalityFinder(graph, algorithms),
-                new GraphStructureAnalyser(graph, algorithms),
-                new GraphCycleAnalyser(algorithms)
+                new GraphPathFinder(snapshots, algorithms),
+                new GraphConnectivityAnalyser(snapshots, algorithms),
+                new GraphCommonalityFinder(snapshots, algorithms),
+                new GraphStructureAnalyser(snapshots, algorithms),
+                new GraphCycleAnalyser(snapshots, algorithms)
         );
     }
 

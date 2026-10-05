@@ -6,7 +6,6 @@ import graph.model.Node;
 import graph.transaction.CommitLog;
 import graph.transaction.TransactionManager;
 import graph.transaction.Transaction;
-import graph.events.GraphListener;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.storage.GraphSnapshot;
@@ -51,11 +50,6 @@ public class Graph implements GraphReader {
 
     public Transaction createTransaction() {
         return manager.begin();
-    }
-
-    /** Internal: listeners run inside the commit lock, so only the database registers them (the query cache). */
-    void addListener(GraphListener listener) {
-        manager.addListener(listener);
     }
 
     @Override
@@ -113,7 +107,8 @@ public class Graph implements GraphReader {
         return reader().getNodesIdWithEdgeToNode(nodeId);
     }
 
-    private SnapshotReader reader() {
+    /** A reader of the latest committed snapshot; the query engine takes one per query. */
+    SnapshotReader reader() {
         return new SnapshotReader(manager.current());
     }
 

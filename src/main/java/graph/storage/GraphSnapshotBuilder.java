@@ -26,28 +26,34 @@ public final class GraphSnapshotBuilder implements MutableGraphStorage {
     private PMap<String, PMap<String, String>> incoming;
     private PMap<String, PSet<String>> incidentEdges;
     private TreePMap<Double, PMap<String, Edge>> edgesByWeight;
+    private final long version;
 
-    private GraphSnapshotBuilder(GraphSnapshot base) {
+    private GraphSnapshotBuilder(GraphSnapshot base, long version) {
         nodes = base.nodes;
         edges = base.edges;
         outgoing = base.outgoing;
         incoming = base.incoming;
         incidentEdges = base.incidentEdges;
         edgesByWeight = base.edgesByWeight;
+        this.version = version;
     }
 
+    /** A builder starting empty, whose snapshots are version 0. */
     public static GraphSnapshotBuilder create() {
-        return from(GraphSnapshot.empty());
+        return new GraphSnapshotBuilder(GraphSnapshot.empty(), 0);
     }
 
-    /** A builder starting at {@code base}; its writes never change {@code base}. */
+    /**
+     * A builder starting at {@code base}, whose snapshots are version {@code base.version() + 1}; its writes never
+     * change {@code base}.
+     */
     public static GraphSnapshotBuilder from(GraphSnapshot base) {
-        return new GraphSnapshotBuilder(base);
+        return new GraphSnapshotBuilder(base, base.version() + 1);
     }
 
     /** The current state as a snapshot; later writes to this builder do not change it. */
     public GraphSnapshot freeze() {
-        return new GraphSnapshot(nodes, edges, outgoing, incoming, incidentEdges, edgesByWeight);
+        return new GraphSnapshot(nodes, edges, outgoing, incoming, incidentEdges, edgesByWeight, version);
     }
 
     @Override

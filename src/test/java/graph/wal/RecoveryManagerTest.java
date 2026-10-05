@@ -7,9 +7,12 @@ import graph.testsupport.EdgeBaseMatcher;
 import graph.testsupport.NodeBaseMatcher;
 import graph.transaction.AddOrUpdateEdge;
 import graph.transaction.AddOrUpdateNode;
+import graph.transaction.CommitLog;
 import graph.transaction.DeleteEdge;
 import graph.transaction.DeleteNode;
 import graph.transaction.GraphOperation;
+import graph.transaction.Transaction;
+import graph.transaction.TransactionManager;
 import graph.storage.GraphSnapshot;
 import org.junit.Before;
 import org.junit.Test;
@@ -120,6 +123,29 @@ public class RecoveryManagerTest {
         GraphSnapshot graph = recoveryManager.recover(log).get("g1");
         assertEquals(2, graph.getAllNodes().size());
         checkEdgeComponents("e1", "n1", "n2", 1.5, ATTRIBUTES, graph.getAllEdges().getFirst());
+    }
+
+    @Test
+    public void aRecoveredGraphStartsAtVersionZeroWhateverItsHistory() {
+        List<WalRecord> log = new ArrayList<>();
+        log.add(new GraphCreated("g1"));
+        log.addAll(transaction("g1", addNode1));
+        log.addAll(transaction("g1", addNode2));
+        log.addAll(transaction("g1", addEdge));
+
+        assertEquals(0, recoveryManager.recover(log).get("g1").version());
+    }
+
+    @Test
+    public void theFirstCommitAfterRecoveryIsVersionOne() {
+        GraphSnapshot recovered = recover(transaction("g1", addNode1, addNode2)).get("g1");
+        TransactionManager manager = new TransactionManager(recovered, "g1", CommitLog.NONE);
+
+        Transaction transaction = manager.begin();
+        transaction.addNode(ATTRIBUTES);
+        transaction.commit();
+
+        assertEquals(1, manager.current().version());
     }
 
     @Test

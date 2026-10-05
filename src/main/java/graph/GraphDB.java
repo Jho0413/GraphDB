@@ -1,6 +1,5 @@
 package graph;
 
-import graph.algorithms.GraphAlgorithms;
 import graph.wal.WalReader;
 import graph.wal.WriteAheadLog;
 import graph.wal.RecoveryManager;
@@ -106,11 +105,9 @@ public class GraphDB implements AutoCloseable {
         return queryClients.computeIfAbsent(graphId, id -> newQueryClient(graph));
     }
 
-    /** A query client whose cache is cleared by the graph's commits. */
+    /** A query client over the graph's latest committed snapshot, one snapshot per query. */
     static GraphQueryClient newQueryClient(Graph graph) {
-        GraphAlgorithms algorithms = new GraphAlgorithms(graph);
-        graph.addListener(algorithms);
-        return GraphQueryClient.create(graph, algorithms);
+        return GraphQueryClient.create(graph::reader);
     }
 
     /** Closes the write-ahead log. Graphs from this database can no longer commit transactions afterwards. */

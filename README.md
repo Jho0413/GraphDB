@@ -16,7 +16,7 @@ Each transaction reads the immutable snapshot committed when it began, plus its 
 Supports high-performance queries powered by classic algorithms (Dijkstra, DFS, Bellman-Ford, etc.).
 
 - **LRU Caching**  
-Query results are cached using a Least Recently Used strategy to accelerate repeated computations. Results are grouped by what they depend on, so a commit clears only the ones it affects (for example, an edge weight update does not clear strongly connected components).
+Query results are cached using a Least Recently Used strategy to accelerate repeated computations. Results are cached per snapshot version, so a commit never serves a stale result, and the cache is safe for concurrent queries.
 
 - **Indexed Edge Lookup**  
 Enables fast retrieval of edges by weight through indexing.

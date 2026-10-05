@@ -4,30 +4,31 @@ import graph.algorithms.GraphAlgorithms;
 import graph.exceptions.CycleFoundException;
 import graph.exceptions.NegativeCycleException;
 import graph.exceptions.NodeNotFoundException;
-import graph.model.GraphView;
+import graph.storage.SnapshotReader;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class GraphStructureAnalyser {
 
-    private final GraphView graph;
+    private final Supplier<SnapshotReader> snapshots;
     private final GraphAlgorithms algorithms;
 
-    public GraphStructureAnalyser(GraphView graph, GraphAlgorithms algorithms) {
-        this.graph = graph;
+    GraphStructureAnalyser(Supplier<SnapshotReader> snapshots, GraphAlgorithms algorithms) {
+        this.snapshots = snapshots;
         this.algorithms = algorithms;
     }
 
     public int getInDegree(String nodeId) throws NodeNotFoundException {
-        return graph.getNodesIdWithEdgeToNode(nodeId).size();
+        return snapshots.get().getNodesIdWithEdgeToNode(nodeId).size();
     }
 
     public int getOutDegree(String nodeId) throws NodeNotFoundException {
-        return graph.getEdgesFromNode(nodeId).size();
+        return snapshots.get().getEdgesFromNode(nodeId).size();
     }
 
     public double getGraphDiameter() throws NegativeCycleException, IllegalStateException {
-        double diameter = algorithms.floydWarshall().diameter();
+        double diameter = algorithms.floydWarshall(snapshots.get()).diameter();
         // Disconnected graph
         if (diameter == Double.NEGATIVE_INFINITY) {
             throw new IllegalStateException("Graph is completely disconnected, diameter is undefined");
@@ -36,6 +37,6 @@ public class GraphStructureAnalyser {
     }
 
     public List<String> topologicalSort() throws CycleFoundException {
-        return algorithms.topologicalSort();
+        return algorithms.topologicalSort(snapshots.get());
     }
 }

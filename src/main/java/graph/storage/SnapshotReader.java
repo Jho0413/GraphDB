@@ -17,6 +17,11 @@ public final class SnapshotReader implements GraphReader {
         this.snapshot = snapshot;
     }
 
+    /** The commit version of the snapshot this reader reads. */
+    public long version() {
+        return snapshot.version();
+    }
+
     @Override
     public Node getNodeById(String id) throws NodeNotFoundException {
         checkNodeId(id);

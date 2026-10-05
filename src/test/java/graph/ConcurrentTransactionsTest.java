@@ -2,6 +2,7 @@ package graph;
 
 import graph.exceptions.TransactionConflictException;
 import graph.model.Node;
+import graph.testsupport.Workers;
 import graph.transaction.Transaction;
 import org.junit.After;
 import org.junit.Test;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static graph.testsupport.Workers.awaitAll;
 import static org.junit.Assert.*;
 
 /** Real threads on one graph: commits serialize correctly and readers only ever see whole commits. */
@@ -115,6 +117,10 @@ public class ConcurrentTransactionsTest {
         assertEquals(2 * THREADS * COMMITS_PER_THREAD, graph.getNodes().size());
     }
 
+    private Future<?> submit(Runnable work) {
+        return Workers.submit(executor, start, work);
+    }
+
     private void incrementWithRetry(String nodeId) {
         while (true) {
             Transaction transaction = graph.createTransaction();
@@ -126,20 +132,6 @@ public class ConcurrentTransactionsTest {
             } catch (TransactionConflictException e) {
                 // Another increment committed first; retry on the newer snapshot.
             }
-        }
-    }
-
-    private Future<?> submit(Runnable work) {
-        return executor.submit(() -> {
-            start.await();
-            work.run();
-            return null;
-        });
-    }
-
-    private static void awaitAll(List<Future<?>> futures) throws Exception {
-        for (Future<?> future : futures) {
-            future.get(30, TimeUnit.SECONDS);
         }
     }
 }

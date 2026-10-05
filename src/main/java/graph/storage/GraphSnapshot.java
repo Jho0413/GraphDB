@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public final class GraphSnapshot implements GraphStorage {
 
     private static final GraphSnapshot EMPTY = new GraphSnapshot(HashTreePMap.empty(), HashTreePMap.empty(),
-            HashTreePMap.empty(), HashTreePMap.empty(), HashTreePMap.empty(), TreePMap.empty());
+            HashTreePMap.empty(), HashTreePMap.empty(), HashTreePMap.empty(), TreePMap.empty(), 0);
 
     final PMap<String, Node> nodes;
     final PMap<String, Edge> edges;
@@ -31,20 +31,31 @@ public final class GraphSnapshot implements GraphStorage {
     // another edge took over.
     final PMap<String, PSet<String>> incidentEdges;
     final TreePMap<Double, PMap<String, Edge>> edgesByWeight;
+    private final long version;
 
     GraphSnapshot(PMap<String, Node> nodes, PMap<String, Edge> edges, PMap<String, PMap<String, String>> outgoing,
                   PMap<String, PMap<String, String>> incoming, PMap<String, PSet<String>> incidentEdges,
-                  TreePMap<Double, PMap<String, Edge>> edgesByWeight) {
+                  TreePMap<Double, PMap<String, Edge>> edgesByWeight, long version) {
         this.nodes = nodes;
         this.edges = edges;
         this.outgoing = outgoing;
         this.incoming = incoming;
         this.incidentEdges = incidentEdges;
         this.edgesByWeight = edgesByWeight;
+        this.version = version;
     }
 
+    /** The empty graph, at version 0. */
     public static GraphSnapshot empty() {
         return EMPTY;
+    }
+
+    /**
+     * This snapshot's commit version: one more than the snapshot it was built from. It identifies a snapshot only
+     * within one graph's history, which starts at 0 when the graph is created or recovered.
+     */
+    public long version() {
+        return version;
     }
 
     @Override

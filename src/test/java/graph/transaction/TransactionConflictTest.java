@@ -1,6 +1,5 @@
 package graph.transaction;
 
-import graph.events.GraphEvent;
 import graph.exceptions.EdgeExistsException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
@@ -22,7 +21,6 @@ import static org.junit.Assert.*;
 public class TransactionConflictTest {
 
     private final List<List<GraphOperation>> logged = new ArrayList<>();
-    private final List<GraphEvent> events = new ArrayList<>();
     private final TransactionManager manager =
             new TransactionManager(GraphSnapshot.empty(), "g1", (graphId, operations) -> logged.add(operations));
     private Node a, b, c;
@@ -37,7 +35,6 @@ public class TransactionConflictTest {
         ab = setup.addEdge(a.getId(), b.getId(), Map.of(), 1.0);
         setup.commit();
         logged.clear();
-        manager.addListener(events::add);
     }
 
     // ============ Rule (a): the same node or edge ============
@@ -259,7 +256,7 @@ public class TransactionConflictTest {
     // ============ A rejected transaction ============
 
     @Test
-    public void aRejectedTransactionLogsPublishesAndNotifiesNothing() {
+    public void aRejectedTransactionLogsAndPublishesNothing() {
         Transaction first = manager.begin();
         Transaction second = manager.begin();
         first.updateNode(a.getId(), "name", "first");
@@ -268,17 +265,15 @@ public class TransactionConflictTest {
         first.commit();
         GraphSnapshot before = manager.current();
         logged.clear();
-        events.clear();
 
         assertThrows(TransactionConflictException.class, second::commit);
 
         assertTrue(logged.isEmpty());
         assertSame(before, manager.current());
-        assertTrue(events.isEmpty());
     }
 
     @Test
-    public void aTransactionRejectedByItsResultLogsPublishesAndNotifiesNothing() {
+    public void aTransactionRejectedByItsResultLogsAndPublishesNothing() {
         Transaction deletesA = manager.begin();
         Transaction addsEdge = manager.begin();
         addsEdge.addEdge(a.getId(), c.getId(), Map.of(), 1.0);
@@ -286,13 +281,11 @@ public class TransactionConflictTest {
         deletesA.commit();
         GraphSnapshot before = manager.current();
         logged.clear();
-        events.clear();
 
         String message = assertThrows(TransactionConflictException.class, addsEdge::commit).getMessage();
 
         assertTrue(logged.isEmpty());
         assertSame(before, manager.current());
-        assertTrue(events.isEmpty());
         assertTrue(message, message.contains("endpoint"));
     }
 

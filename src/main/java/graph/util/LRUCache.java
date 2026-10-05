@@ -4,7 +4,8 @@ package graph.util;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LRUCache<K, V> implements Cache<K, V> {
+/** A fixed-capacity cache that evicts the least recently used entry. Thread-safe. */
+public class LRUCache<K, V> {
 
     private final int maxSize;
     private final DoublyLinkedList<K, V> orderedList = new DoublyLinkedList<>();
@@ -17,7 +18,7 @@ public class LRUCache<K, V> implements Cache<K, V> {
         this.maxSize = maxSize;
     }
 
-    public void put(K key, V value) {
+    public synchronized void put(K key, V value) {
         if (!store.containsKey(key) && store.size() == maxSize) {
             ListNode<K, V> nodeRemoved = orderedList.removeLeft();
             store.remove(nodeRemoved.getKey());
@@ -33,7 +34,7 @@ public class LRUCache<K, V> implements Cache<K, V> {
         }
     }
 
-    public V get(K key) {
+    public synchronized V get(K key) {
         ListNode<K, V> node = store.get(key);
         if (node != null) {
             orderedList.remove(node);
@@ -41,10 +42,5 @@ public class LRUCache<K, V> implements Cache<K, V> {
             return node.getValue();
         }
         return null;
-    }
-
-    public void clear() {
-        store.clear();
-        orderedList.clear();
     }
 }

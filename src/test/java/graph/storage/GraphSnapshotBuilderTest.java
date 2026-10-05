@@ -88,6 +88,32 @@ public class GraphSnapshotBuilderTest {
         assertTrue(GraphSnapshot.empty().getAllEdges().isEmpty());
     }
 
+    // ============ Versions ============
+
+    @Test
+    public void theEmptySnapshotIsVersionZero() {
+        assertThat(GraphSnapshot.empty().version(), is(0L));
+    }
+
+    @Test
+    public void aBuilderCreatedEmptyFreezesAtVersionZero() {
+        assertThat(snapshot.version(), is(0L));
+    }
+
+    @Test
+    public void aBuilderStartedFromASnapshotFreezesAtTheNextVersion() {
+        assertThat(GraphSnapshotBuilder.from(snapshot).freeze().version(), is(snapshot.version() + 1));
+    }
+
+    @Test
+    public void freezingOneBuilderTwiceGivesTheSameVersion() {
+        GraphSnapshotBuilder next = GraphSnapshotBuilder.from(snapshot);
+        GraphSnapshot first = next.freeze();
+        next.putNode(new Node("C", Map.of()));
+
+        assertThat(next.freeze().version(), is(first.version()));
+    }
+
     @Test
     public void snapshotIsUnaffectedByRemovingAnEdge() {
         builder.removeEdge("AB");
