@@ -1,7 +1,9 @@
 package graph.model;
 
 import org.junit.Test;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -84,5 +86,20 @@ public class EdgeTest {
 
         assertTrue(edge.hasProperty("size"));
         assertNull(edge.getProperties().get("size"));
+    }
+
+    @Test
+    public void changingAListAfterPassingItAsAPropertyDoesNotChangeTheEdge() {
+        List<Object> tags = new ArrayList<>(List.of("transfer"));
+        Edge edge = new Edge("edge1", "node1", "node2", 1.0, Map.of("tags", tags));
+        tags.add("flagged");
+
+        assertThat(edge.getProperty("tags"), is(List.of("transfer")));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void aMapPropertyCannotBeModifiedThroughTheEdge() {
+        Edge edge = new Edge("edge1", "node1", "node2", 1.0, Map.of("details", new HashMap<>(Map.of("risk", 1))));
+        ((Map<String, Object>) edge.getProperty("details")).put("risk", 9);
     }
 }

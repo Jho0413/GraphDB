@@ -1,7 +1,5 @@
 package graph.model;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -21,8 +19,7 @@ public final class Edge {
         this.from = from;
         this.to = to;
         this.weight = weight;
-        // A copy of a HashMap rather than Map.copyOf: property values may be null.
-        this.properties = Collections.unmodifiableMap(new HashMap<>(properties));
+        this.properties = AttributeValues.copyOf(properties);
     }
 
     public String getId() {

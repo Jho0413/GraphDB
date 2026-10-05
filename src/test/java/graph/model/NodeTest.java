@@ -1,7 +1,10 @@
 package graph.model;
 
 import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -76,5 +79,48 @@ public class NodeTest {
 
         assertTrue(node.hasAttribute("size"));
         assertNull(node.getAttributes().get("size"));
+    }
+
+    @Test
+    public void changingAListAfterPassingItAsAnAttributeDoesNotChangeTheNode() {
+        List<Object> tags = new ArrayList<>(List.of("fraud"));
+        Node node = new Node("node1", Map.of("tags", tags));
+        tags.add("vip");
+
+        assertThat(node.getAttribute("tags"), is(List.of("fraud")));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void aListAttributeCannotBeModifiedThroughTheNode() {
+        Node node = new Node("node1", Map.of("tags", new ArrayList<>(List.of("fraud"))));
+        ((List<Object>) node.getAttribute("tags")).add("vip");
+    }
+
+    @Test
+    public void changingAListNestedInAMapAttributeDoesNotChangeTheNode() {
+        List<Object> tags = new ArrayList<>(List.of("fraud"));
+        Map<String, Object> details = new HashMap<>(Map.of("tags", tags));
+        Node node = new Node("node1", Map.of("details", details));
+        tags.add("vip");
+        details.put("risk", 9);
+
+        assertThat(node.getAttribute("details"), is(Map.of("tags", List.of("fraud"))));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void aListNestedInAListAttributeCannotBeModifiedThroughTheNode() {
+        List<Object> outer = new ArrayList<>(List.of(new ArrayList<>(List.of("fraud"))));
+        Node node = new Node("node1", Map.of("history", outer));
+        ((List<Object>) ((List<?>) node.getAttribute("history")).get(0)).add("vip");
+    }
+
+    @Test
+    public void nullsInsideListAndMapAttributesAreKept() {
+        Map<String, Object> details = new HashMap<>();
+        details.put("risk", null);
+        Node node = new Node("node1", Map.of("tags", Arrays.asList("fraud", null), "details", details));
+
+        assertThat(node.getAttribute("tags"), is(Arrays.asList("fraud", null)));
+        assertThat(node.getAttribute("details"), is(details));
     }
 }

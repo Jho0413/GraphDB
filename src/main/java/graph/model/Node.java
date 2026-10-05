@@ -1,7 +1,5 @@
 package graph.model;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -15,8 +13,7 @@ public final class Node {
 
     public Node(String id, Map<String, Object> attributes) {
         this.id = id;
-        // A copy of a HashMap rather than Map.copyOf: attribute values may be null.
-        this.attributes = Collections.unmodifiableMap(new HashMap<>(attributes));
+        this.attributes = AttributeValues.copyOf(attributes);
     }
 
     public String getId() {
