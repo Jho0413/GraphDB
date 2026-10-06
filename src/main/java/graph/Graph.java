@@ -107,6 +107,10 @@ public class Graph implements GraphReader {
         return reader().getNodesIdWithEdgeToNode(nodeId);
     }
 
+    boolean markDropped() {
+        return manager.markDropped();
+    }
+
     /** A reader of the latest committed snapshot; the query engine takes one per query. */
     SnapshotReader reader() {
         return new SnapshotReader(manager.current());

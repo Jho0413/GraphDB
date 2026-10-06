@@ -1,5 +1,6 @@
 package graph.transaction;
 
+import graph.exceptions.GraphNotFoundException;
 import graph.exceptions.TransactionConflictException;
 import graph.exceptions.WalException;
 import graph.storage.GraphSnapshot;
@@ -22,6 +23,10 @@ import java.util.List;
  * <p>Versions increase by one per appended commit. Commits woken by the same {@code fsync} may publish in any order,
  * so a snapshot is published only if it is newer than the current one: published snapshots are durable, and their
  * versions strictly increase in log order, possibly skipping some.
+ *
+ * <p>Once the graph is dropped, every commit is refused before it is validated, and appends nothing. The flag is set
+ * under the lock, so every commit appended before it is already in the log: a drop record logged after
+ * {@link #markDropped} returns follows every commit to the graph. Commits appended before the drop complete normally.
  */
 public final class TransactionManager {
 
@@ -31,6 +36,8 @@ public final class TransactionManager {
     private final Object lock = new Object();
     /** The newest snapshot whose commit was appended to the log, durable or not. Guarded by {@link #lock}. */
     private Staged latest;
+    /** True once the graph is deleted; every later commit is refused. Guarded by {@link #lock}. */
+    private boolean dropped;
 
     /** A snapshot whose commit has been appended to the log. */
     private record Staged(GraphSnapshot snapshot, CommitLog.Pending pending) {}
@@ -52,9 +59,21 @@ public final class TransactionManager {
         return current;
     }
 
+    /** Refuses every later commit. Returns true for the first call only, so exactly one caller deletes the graph. */
+    public boolean markDropped() {
+        synchronized (lock) {
+            if (dropped) {
+                return false;
+            }
+            dropped = true;
+            return true;
+        }
+    }
+
     /**
      * Commits operations staged on snapshot {@code base}. Returns once they are durable and published.
      *
+     * @throws GraphNotFoundException if the graph has been dropped, in which case nothing is logged
      * @throws TransactionConflictException if a commit appended since {@code base} conflicts with them; thrown only
      *                                      once the newest appended commit is durable and published, so a retry
      *                                      begins on a snapshot that contains it
@@ -62,6 +81,9 @@ public final class TransactionManager {
      */
     void commit(GraphStorage base, List<GraphOperation> operations) {
         if (operations.isEmpty()) {
+            synchronized (lock) {
+                checkNotDropped();
+            }
             return;
         }
         Staged staged = stage(base, operations);
@@ -75,6 +97,7 @@ public final class TransactionManager {
         Staged inFlight;
         TransactionConflictException conflict;
         synchronized (lock) {
+            checkNotDropped();
             try {
                 GraphSnapshot next = buildChecked(base, operations);
                 latest = new Staged(next, commitLog.append(graphId, operations));
@@ -93,6 +116,13 @@ public final class TransactionManager {
         }
         publish(inFlight.snapshot());
         throw conflict;
+    }
+
+    /** Call with the lock held. */
+    private void checkNotDropped() {
+        if (dropped) {
+            throw new GraphNotFoundException(graphId);
+        }
     }
 
     /** Both conflict rules and the build between them, so every conflict is raised in one place. */
