@@ -31,7 +31,8 @@ checks that the other is rejected. Nothing depends on timing. The same approach 
 middle of a query, so these cases run the same way every time.
 
 **Multi-threaded tests check the locking.** A few tests run real threads. Examples: writers on different nodes all
-commit, retried increments of one counter lose no update, a reader never sees half of a commit, and the LRU cache
+commit, retried increments of one counter lose no update, a reader never sees half of a commit, concurrent deletes
+of one graph return it exactly once, commits racing a graph's deletion are never logged after it, and the LRU cache
 stays consistent under concurrent use. Tests like these can catch missing synchronization, but they cannot prove it
 is absent, which is why the deterministic tests cover the rules themselves. Every wait has a timeout, so a deadlock
 fails the test instead of hanging it.

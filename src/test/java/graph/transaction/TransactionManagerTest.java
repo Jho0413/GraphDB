@@ -1,5 +1,6 @@
 package graph.transaction;
 
+import graph.exceptions.GraphNotFoundException;
 import graph.exceptions.WalException;
 import graph.model.Edge;
 import graph.model.Node;
@@ -10,6 +11,12 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.*;
 
@@ -109,6 +116,78 @@ public class TransactionManagerTest {
 
         assertEquals(1, logged.size());
         assertEquals("A", manager.current().getAllNodes().getFirst().getAttribute("name"));
+    }
+
+    // ============ Dropping ============
+
+    @Test
+    public void aCommitAfterMarkDroppedThrowsAndIsNotLoggedOrPublished() {
+        GraphSnapshot before = manager.current();
+        manager.markDropped();
+
+        assertThrows(GraphNotFoundException.class, () -> commit(new AddOrUpdateNode(nodeA)));
+        assertTrue(logged.isEmpty());
+        assertSame(before, manager.current());
+    }
+
+    @Test
+    public void aCommitThatWouldConflictAfterMarkDroppedThrowsGraphNotFound() {
+        GraphSnapshot stale = manager.current();
+        commit(new AddOrUpdateNode(nodeA));
+        manager.markDropped();
+
+        assertThrows(GraphNotFoundException.class,
+                () -> manager.commit(stale, List.of(new AddOrUpdateNode(new Node("a", Map.of("x", 1))))));
+    }
+
+    @Test
+    public void anEmptyCommitAfterMarkDroppedThrowsAndIsNotLogged() {
+        manager.markDropped();
+
+        assertThrows(GraphNotFoundException.class, () -> manager.begin().commit());
+        assertTrue(logged.isEmpty());
+    }
+
+    @Test
+    public void markDroppedReturnsTrueOnlyTheFirstTime() {
+        assertTrue(manager.markDropped());
+        assertFalse(manager.markDropped());
+    }
+
+    @Test(timeout = 10_000)
+    public void markDroppedWaitsForACommitThatIsAppending() throws Exception {
+        CountDownLatch appending = new CountDownLatch(1);
+        CountDownLatch releaseAppend = new CountDownLatch(1);
+        manager = new TransactionManager(GraphSnapshot.empty(), "g1", (graphId, operations) -> {
+            appending.countDown();
+            awaitOrFail(releaseAppend);
+            logged.add(operations);
+            return () -> {};
+        });
+        ExecutorService executor = Executors.newCachedThreadPool();
+        try {
+            Future<?> commit = executor.submit(() -> commit(new AddOrUpdateNode(nodeA)));
+            appending.await();
+            Future<Boolean> drop = executor.submit(manager::markDropped);
+
+            assertThrows(TimeoutException.class, () -> drop.get(100, TimeUnit.MILLISECONDS));
+
+            releaseAppend.countDown();
+            assertTrue(drop.get());
+            commit.get();
+            assertTrue(manager.current().containsNode("a"));
+        } finally {
+            releaseAppend.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    private static void awaitOrFail(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private void commit(GraphOperation... operations) {

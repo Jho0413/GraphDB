@@ -36,6 +36,10 @@ GraphDB gives **snapshot isolation**.
 - **Readers see only durable commits, and never go back in time.** A snapshot is published only once its commit is
   on disk, and published versions strictly increase in log order. Readers may skip a version.
   See [Concurrency](concurrency.md#publishing-a-snapshot).
+- **A deleted graph takes no more commits.** Once `GraphDB.deleteGraph` has marked a graph deleted, every commit to
+  it, through a `Graph` or `Transaction` still held, throws `GraphNotFoundException` and logs nothing. A commit that
+  reached the log before the deletion completes normally, and is durable by the time `deleteGraph` returns.
+  See [Concurrency](concurrency.md#deleting-a-graph).
 - **Recovery rebuilds every snapshot the live graph built,** in log order, so it includes every acknowledged commit.
   See [Durability](durability.md#recovery).
 
@@ -48,29 +52,25 @@ GraphDB gives **snapshot isolation**.
 
 ## Thread safety
 
-`Graph`, `GraphQueryClient` and the values they return are safe to share between threads. A `Transaction` must be
-used by one thread at a time. `GraphDB` is not thread-safe. See [Concurrency](concurrency.md#what-is-thread-safe).
+`GraphDB`, `Graph`, `GraphQueryClient` and the values they return are safe to share between threads. A
+`Transaction` must be used by one thread at a time. See [Concurrency](concurrency.md#what-is-thread-safe).
 
 ## Limits
 
 What the engine does not guarantee today:
 
-1. **`GraphDB` is not thread-safe.** Creating, deleting or looking up graphs and query clients from several threads
-   at once is unsafe. Make these calls from one thread, or synchronize them yourself.
-2. **A commit on a deleted graph is lost on restart.** A `Graph` object kept after `GraphDB.deleteGraph` still
-   accepts commits. They are logged after the deletion, so recovery skips them.
-3. **Corruption in the middle of the log loses every later commit.** Recovery stops at the first bad record and
+1. **Corruption in the middle of the log loses every later commit.** Recovery stops at the first bad record and
    truncates the log there, even if intact commits follow it. The start-up message still describes this as an
    incomplete log at the end. See [Durability](durability.md#recovery).
-4. **A log write failure stops all writes, and what failed can come back.** If writing or forcing a batch fails,
+2. **A log write failure stops all writes, and what failed can come back.** If writing or forcing a batch fails,
    every commit, graph creation and graph deletion in it and after it fails with `WalException`, and the database
    refuses further writes, to every graph, until it is reopened. Everything in the failed batch, possibly from
    several graphs, may be replayed on restart: a failed commit may reappear, a graph whose creation failed may exist,
    and a graph whose deletion failed may be gone. See [Durability](durability.md#write-failures).
-5. **Unsupported attribute types fail at commit, not when staged.** Durable graphs store only `null`, `Boolean`,
+3. **Unsupported attribute types fail at commit, not when staged.** Durable graphs store only `null`, `Boolean`,
    `Integer`, `Long`, `Float`, `Double`, `String`, `List` and `Map` values. A value of any other type is accepted
    when it is staged, then makes `commit()` fail with `WalException`. Standalone graphs accept any type, but deep-copy
    only lists and maps, so a mutable value of another type can still be changed in place.
    See [Durability](durability.md#attribute-values).
-6. **Standalone graphs are not durable.** Graphs made with `Graph.createGraph()` are never logged.
-7. **Snapshot versions restart at 0 each time a database is opened.** See [Storage](storage.md#versions).
+4. **Standalone graphs are not durable.** Graphs made with `Graph.createGraph()` are never logged.
+5. **Snapshot versions restart at 0 each time a database is opened.** See [Storage](storage.md#versions).

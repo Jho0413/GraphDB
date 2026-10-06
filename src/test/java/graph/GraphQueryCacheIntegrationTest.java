@@ -109,6 +109,24 @@ public class GraphQueryCacheIntegrationTest {
     }
 
     @Test
+    public void aGraphKeepsItsClientWhileOtherGraphsAreCreatedAndDeleted() {
+        Graph other = db.createGraph();
+        db.createQueryClient(other.getId());
+        db.deleteGraph(other.getId());
+        db.createGraph();
+
+        assertSame(queryClient, db.createQueryClient(graph.getId()));
+    }
+
+    @Test
+    public void aRecoveredGraphHasOneClient() {
+        db.close();
+        db = GraphDB.open(temp.getRoot().toPath());
+
+        assertSame(db.createQueryClient(graph.getId()), db.createQueryClient(graph.getId()));
+    }
+
+    @Test
     public void aWeightUpdateChangesTheShortestPath() {
         // Alice -> Acme directly (1.0) is shorter than Alice -> Bob -> Acme (0.9 + 1.2)
         assertEquals(List.of(alice.getId(), acme.getId()),

@@ -81,21 +81,41 @@ one graph append one at a time, and `volatile` safely publishes each result to r
 | `GraphQueryClient` | Yes |
 | `Node`, `Edge`, `Path`, `DistanceMatrix`, query results | Yes: they are immutable |
 | `Transaction` | No: use it from one thread at a time. Separate transactions can run on separate threads |
-| `GraphDB` | No: its maps of graphs and query clients are not synchronized (see [Limits](guarantees.md#limits)) |
+| `GraphDB` | Yes |
+
+`GraphDB` keeps each graph and its query client together in one concurrent map, so lookups never lock. Creating a
+graph adds it to the map only once its creation is durable, and deleting one removes it only once its deletion is
+durable.
+
+## Deleting a graph
+
+A `Graph` or `Transaction` can outlive its graph's deletion, and a commit through it may race the delete. Recovery
+forgets a graph at its *graph dropped* record and skips any commit logged after it, so such a commit must never
+be appended after that record.
+
+The graph's commit lock orders them. `deleteGraph` first marks the graph dropped under the commit lock, and only
+then appends the record. Appends also happen under that lock, so every commit appended before the mark is already
+ahead of the record in the log. Every commit that takes the lock after the mark finds it and throws
+`GraphNotFoundException` without appending. A commit appended before the mark but still waiting for its `fsync`
+completes normally, and recovery replays it before dropping the graph, as the live database did.
+
+Marking also decides which caller deletes the graph: only the first to mark it logs the record, and every other
+concurrent `deleteGraph` returns `null`. No database-wide lock is needed, so deleting one graph never waits for
+another graph's commits.
 
 ## The locks
 
 There are three locks, and each guards one thing:
 
 - **Commit lock**, one per graph: held while a commit validates, builds and appends, and again while it publishes.
-  Never held while waiting for the disk.
+  Also held briefly by `deleteGraph` to mark the graph dropped. Never held while waiting for the disk.
 - **Log lock**, one per database: held only to add a block to the open batch, or for the flusher to take a batch.
   Never held during a write or an `fsync`.
 - **Cache lock**, one per query client: held only for a cache lookup or insert, never while an algorithm runs.
 
 A commit takes its commit lock and then the log lock, and no code takes them in the opposite order, so they cannot
-deadlock. The flusher takes only the log lock, and waiting for a batch happens with no lock held. The cache lock is
-never held together with either of the others.
+deadlock. `deleteGraph` releases the commit lock before it appends to the log. The flusher takes only the log lock,
+and waiting for a batch happens with no lock held. The cache lock is never held together with either of the others.
 
 Only the flusher thread writes to the log file. Interrupting a thread that is committing therefore cannot disturb
 the file: the commit carries on waiting until it is durable and returns with the thread's interrupt flag still set.

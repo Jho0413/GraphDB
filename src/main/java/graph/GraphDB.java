@@ -12,12 +12,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * A database of durable graphs sharing one write-ahead log. Thread-safe: graphs can be created, looked up, queried and
+ * deleted from any thread, while other threads commit to them.
+ */
 public class GraphDB implements AutoCloseable {
 
     public static final Path DEFAULT_DATA_DIRECTORY = Path.of("graphdb-data");
@@ -26,10 +29,17 @@ public class GraphDB implements AutoCloseable {
 
     private static GraphDB instance;
 
-    private final Map<String, Graph> graphs;
-    private final Map<String, GraphQueryClient> queryClients = new HashMap<>();
+    private final ConcurrentHashMap<String, Entry> graphs;
     private final WriteAheadLog wal;
     private final DataDirectoryLock lock;
+
+    /** A graph and its query client, added and removed together. */
+    private record Entry(Graph graph, GraphQueryClient queries) {
+
+        static Entry of(Graph graph) {
+            return new Entry(graph, GraphQueryClient.create(graph::reader));
+        }
+    }
 
     public static synchronized GraphDB getInstance() {
         if (instance == null) {
@@ -61,8 +71,9 @@ public class GraphDB implements AutoCloseable {
             Map<String, GraphSnapshot> recovered = new RecoveryManager().recover(log.records());
             WriteAheadLog wal = WriteAheadLog.open(walFile, log.validLength());
             try {
-                Map<String, Graph> graphs = new LinkedHashMap<>();
-                recovered.forEach((graphId, snapshot) -> graphs.put(graphId, Graph.create(snapshot, graphId, wal)));
+                ConcurrentHashMap<String, Entry> graphs = new ConcurrentHashMap<>();
+                recovered.forEach((graphId, snapshot) ->
+                        graphs.put(graphId, Entry.of(Graph.create(snapshot, graphId, wal))));
                 return new GraphDB(graphs, wal, lock);
             } catch (RuntimeException e) {
                 wal.close();
@@ -74,7 +85,7 @@ public class GraphDB implements AutoCloseable {
         }
     }
 
-    private GraphDB(Map<String, Graph> graphs, WriteAheadLog wal, DataDirectoryLock lock) {
+    private GraphDB(ConcurrentHashMap<String, Entry> graphs, WriteAheadLog wal, DataDirectoryLock lock) {
         this.graphs = graphs;
         this.wal = wal;
         this.lock = lock;
@@ -84,34 +95,48 @@ public class GraphDB implements AutoCloseable {
         String graphId = UUID.randomUUID().toString();
         wal.logGraphCreated(graphId);
         Graph graph = Graph.createGraph(graphId, wal);
-        graphs.put(graphId, graph);
+        graphs.put(graphId, Entry.of(graph));
         return graph;
     }
 
     public List<Graph> getGraphs() {
-        return new ArrayList<Graph>(graphs.values());
+        List<Graph> result = new ArrayList<>();
+        graphs.values().forEach(entry -> result.add(entry.graph()));
+        return result;
     }
 
     public Graph getGraph(String id) {
-        return graphs.get(id);
+        Entry entry = graphs.get(id);
+        return entry == null ? null : entry.graph();
     }
 
+    /**
+     * Deletes a graph and returns it once its deletion is durable. Once this call has marked the graph dropped, commits
+     * to it through a held {@code Graph} or an open {@code Transaction} throw {@link GraphNotFoundException} and log
+     * nothing; a commit already logged completes normally and is durable when this returns. Reads keep seeing its last
+     * snapshot.
+     *
+     * @return the deleted graph, or null if there is no such graph or another call is already deleting it
+     * @throws WalException if the deletion could not be logged; the graph then still refuses commits, and may or may
+     *                      not exist after the database is reopened
+     */
     public Graph deleteGraph(String id) {
-        if (!graphs.containsKey(id)) {
+        Entry entry = graphs.get(id);
+        if (entry == null || !entry.graph().markDropped()) {
             return null;
         }
         wal.logGraphDropped(id);
-        queryClients.remove(id);
-        return graphs.remove(id);
+        graphs.remove(id);
+        return entry.graph();
     }
 
     /** The graph's query client. Every call returns the same client, so queries share one cache. */
     public GraphQueryClient createQueryClient(String graphId) throws GraphNotFoundException {
-        Graph graph = graphs.get(graphId);
-        if (graph == null) {
+        Entry entry = graphs.get(graphId);
+        if (entry == null) {
             throw new GraphNotFoundException(graphId);
         }
-        return queryClients.computeIfAbsent(graphId, id -> GraphQueryClient.create(graph::reader));
+        return entry.queries();
     }
 
     /** Closes the write-ahead log. Graphs from this database can no longer commit transactions afterwards. */

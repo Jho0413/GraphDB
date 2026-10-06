@@ -201,6 +201,35 @@ public class TransactionManagerPipelineTest {
         assertTrue(manager.current().containsEdge("ab"));
     }
 
+    // ============ Dropping ============
+
+    @Test(timeout = 10_000)
+    public void aCommitAppendedBeforeMarkDroppedStillCompletesAndPublishes() throws Exception {
+        Future<?> commit = commitAsync(manager.current(), new DeleteNode("b"));
+        log.awaitAppends(1);
+
+        assertTrue(manager.markDropped());
+        log.complete(0);
+
+        commit.get();
+        assertFalse(manager.current().containsNode("b"));
+    }
+
+    @Test(timeout = 10_000)
+    public void aConflictWithACommitInFlightAcrossMarkDroppedStillThrowsTheConflict() throws Exception {
+        GraphSnapshot base = manager.current();
+        Future<?> winner = commitAsync(base, updateA(1));
+        log.awaitAppends(1);
+        Future<?> loser = commitAsync(base, updateA(2));
+        log.awaitWaiters(0, 2);
+
+        assertTrue(manager.markDropped());
+        log.complete(0);
+
+        winner.get();
+        assertCauseIs(TransactionConflictException.class, loser);
+    }
+
     // ============ Log failures ============
 
     @Test(timeout = 10_000)

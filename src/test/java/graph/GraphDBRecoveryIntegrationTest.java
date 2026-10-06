@@ -3,12 +3,14 @@ package graph;
 import graph.model.Edge;
 import graph.model.Node;
 import graph.transaction.Transaction;
+import graph.exceptions.GraphNotFoundException;
 import graph.exceptions.TransactionConflictException;
 import graph.exceptions.WalException;
 import graph.transaction.AddOrUpdateEdge;
 import graph.transaction.AddOrUpdateNode;
 import graph.transaction.DeleteNode;
 import graph.transaction.GraphOperation;
+import graph.testsupport.WalLogs;
 import graph.testsupport.Workers;
 import graph.wal.WalReader;
 import graph.wal.WriteAheadLog;
@@ -281,6 +283,113 @@ public class GraphDBRecoveryIntegrationTest {
         assertEquals(liveEdges, edgeIds(recovered));
     }
 
+    // ============ Deleting graphs ============
+
+    @Test
+    public void aGraphHeldAfterDeletionRefusesCommitsAndLogsNothingAfterTheDrop() {
+        Graph graph = db.createGraph();
+        commitNode(graph, "before");
+        db.deleteGraph(graph.getId());
+
+        assertThrows(GraphNotFoundException.class, () -> commitNode(graph, "after"));
+
+        WalLogs.DropLog log = dropLog(graph.getId());
+        assertEquals(1, log.transactionsBefore());
+        assertEquals(0, log.transactionsAfter());
+    }
+
+    @Test
+    public void aTransactionBegunBeforeDeletionRefusesToCommit() {
+        Graph graph = db.createGraph();
+        Transaction transaction = graph.createTransaction();
+        transaction.addNode(Map.of("name", "after"));
+
+        db.deleteGraph(graph.getId());
+
+        assertThrows(GraphNotFoundException.class, transaction::commit);
+    }
+
+    @Test
+    public void aHeldGraphAndTransactionStillReadTheLastSnapshotAfterDeletion() {
+        Graph graph = db.createGraph();
+        commitNode(graph, "before");
+        Transaction transaction = graph.createTransaction();
+        transaction.addNode(Map.of("name", "staged"));
+
+        db.deleteGraph(graph.getId());
+
+        assertEquals(2, transaction.getNodes().size());
+        assertEquals(1, graph.getNodes().size());
+    }
+
+    @Test
+    public void deletingAGraphTwiceReturnsItThenNull() {
+        Graph graph = db.createGraph();
+
+        assertSame(graph, db.deleteGraph(graph.getId()));
+        assertNull(db.deleteGraph(graph.getId()));
+    }
+
+    @Test
+    public void deletingAGraphTwiceLogsOneDropRecord() {
+        Graph graph = db.createGraph();
+
+        db.deleteGraph(graph.getId());
+        db.deleteGraph(graph.getId());
+
+        assertEquals(1, dropLog(graph.getId()).dropRecords());
+    }
+
+    @Test
+    public void deletingAnUnknownGraphReturnsNull() {
+        Graph graph = db.createGraph();
+
+        assertNull(db.deleteGraph("missing"));
+        assertSame(graph, db.getGraph(graph.getId()));
+    }
+
+    @Test
+    public void deletingAnUnknownGraphLogsNothing() {
+        db.deleteGraph("missing");
+
+        assertEquals(0, dropLog("missing").dropRecords());
+    }
+
+    @Test
+    public void aDeletedGraphHasNoQueryClient() {
+        Graph graph = db.createGraph();
+        db.createQueryClient(graph.getId());
+
+        db.deleteGraph(graph.getId());
+
+        assertThrows(GraphNotFoundException.class, () -> db.createQueryClient(graph.getId()));
+    }
+
+    @Test
+    public void deletingAGraphOnAClosedDatabaseThrowsAndKeepsIt() {
+        Graph graph = db.createGraph();
+        db.close();
+
+        assertThrows(WalException.class, () -> db.deleteGraph(graph.getId()));
+        assertSame(graph, db.getGraph(graph.getId()));
+
+        // A closed log accepts nothing, so no drop record exists.
+        db = GraphDB.open(dataDirectory);
+        assertNotNull(db.getGraph(graph.getId()));
+    }
+
+    @Test
+    public void aGraphWhoseDeletionFailedStillRefusesCommits() {
+        Graph graph = db.createGraph();
+        db.close();
+        assertThrows(WalException.class, () -> db.deleteGraph(graph.getId()));
+
+        // The log is closed, so only the dropped check can throw GraphNotFoundException.
+        assertThrows(GraphNotFoundException.class, () -> commitNode(graph, "after"));
+
+        db = GraphDB.open(dataDirectory);  // so tearDown has a database to close
+    }
+
     // ============ Logs holding data that validation would reject ============
 
     @Test
@@ -323,6 +432,14 @@ public class GraphDBRecoveryIntegrationTest {
             wal.append(graphId, List.of(operations)).await();
         }
         db = GraphDB.open(dataDirectory);
+    }
+
+    /** {@link WalLogs#dropLog} for this database, which it closes and reopens. */
+    private WalLogs.DropLog dropLog(String graphId) {
+        db.close();
+        WalLogs.DropLog log = WalLogs.dropLog(dataDirectory.resolve(GraphDB.WAL_FILE_NAME), graphId);
+        db = GraphDB.open(dataDirectory);
+        return log;
     }
 
     private static List<String> nodeIds(Graph graph) {
