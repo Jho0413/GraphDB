@@ -14,9 +14,10 @@ GraphDB gives **snapshot isolation**.
   [Query engine](query-engine.md#one-snapshot-per-query).
 - **A cached query result is only ever returned for the snapshot it was computed on.**
   See [Query engine](query-engine.md#caching).
-- **First committer wins.** A transaction is rejected with `TransactionConflictException` if another commit, made
-  after it began, changed a node, edge or edge slot it writes, or if an edge it writes would be left without an
-  endpoint. A rejected transaction has logged and published nothing.
+- **First committer wins.** A transaction is rejected with `TransactionConflictException` if another commit,
+  appended to the log after it began, changed a node, edge or edge slot it writes, or if an edge it writes would be
+  left without an endpoint. "First" means first to append, durable yet or not. A rejected transaction has logged and
+  published nothing.
   See [Transactions](transactions.md#conflict-detection).
 - **Write skew is allowed.** Only what a transaction writes is checked, not what it read, so isolation is not
   serializable. See [Transactions](transactions.md#write-skew).
@@ -32,7 +33,10 @@ GraphDB gives **snapshot isolation**.
 - **An acknowledged commit survives a crash**, apart from the cases under [Limits](#limits). When `commit()`
   returns, the transaction has been written to the log and forced to disk. Creating and deleting graphs is logged
   the same way. See [Durability](durability.md).
-- **Recovery rebuilds the state readers saw.** Log order equals publish order, and replay follows the log.
+- **Readers see only durable commits, and never go back in time.** A snapshot is published only once its commit is
+  on disk, and published versions strictly increase in log order. Readers may skip a version.
+  See [Concurrency](concurrency.md#publishing-a-snapshot).
+- **Recovery rebuilds every snapshot the live graph built,** in log order, so it includes every acknowledged commit.
   See [Durability](durability.md#recovery).
 
 ## Consistency
@@ -58,9 +62,11 @@ What the engine does not guarantee today:
 3. **Corruption in the middle of the log loses every later commit.** Recovery stops at the first bad record and
    truncates the log there, even if intact commits follow it. The start-up message still describes this as an
    incomplete log at the end. See [Durability](durability.md#recovery).
-4. **A failed commit can come back if the log cannot undo it.** If a log write fails and removing the partial write
-   also fails, the log refuses further writes until the database is reopened, and the failed commit may be replayed
-   on restart. See [Durability](durability.md#write-failures).
+4. **A log write failure stops all writes, and what failed can come back.** If writing or forcing a batch fails,
+   every commit, graph creation and graph deletion in it and after it fails with `WalException`, and the database
+   refuses further writes, to every graph, until it is reopened. Everything in the failed batch, possibly from
+   several graphs, may be replayed on restart: a failed commit may reappear, a graph whose creation failed may exist,
+   and a graph whose deletion failed may be gone. See [Durability](durability.md#write-failures).
 5. **Unsupported attribute types fail at commit, not when staged.** Durable graphs store only `null`, `Boolean`,
    `Integer`, `Long`, `Float`, `Double`, `String`, `List` and `Map` values. A value of any other type is accepted
    when it is staged, then makes `commit()` fail with `WalException`. Standalone graphs accept any type, but deep-copy

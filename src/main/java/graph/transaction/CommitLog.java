@@ -9,11 +9,26 @@ import java.util.List;
 public interface CommitLog {
 
     /** A log for graphs that are not attached to a database: nothing is persisted. */
-    CommitLog NONE = (graphId, operations) -> {};
+    CommitLog NONE = (graphId, operations) -> Pending.DURABLE;
 
     /**
-     * Durably logs a committed transaction. When this returns, the transaction survives a crash;
-     * if it throws, nothing was logged and the transaction must not be published.
+     * Appends a commit after every commit appended before it, without waiting for disk. Throws WalException, having
+     * appended nothing, if the operations cannot be encoded or the log no longer accepts writes.
      */
-    void logCommit(String graphId, List<GraphOperation> operations);
+    Pending append(String graphId, List<GraphOperation> operations);
+
+    /** A commit appended to the log. */
+    interface Pending {
+
+        /** A commit that is already durable. */
+        Pending DURABLE = () -> {};
+
+        /**
+         * Returns once the commit is durable. Throws WalException if it never will be; then every commit appended
+         * after it also fails, and later appends throw. Ignores interrupts (the flag stays set), because an appended
+         * commit is written regardless. Safe to call from several threads and more than once. Has no timeout, so a
+         * stalled disk stalls the caller.
+         */
+        void await();
+    }
 }

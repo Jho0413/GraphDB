@@ -83,5 +83,7 @@ work differently; see [Transactions](transactions.md#reads-inside-a-transaction)
 ## Versions
 
 The empty graph is version 0, and so is each graph that recovery rebuilds. Each commit that changes something
-produces the next version. The query cache uses the version to tell snapshots apart (see
-[Query engine](query-engine.md#caching)). Versions are meaningful only within one graph during one run.
+produces the next version. Readers can see versions skip: when several commits become durable together, only the
+newest may be published (see [Concurrency](concurrency.md#publishing-a-snapshot)). The query cache uses the version
+to tell snapshots apart (see [Query engine](query-engine.md#caching)). Versions are meaningful only within one graph
+during one run.

@@ -22,7 +22,10 @@ public class TransactionConflictTest {
 
     private final List<List<GraphOperation>> logged = new ArrayList<>();
     private final TransactionManager manager =
-            new TransactionManager(GraphSnapshot.empty(), "g1", (graphId, operations) -> logged.add(operations));
+            new TransactionManager(GraphSnapshot.empty(), "g1", (graphId, operations) -> {
+                logged.add(operations);
+                return () -> {};
+            });
     private Node a, b, c;
     private Edge ab;
 

@@ -6,6 +6,7 @@ import graph.wal.RecoveryManager;
 import graph.exceptions.GraphNotFoundException;
 import graph.exceptions.WalException;
 import graph.query.GraphQueryClient;
+import graph.storage.GraphSnapshot;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -56,11 +57,17 @@ public class GraphDB implements AutoCloseable {
                         "Discarding {0} bytes of incomplete write-ahead log at the end of {1}",
                         log.fileLength() - log.validLength(), walFile);
             }
+            // Recover before opening the log, so a failed recovery leaves no flusher thread or open log file behind.
+            Map<String, GraphSnapshot> recovered = new RecoveryManager().recover(log.records());
             WriteAheadLog wal = WriteAheadLog.open(walFile, log.validLength());
-            Map<String, Graph> graphs = new LinkedHashMap<>();
-            new RecoveryManager().recover(log.records())
-                    .forEach((graphId, snapshot) -> graphs.put(graphId, Graph.create(snapshot, graphId, wal)));
-            return new GraphDB(graphs, wal, lock);
+            try {
+                Map<String, Graph> graphs = new LinkedHashMap<>();
+                recovered.forEach((graphId, snapshot) -> graphs.put(graphId, Graph.create(snapshot, graphId, wal)));
+                return new GraphDB(graphs, wal, lock);
+            } catch (RuntimeException e) {
+                wal.close();
+                throw e;
+            }
         } catch (RuntimeException e) {
             lock.close();
             throw e;

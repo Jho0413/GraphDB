@@ -34,14 +34,16 @@ flowchart LR
 flowchart LR
     stage["Transaction stages operations"] --> validate["check for conflicts"]
     validate --> build["build the next snapshot"]
-    build --> log["append to the log and fsync"]
-    log --> publish["make the new snapshot current"]
+    build --> log["append to the log's open batch"]
+    log --> fsync["flusher writes the batch and fsyncs"]
+    fsync --> publish["make the new snapshot current"]
 ```
 
 A transaction records its writes as a list of operations. On `commit()`, the `TransactionManager` checks them
-against what other transactions committed since this one began, applies them to a copy of the current snapshot,
-writes them to the log and forces it to disk, then swaps the new snapshot in. Readers, new transactions and queries
-see the new snapshot from then on. See [Transactions](transactions.md) and [Durability](durability.md).
+against what other transactions appended since this one began, applies them to a copy of the newest snapshot, and
+appends them to the log. The log's flusher thread writes every commit appended since its last flush and forces them
+to disk together. Once its commit is durable, the `TransactionManager` swaps the new snapshot in. Readers, new
+transactions and queries see it from then on. See [Transactions](transactions.md) and [Durability](durability.md).
 
 ## How a read flows
 
@@ -103,6 +105,8 @@ interface it needs, `CommitLog`, and `WriteAheadLog` implements it. `GraphDB` co
 - **Operations are the unit of change.** One operation list is applied to build the next snapshot, recorded in the
   log and replayed by recovery, so the live graph and the recovered graph cannot disagree.
 - **The log comes before visibility.** A commit is written and forced to disk before it is published.
+- **Commits share `fsync`s.** No lock is held while waiting for the disk, so commits from any number of threads and
+  graphs are forced together by one flusher thread.
 - **`Node` and `Edge` are immutable.** Their attribute maps, including nested lists and maps, are unmodifiable
   copies, so the objects reads return can be shared freely and cannot be used to change the graph.
 - **Standalone graphs skip the log.** `Graph.createGraph()` makes an in-memory graph whose commits are not logged.

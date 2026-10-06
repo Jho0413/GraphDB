@@ -36,6 +36,12 @@ stays consistent under concurrent use. Tests like these can catch missing synchr
 is absent, which is why the deterministic tests cover the rules themselves. Every wait has a timeout, so a deadlock
 fails the test instead of hanging it.
 
+**The log's timing is controlled, not waited for.** The write-ahead log tests run it over a `ScriptedChannel`, a
+file channel whose writes, `fsync`s and truncations can be made to block or fail on cue. A test can hold the first
+`fsync` open, append more commits, and check they all share the next one, or fail an `fsync` and check what every
+waiting commit sees. The commit path is tested the same way with a fake log whose commits become durable only when
+the test says so.
+
 ## Test helpers
 
 Shared helpers live in `graph.testsupport`. The main ones:

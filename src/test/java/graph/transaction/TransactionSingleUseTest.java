@@ -23,6 +23,7 @@ public class TransactionSingleUseTest {
                 if (logFails) {
                     throw new WalException("disk full");
                 }
+                return () -> {};
             });
     private Node a, b;
     private Edge ab;

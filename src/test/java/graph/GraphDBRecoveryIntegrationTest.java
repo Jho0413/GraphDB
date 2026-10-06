@@ -9,6 +9,7 @@ import graph.transaction.AddOrUpdateEdge;
 import graph.transaction.AddOrUpdateNode;
 import graph.transaction.DeleteNode;
 import graph.transaction.GraphOperation;
+import graph.testsupport.Workers;
 import graph.wal.WalReader;
 import graph.wal.WriteAheadLog;
 import org.junit.After;
@@ -21,9 +22,14 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.*;
 
@@ -181,6 +187,54 @@ public class GraphDBRecoveryIntegrationTest {
     }
 
     @Test
+    public void openingALogWithABadHeaderFailsAndReleasesItsFileAndThread() throws IOException {
+        db.close();
+        Path walFile = dataDirectory.resolve(GraphDB.WAL_FILE_NAME);
+        Files.writeString(walFile, "not a write-ahead log");
+        long flushersBefore = liveFlusherThreads();
+
+        assertThrows(WalException.class, () -> GraphDB.open(dataDirectory));
+
+        assertTrue(liveFlusherThreads() <= flushersBefore);  // a thread from an earlier close may still be ending
+        Files.delete(walFile);  // fails on Windows while the file is still open
+        db = GraphDB.open(dataDirectory);
+    }
+
+    @Test(timeout = 60_000)
+    public void concurrentCommitsToSeveralGraphsAreRecovered() throws Exception {
+        List<Graph> graphs = List.of(db.createGraph(), db.createGraph());
+        ExecutorService executor = Executors.newFixedThreadPool(8);
+        CountDownLatch start = new CountDownLatch(1);
+        try {
+            List<Future<?>> writers = new ArrayList<>();
+            for (int t = 0; t < 8; t++) {
+                Graph graph = graphs.get(t % graphs.size());
+                String name = "writer " + t;
+                writers.add(Workers.submit(executor, start, () -> {
+                    for (int i = 0; i < 25; i++) {
+                        commitNode(graph, name + " #" + i);
+                    }
+                }));
+            }
+            start.countDown();
+            Workers.awaitAll(writers);
+        } finally {
+            executor.shutdownNow();
+        }
+        Map<String, List<Node>> published = new HashMap<>();
+        graphs.forEach(graph -> published.put(graph.getId(), graph.getNodes()));
+
+        reopen();
+
+        for (Graph graph : graphs) {
+            assertEquals(nodeIds(graph), nodeIds(db.getGraph(graph.getId())));
+            for (Node node : published.get(graph.getId())) {
+                assertEquals(node.getAttributes(), db.getGraph(graph.getId()).getNodeById(node.getId()).getAttributes());
+            }
+        }
+    }
+
+    @Test
     public void closedDatabaseRejectsCommits() {
         Graph graph = db.createGraph();
         db.close();
@@ -266,7 +320,7 @@ public class GraphDBRecoveryIntegrationTest {
         db.close();
         Path walFile = dataDirectory.resolve(GraphDB.WAL_FILE_NAME);
         try (WriteAheadLog wal = WriteAheadLog.open(walFile, WalReader.read(walFile).validLength())) {
-            wal.logCommit(graphId, List.of(operations));
+            wal.append(graphId, List.of(operations)).await();
         }
         db = GraphDB.open(dataDirectory);
     }
@@ -288,5 +342,11 @@ public class GraphDBRecoveryIntegrationTest {
         Transaction transaction = graph.createTransaction();
         transaction.addNode(Map.of("name", name));
         transaction.commit();
+    }
+
+    private static long liveFlusherThreads() {
+        return Thread.getAllStackTraces().keySet().stream()
+                .filter(thread -> thread.getName().equals("graphdb-wal-flusher"))
+                .count();
     }
 }

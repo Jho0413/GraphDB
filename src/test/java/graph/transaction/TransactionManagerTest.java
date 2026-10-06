@@ -24,7 +24,10 @@ public class TransactionManagerTest {
 
     @Before
     public void setUp() {
-        manager = new TransactionManager(GraphSnapshot.empty(), "g1", (graphId, operations) -> logged.add(operations));
+        manager = new TransactionManager(GraphSnapshot.empty(), "g1", (graphId, operations) -> {
+            logged.add(operations);
+            return () -> {};
+        });
     }
 
     // ============ Commit order ============
@@ -34,7 +37,10 @@ public class TransactionManagerTest {
         List<Boolean> publishedWhenLogged = new ArrayList<>();
         // The log is built before the manager exists, so it reads the field when called.
         manager = new TransactionManager(GraphSnapshot.empty(), "g1",
-                (graphId, operations) -> publishedWhenLogged.add(manager.current().containsNode("a")));
+                (graphId, operations) -> {
+                    publishedWhenLogged.add(manager.current().containsNode("a"));
+                    return () -> {};
+                });
 
         commit(new AddOrUpdateNode(nodeA));
 
@@ -87,7 +93,10 @@ public class TransactionManagerTest {
     @Test
     public void logsUnderTheGraphId() {
         List<String> graphIds = new ArrayList<>();
-        new TransactionManager(GraphSnapshot.empty(), "g42", (graphId, operations) -> graphIds.add(graphId))
+        new TransactionManager(GraphSnapshot.empty(), "g42", (graphId, operations) -> {
+            graphIds.add(graphId);
+            return () -> {};
+        })
                 .commit(GraphSnapshot.empty(), List.of(new AddOrUpdateNode(nodeA)));
         assertEquals(List.of("g42"), graphIds);
     }

@@ -262,11 +262,14 @@ public class Transaction implements GraphReader, GraphWriter {
 
     /**
      * Validates the staged changes against commits made since this transaction began, logs them, then publishes them
-     * as the graph's next snapshot. Nothing is logged or published if validation fails, and nothing is published if
-     * the log write fails.
+     * as the graph's next snapshot. Returns once they are durable. Nothing is logged or published if validation fails,
+     * and nothing is published if the log write fails.
      *
      * @throws TransactionConflictException if a concurrent commit changed a node, edge or edge slot this transaction
      *                                      writes, or removed an endpoint of an edge it puts
+     * @throws graph.exceptions.WalException if the log could not write this commit, or failed earlier; also instead
+     *                                       of a conflict if the conflicting in-flight commit failed. Every later
+     *                                       commit fails too until the database is reopened
      * @throws IllegalStateException if the transaction has already been committed
      */
     public void commit() {
